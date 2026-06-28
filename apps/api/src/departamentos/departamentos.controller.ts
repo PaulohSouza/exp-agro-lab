@@ -13,6 +13,11 @@ export class DepartamentosController {
     return this.service.listar(user);
   }
 
+  @Get("unidades")
+  listarUnidades(@CurrentUser() user: UsuarioAtual) {
+    return this.service.listarUnidades(user);
+  }
+
   @Post()
   @RequirePapel("gestao_instituicao")
   criar(@CurrentUser() user: UsuarioAtual, @Body() dto: { nome: string }) {

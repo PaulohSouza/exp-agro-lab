@@ -14,6 +14,15 @@ export class DepartamentosService {
     });
   }
 
+  /** Unidades/laboratórios da instituição (para atribuir coordenador de área). */
+  listarUnidades(user: UsuarioAtual) {
+    return this.prisma.unidade.findMany({
+      where: { instituicaoId: user.instituicaoId },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true, tipo: true, departamentoId: true },
+    });
+  }
+
   criar(user: UsuarioAtual, dto: { nome: string }) {
     return this.prisma.departamento.create({
       data: { instituicaoId: user.instituicaoId, nome: dto.nome },

@@ -159,7 +159,9 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-export interface Usuario { id: string; nome: string; email: string; papel?: Papel; isAdminInstituicao: boolean; ativo: boolean }
+export interface Usuario { id: string; nome: string; email: string; papel?: Papel; departamentoId?: string | null; unidadeId?: string | null; isAdminInstituicao: boolean; ativo: boolean }
+export interface Departamento { id: string; nome: string; ativo: boolean; _count?: { unidades: number; usuarios: number } }
+export interface Unidade { id: string; nome: string; tipo: string; departamentoId: string | null }
 
 export type Papel =
   | "admin_sistema"
@@ -169,6 +171,16 @@ export type Papel =
   | "pesquisador"
   | "analista"
   | "assistente";
+
+/** Papéis selecionáveis na gestão da instituição (admin_sistema é global, fora daqui). */
+export const PAPEIS: { value: Papel; label: string }[] = [
+  { value: "gestao_instituicao", label: "Gestão da instituição" },
+  { value: "gestao_departamento", label: "Gestão de departamento" },
+  { value: "coordenador_area", label: "Coordenador de área/laboratório" },
+  { value: "pesquisador", label: "Pesquisador" },
+  { value: "analista", label: "Analista" },
+  { value: "assistente", label: "Assistente" },
+];
 
 export interface Contagem { rotulo: string; n: number }
 export interface ChecklistItem {
@@ -243,8 +255,18 @@ export const api = {
 
   // usuários (admin da instituição)
   listarUsuarios: () => req<Usuario[]>("/usuarios"),
-  criarUsuario: (body: { nome: string; email: string; senha: string; isAdminInstituicao?: boolean }) =>
+  criarUsuario: (body: { nome: string; email: string; senha: string; papel?: Papel; isAdminInstituicao?: boolean }) =>
     req<Usuario>("/usuarios", { method: "POST", body: JSON.stringify(body) }),
+  atualizarUsuario: (id: string, body: { papel?: Papel; departamentoId?: string | null; unidadeId?: string | null; ativo?: boolean }) =>
+    req<Usuario>(`/usuarios/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+
+  // departamentos + unidades (hierarquia organizacional)
+  departamentos: () => req<Departamento[]>("/departamentos"),
+  unidades: () => req<Unidade[]>("/departamentos/unidades"),
+  criarDepartamento: (nome: string) => req<Departamento>("/departamentos", { method: "POST", body: JSON.stringify({ nome }) }),
+  atualizarDepartamento: (id: string, body: { nome?: string; ativo?: boolean }) =>
+    req<Departamento>(`/departamentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  desativarDepartamento: (id: string) => req<{ ok: boolean }>(`/departamentos/${id}`, { method: "DELETE" }),
 
   // compartilhamento
   listarCompartilhamentos: (expId: string) => req<Compartilhamento[]>(`/experimentos/${expId}/compartilhamentos`),

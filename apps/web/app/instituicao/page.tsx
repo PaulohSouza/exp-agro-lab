@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, type Aprovador, type Instituicao, type Usuario } from "../../lib/api";
+import { api, type Aprovador, type Departamento, type Instituicao, type Usuario } from "../../lib/api";
 import { Protected } from "../../components/Protected";
 
 export default function InstituicaoPage() {
   const [inst, setInst] = useState<Instituicao | null>(null);
   const [aprovadores, setAprovadores] = useState<Aprovador[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+  const [novoDep, setNovoDep] = useState("");
   const [sel, setSel] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -16,10 +18,17 @@ export default function InstituicaoPage() {
       setInst(await api.obterInstituicao());
       setAprovadores(await api.listarAprovadores());
       setUsuarios(await api.listarUsuarios());
+      setDepartamentos(await api.departamentos());
       setErro(null);
     } catch (e) { setErro(e instanceof Error ? e.message : "falha"); }
   }
   useEffect(() => { recarregar(); }, []);
+
+  async function criarDepartamento() {
+    if (!novoDep.trim()) return;
+    try { await api.criarDepartamento(novoDep.trim()); setNovoDep(""); recarregar(); }
+    catch (e) { setErro(e instanceof Error ? e.message : "falha"); }
+  }
 
   async function salvarPolitica(politica: string, n: number) {
     setInst(await api.atualizarInstituicao({ politicaAprovacao: politica, nAprovadores: n }));
@@ -61,6 +70,28 @@ export default function InstituicaoPage() {
             </div>
           </div>
         )}
+
+        <div style={{ background: "#fff", borderRadius: 10, padding: 16, marginTop: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Departamentos</h3>
+          <ul style={{ paddingLeft: 18 }}>
+            {departamentos.map((d) => (
+              <li key={d.id} style={{ marginBottom: 4, opacity: d.ativo ? 1 : 0.5 }}>
+                {d.nome}{" "}
+                <span style={{ color: "#7987A1", fontSize: 12 }}>
+                  ({d._count?.unidades ?? 0} unid. · {d._count?.usuarios ?? 0} usu.){d.ativo ? "" : " — inativo"}
+                </span>{" "}
+                {d.ativo && (
+                  <button onClick={async () => { await api.desativarDepartamento(d.id); recarregar(); }} style={lixo}>desativar</button>
+                )}
+              </li>
+            ))}
+            {departamentos.length === 0 && <li style={{ color: "#a9abbd", listStyle: "none", marginLeft: -18 }}>nenhum departamento</li>}
+          </ul>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input value={novoDep} onChange={(e) => setNovoDep(e.target.value)} placeholder="Novo departamento" style={inp} />
+            <button onClick={criarDepartamento} style={btn}>Adicionar departamento</button>
+          </div>
+        </div>
 
         <div style={{ background: "#fff", borderRadius: 10, padding: 16, marginTop: 16 }}>
           <h3 style={{ marginTop: 0 }}>Aprovadores internos</h3>
