@@ -25,9 +25,9 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 - ✅ **Etapa C (28/06/2026):** **compartilhamento** de experimentos (RF-23..25). API: compartilhar por e-mail com nível **input/edit** (auto-aceito se usuário existe; senão **convite por e-mail simulado** com token), listar e revogar (dono/admin). Lista inclui **compartilhados comigo**. Enforcement do nível: `garantirAcesso` aplicado em avaliações (lançar = input; cadastrar/editar = edit) e tratamentos (edit). Web: aba **Compartilhar** (form e-mail+nível, lista, revogar) + badge "compartilhado" na lista. Verificado: input lança mas não edita (403); edit edita; revogar tira acesso.
 - ✅ **Etapa D — Ordem de Serviço (RF-26, 28/06/2026):** fluxo comercial completo. API: `InstituicaoModule` (política `todos`/`n_de_m` + aprovadores) e `OrdemServicoModule` (criar → submeter → **aprovação interna por política** → **aprovação do cliente por e-mail/token**, endpoint **público** de decisão). Web: aba **Ordem de Serviço** (criar/submeter/aprovar interno/ver status), página **/instituicao** (política + aprovadores, admin) e página **pública /aprovacao/[token]**. Verificado E2E: submeter → aprovação interna 1-de-N → e-mail simulado → cliente decide por token → OS aprovada; não-aprovador bloqueado.
 
-## Marco 2 — Coleta mobile offline-first
-- App RN: download do protocolo/croqui, lançamento de avaliações por parcela, fotos.
-- Persistência local (SQLite/WatermelonDB) + fila de sincronização + resolução de conflito.
+## Marco 2 — Coleta mobile offline-first — em andamento
+- ✅ **Fatia 1 — fundação de sync (28/06/2026):** helpers no `packages/domain` (`chaveColeta` idempotente, `resolverColeta` LWW, `dedupLote`) com 3 testes; API `SyncModule`: `GET /sync/experimentos/:id` (pacote offline: estrutura+croqui+avaliações+dados) e `POST /sync/push` (lote idempotente, dedup, **resolução de conflito** marcando — nunca descarta). Verificado: dedup, conflito por timestamp, origem `mobile`.
+- ⬜ Fatia 2: **app React Native (Expo)** — login, lista de protocolos (pull), coleta por parcela offline (fila local AsyncStorage/SQLite), botão sincronizar (push), fotos. _Requer device/emulador para validar — testar com o usuário._
 - **Entrega:** coletar avaliações sem internet e sincronizar.
 
 ## Marco 3 — Fluxos (comercial × interno) e aprovação

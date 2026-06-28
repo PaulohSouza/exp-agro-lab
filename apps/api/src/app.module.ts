@@ -14,9 +14,10 @@ import { CompartilhamentoModule } from "./compartilhamento/compartilhamento.modu
 import { InstituicaoModule } from "./instituicao/instituicao.module";
 import { OrdemServicoModule } from "./ordem-servico/ordem-servico.module";
 import { ExportModule } from "./export/export.module";
+import { SyncModule } from "./sync/sync.module";
 
 @Module({
-  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule, InstituicaoModule, OrdemServicoModule, ExportModule],
+  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule, InstituicaoModule, OrdemServicoModule, ExportModule, SyncModule],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
