@@ -45,6 +45,20 @@ export class ExperimentosService {
 
   /** Lista experimentos da instituição do usuário (+ compartilhados — etapa C). */
   async listar(user: UsuarioAtual) {
+    // super-admin global: enxerga todas as instituições (RN-RBAC).
+    if (user.papel === "admin_sistema") {
+      const todos = await this.prisma.experimento.findMany({
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        include: {
+          objetoEstudo: true, local: true, safra: true, areaPesquisa: true, delineamento: true,
+          instituicao: { select: { nome: true } },
+          owner: { select: { id: true, nome: true } },
+          _count: { select: { tratamentos: true, parcelas: true } },
+        },
+      });
+      return todos.map((e) => ({ ...e, compartilhadoComigo: false }));
+    }
     const proprios = await this.prisma.experimento.findMany({
       where: { deletedAt: null, instituicaoId: user.instituicaoId },
       orderBy: { createdAt: "desc" },
@@ -90,7 +104,8 @@ export class ExperimentosService {
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
 
     let nivel: "own" | "edit" | "input" | null = null;
-    if (exp.instituicaoId === user.instituicaoId) nivel = "own";
+    if (user.papel === "admin_sistema") nivel = "own"; // super-admin global (RN-RBAC)
+    else if (exp.instituicaoId === user.instituicaoId) nivel = "own";
     else if (exp.compartilhamentos.length) nivel = exp.compartilhamentos[0].nivel === "edit" ? "edit" : "input";
 
     if (!nivel) throw new ForbiddenException("Sem acesso a este experimento.");
@@ -98,6 +113,39 @@ export class ExperimentosService {
       throw new ForbiddenException("Permissão apenas de inserção de dados (input).");
     }
     return nivel;
+  }
+
+  // ── Responsáveis pela coleta (RN-RBAC) ──────────────────────────────────────
+
+  async listarResponsaveis(id: string, user: UsuarioAtual) {
+    await this.garantirAcesso(id, user);
+    return this.prisma.experimentoResponsavel.findMany({
+      where: { experimentoId: id },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { id: true, nome: true, email: true, papel: true } } },
+    });
+  }
+
+  async adicionarResponsavel(id: string, user: UsuarioAtual, userId: string) {
+    await this.garantirAcesso(id, user, "edit");
+    const exp = await this.prisma.experimento.findUnique({ where: { id }, select: { instituicaoId: true } });
+    const alvo = await this.prisma.user.findUnique({ where: { id: userId }, select: { instituicaoId: true } });
+    if (!exp || !alvo) throw new NotFoundException("Experimento ou usuário não encontrado.");
+    if (alvo.instituicaoId !== exp.instituicaoId) {
+      throw new BadRequestException("O responsável deve pertencer à instituição do experimento.");
+    }
+    return this.prisma.experimentoResponsavel.upsert({
+      where: { experimentoId_userId: { experimentoId: id, userId } },
+      create: { experimentoId: id, userId },
+      update: {},
+      include: { user: { select: { id: true, nome: true, email: true, papel: true } } },
+    });
+  }
+
+  async removerResponsavel(id: string, user: UsuarioAtual, userId: string) {
+    await this.garantirAcesso(id, user, "edit");
+    await this.prisma.experimentoResponsavel.deleteMany({ where: { experimentoId: id, userId } });
+    return { ok: true };
   }
 
   async obter(id: string, user: UsuarioAtual) {

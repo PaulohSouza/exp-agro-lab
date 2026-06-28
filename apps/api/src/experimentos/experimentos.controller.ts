@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
 import {
   ExperimentosService,
   type CriarExperimentoDto,
@@ -53,5 +53,20 @@ export class ExperimentosController {
     @Body() body: { parcelas: Array<{ id: string; tratamentoId: string; bloco: number; posLinha: number; posColuna: number; numero: number; isInicio?: boolean }> },
   ) {
     return this.service.salvarCroqui(id, user, body.parcelas);
+  }
+
+  @Get(":id/responsaveis")
+  listarResponsaveis(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
+    return this.service.listarResponsaveis(id, user);
+  }
+
+  @Post(":id/responsaveis")
+  adicionarResponsavel(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() body: { userId: string }) {
+    return this.service.adicionarResponsavel(id, user, body.userId);
+  }
+
+  @Delete(":id/responsaveis/:userId")
+  removerResponsavel(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Param("userId") userId: string) {
+    return this.service.removerResponsavel(id, user, userId);
   }
 }

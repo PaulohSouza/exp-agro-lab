@@ -35,7 +35,8 @@ Monorepo TypeScript (pnpm + Turborepo):
 | **Sincronização offline** (pull/push idempotente + conflito) | ✅ | `SyncModule`; helpers em `packages/domain` |
 | **App mobile** (login, protocolos, coleta offline, sincronizar) | ⚠️ scaffold | `apps/mobile` — compila; **não testado em device** |
 | **Papéis (RBAC) + Dashboard** (fatia 1) | ✅ fatia 1 | enum `Papel` (7) + `Departamento` no schema; JWT carrega `papel`; `GET /dashboard` escopado; tela `/dashboard`. Ver [SDD 07](SDD/04-design-detalhado/07-dashboard.md) / [RBAC](SDD/05-seguranca/03-papeis-rbac.md) |
-| **RBAC fatia 2 parte 1** (backend + UI) | ✅ | guard `@RequirePapel` (admin_sistema passa sempre); CRUD `/departamentos` (+ `GET /departamentos/unidades`); `PUT /usuarios/:id` (atribui papel/depto/unidade); dashboard refina escopo por depto/área. UI: card de Departamentos em `/instituicao`; seletores de papel/depto/área em `/usuarios`. **Falta:** fatia 2 parte 2 (super-admin global de fato, responsável de coleta). |
+| **RBAC fatia 2 parte 1** (backend + UI) | ✅ | guard `@RequirePapel` (admin_sistema passa sempre); CRUD `/departamentos` (+ `GET /departamentos/unidades`); `PUT /usuarios/:id` (atribui papel/depto/unidade); dashboard refina escopo por depto/área. UI: card de Departamentos em `/instituicao`; seletores de papel/depto/área em `/usuarios`. |
+| **RBAC fatia 2 parte 2** | ✅ | **super-admin global de fato** (`admin_sistema` vê/abre todas as instituições — `listar`/`garantirAcesso` ignoram o tenant; lista mostra a instituição); **responsável de coleta** (`ExperimentoResponsavel`, rotas `/experimentos/:id/responsaveis`) entra no escopo "atribuídos" do painel. UI na aba Compartilhar. Super-admin demo: `root@sistema.com`/`root123`. |
 | **Web responsiva** (mobile/tablet) | ✅ | `globals.css` (viewport, box-sizing, `.tabela-scroll`/`.scroll-x`); tabelas roláveis, header/abas sem corte, grids `auto-fit`, containers fluidos. Auditoria das 16 telas. |
 
 ## 3.1 Em andamento — croqui de 2+ fatores (esquema)
@@ -62,7 +63,7 @@ pnpm --filter @exp/api db:seed                    # cenário PC1699 (20 parcelas
 node apps/api/dist/main.js                         # API em :3001  (rode 'pnpm --filter @exp/api build' antes)
 pnpm --filter @exp/web dev                         # Web em :3000 → http://localhost:3000/login
 ```
-Login demo: **admin@demo.com / admin123** (admin) · **analista@demo.com / analista123**.
+Login demo: **admin@demo.com / admin123** (gestão da instituição) · **analista@demo.com / analista123** · **root@sistema.com / root123** (super-admin global).
 Mobile: ver `apps/mobile/README.md` (`EXPO_PUBLIC_API_BASE` = IP da máquina).
 
 ## 7. Testes a fazer

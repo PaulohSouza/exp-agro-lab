@@ -74,6 +74,7 @@ export default function ExperimentosPage() {
                 <td style={td}>
                   {e.codigo ? `${e.codigo} — ` : ""}{e.titulo}
                   {e.compartilhadoComigo && <span style={{ marginLeft: 8, background: "#9BD2F5", color: "#1F2940", padding: "1px 7px", borderRadius: 6, fontSize: 11 }}>compartilhado</span>}
+                  {e.instituicao && <span style={{ marginLeft: 8, background: "#E3D7F5", color: "#4A2E83", padding: "1px 7px", borderRadius: 6, fontSize: 11 }}>{e.instituicao.nome}</span>}
                   {e.owner && <div style={{ fontSize: 11, color: "#a9abbd" }}>dono: {e.owner.nome}</div>}
                 </td>
                 <td style={td}>{e.ensaio}</td>

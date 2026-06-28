@@ -64,6 +64,14 @@ dashboard refina por depto/área (gestao_departamento → unidade do seu
 departamento; coordenador_area → sua unidade) — ver
 [07-dashboard.md](../04-design-detalhado/07-dashboard.md).
 
-**Pendente (fatia 2 parte 2):** super-admin global cross-institution de fato;
-responsável de coleta por experimento; depreciar `isAdminInstituicao`; **policy**
-central recurso × ação × escopo substituindo as checagens pontuais restantes.
+**Fatia 2 (parte 2, feito):** `admin_sistema` é **cross-institution de fato** —
+`experimentos.listar` e `garantirAcesso` ignoram o tenant para ele (vê/abre todas
+as instituições; a lista traz o nome da instituição). **Responsável de coleta**
+por experimento (`ExperimentoResponsavel`): `POST/GET/DELETE
+/experimentos/:id/responsaveis`; entra no escopo "atribuídos" do painel para
+pesquisador/analista/assistente. Super-admin de exemplo no seed:
+`root@sistema.com` / `root123`.
+
+**Pendente (futuro):** depreciar `isAdminInstituicao`; **policy** central
+recurso × ação × escopo substituindo as checagens pontuais restantes; tornar
+`instituicaoId` opcional para o super-admin (hoje tem instituição "casa").

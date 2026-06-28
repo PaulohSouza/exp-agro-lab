@@ -49,6 +49,9 @@ atrasadas) e a **lista das próximas e das atrasadas** (avaliação + experiment
 - **Fatia 1:** endpoint + agregações + checklist derivado; escopo da gestão =
   **instituição inteira**; coleta-escopo (pesquisador/analista/assistente) =
   **próprios + atribuídos**.
-- **Fatia 2:** **refino granular** por **departamento** e **área** (Unidade) para
-  gestao_departamento/coordenador_area; possíveis filtros adicionais e séries
-  temporais.
+- **Fatia 2 (feito):** refino granular por **departamento** (gestao_departamento →
+  experimentos da unidade do seu depto) e **área/unidade** (coordenador_area);
+  **admin_sistema** agrega **todas as instituições**; "atribuídos" passa a incluir
+  os experimentos onde o usuário é **responsável pela coleta**
+  (`ExperimentoResponsavel`).
+- **Futuro:** filtros adicionais e séries temporais.

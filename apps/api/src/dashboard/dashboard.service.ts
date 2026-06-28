@@ -53,7 +53,11 @@ export class DashboardService {
       default:
         return {
           ...base,
-          OR: [{ ownerId: user.userId }, { compartilhamentos: { some: { userId: user.userId } } }],
+          OR: [
+            { ownerId: user.userId },
+            { compartilhamentos: { some: { userId: user.userId } } },
+            { responsaveis: { some: { userId: user.userId } } },
+          ],
         };
     }
   }

@@ -11,6 +11,7 @@ async function main() {
   // limpeza idempotente mínima
   await prisma.emailLog.deleteMany();
   await prisma.ordemServico.deleteMany(); // cascata: aprovações interna/cliente
+  await prisma.experimentoResponsavel.deleteMany();
   await prisma.avaliacaoDado.deleteMany();
   await prisma.avaliacao.deleteMany();
   await prisma.parcela.deleteMany();
@@ -25,6 +26,7 @@ async function main() {
   await prisma.aprovadorInstituicao.deleteMany();
   await prisma.user.deleteMany();
   await prisma.unidade.deleteMany();
+  await prisma.departamento.deleteMany();
   await prisma.instituicao.deleteMany();
   await prisma.objetoEstudo.deleteMany();
   await prisma.subcategoria.deleteMany();
@@ -59,6 +61,18 @@ async function main() {
       senhaHash: hash("analista123"),
       papel: "analista",
       isAdminInstituicao: false,
+    },
+  });
+  // super-admin GLOBAL (cross-institution) — opera o SaaS. Tem instituição "casa"
+  // mas o escopo ignora o tenant (RN-RBAC).
+  await prisma.user.create({
+    data: {
+      instituicaoId: inst.id,
+      nome: "Root Sistema",
+      email: "root@sistema.com",
+      senhaHash: hash("root123"),
+      papel: "admin_sistema",
+      isAdminInstituicao: true,
     },
   });
 

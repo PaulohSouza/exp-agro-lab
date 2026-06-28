@@ -107,6 +107,7 @@ export interface Experimento {
   objetivo?: string | null;
   ensaio: string;
   status: string;
+  instituicao?: { nome: string } | null;
   cultivar?: string | null;
   tipoExecucao?: string | null;
   metodologia?: string | null;
@@ -161,6 +162,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 
 export interface Usuario { id: string; nome: string; email: string; papel?: Papel; departamentoId?: string | null; unidadeId?: string | null; isAdminInstituicao: boolean; ativo: boolean }
 export interface Departamento { id: string; nome: string; ativo: boolean; _count?: { unidades: number; usuarios: number } }
+export interface Responsavel { id: string; user: { id: string; nome: string; email: string; papel?: Papel } }
 export interface Unidade { id: string; nome: string; tipo: string; departamentoId: string | null }
 
 export type Papel =
@@ -267,6 +269,13 @@ export const api = {
   atualizarDepartamento: (id: string, body: { nome?: string; ativo?: boolean }) =>
     req<Departamento>(`/departamentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   desativarDepartamento: (id: string) => req<{ ok: boolean }>(`/departamentos/${id}`, { method: "DELETE" }),
+
+  // responsáveis pela coleta
+  listarResponsaveis: (expId: string) => req<Responsavel[]>(`/experimentos/${expId}/responsaveis`),
+  adicionarResponsavel: (expId: string, userId: string) =>
+    req<Responsavel>(`/experimentos/${expId}/responsaveis`, { method: "POST", body: JSON.stringify({ userId }) }),
+  removerResponsavel: (expId: string, userId: string) =>
+    req<{ ok: boolean }>(`/experimentos/${expId}/responsaveis/${userId}`, { method: "DELETE" }),
 
   // compartilhamento
   listarCompartilhamentos: (expId: string) => req<Compartilhamento[]>(`/experimentos/${expId}/compartilhamentos`),

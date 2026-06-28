@@ -1,19 +1,34 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, type Compartilhamento, type Experimento } from "../../../lib/api";
+import { api, type Compartilhamento, type Experimento, type Responsavel, type Usuario } from "../../../lib/api";
 
 export function CompartilharTab({ exp }: { exp: Experimento }) {
   const [shares, setShares] = useState<Compartilhamento[]>([]);
+  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [selResp, setSelResp] = useState("");
   const [email, setEmail] = useState("");
   const [nivel, setNivel] = useState<"input" | "edit">("input");
   const [msg, setMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   async function recarregar() {
-    try { setShares(await api.listarCompartilhamentos(exp.id)); setErro(null); }
-    catch (e) { setErro(e instanceof Error ? e.message : "falha"); }
+    try {
+      setShares(await api.listarCompartilhamentos(exp.id));
+      setResponsaveis(await api.listarResponsaveis(exp.id));
+      setUsuarios(await api.listarUsuarios());
+      setErro(null);
+    } catch (e) { setErro(e instanceof Error ? e.message : "falha"); }
   }
   useEffect(() => { recarregar(); }, [exp.id]);
+
+  async function addResponsavel() {
+    if (!selResp) return;
+    try { await api.adicionarResponsavel(exp.id, selResp); setSelResp(""); recarregar(); }
+    catch (e) { setErro(e instanceof Error ? e.message : "falha"); }
+  }
+
+  const idsResp = new Set(responsaveis.map((r) => r.user.id));
 
   async function compartilhar(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +77,27 @@ export function CompartilharTab({ exp }: { exp: Experimento }) {
           {shares.length === 0 && <tr><td style={td} colSpan={5}><span style={{ color: "#a9abbd" }}>Ainda não compartilhado.</span></td></tr>}
         </tbody>
       </table></div>
+
+      <h3 style={{ margin: "24px 0 6px", color: "#1F2940", fontSize: 16 }}>Responsáveis pela coleta</h3>
+      <p style={{ color: "#7987A1", fontSize: 13, marginTop: 0 }}>
+        Pesquisadores e analistas atribuídos veem este experimento no Painel e são responsáveis pela coleta de dados.
+      </p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <select value={selResp} onChange={(e) => setSelResp(e.target.value)} style={inp}>
+          <option value="">— selecionar usuário —</option>
+          {usuarios.filter((u) => !idsResp.has(u.id)).map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+        </select>
+        <button onClick={addResponsavel} style={btn}>Atribuir responsável</button>
+      </div>
+      <ul style={{ paddingLeft: 18, marginTop: 10 }}>
+        {responsaveis.map((r) => (
+          <li key={r.id} style={{ marginBottom: 4 }}>
+            {r.user.nome} <span style={{ color: "#7987A1", fontSize: 12 }}>({r.user.email})</span>{" "}
+            <button onClick={async () => { await api.removerResponsavel(exp.id, r.user.id); recarregar(); }} style={lixo}>remover</button>
+          </li>
+        ))}
+        {responsaveis.length === 0 && <li style={{ color: "#a9abbd", listStyle: "none", marginLeft: -18 }}>nenhum responsável atribuído</li>}
+      </ul>
     </div>
   );
 }

@@ -86,6 +86,7 @@ model User {
   departamento       Departamento? @relation(fields: [departamentoId], references: [id])
   experimentosOwner  Experimento[] @relation("ExperimentoOwner")
   compartilhamentos  ExperimentoCompartilhamento[] @relation("CompartilhadoCom")
+  responsavelEm      ExperimentoResponsavel[] @relation("ResponsavelColeta")
   aprovadorEm        AprovadorInstituicao[]
 }
 
@@ -207,11 +208,26 @@ model Experimento {
   avaliacoes      Avaliacao[]
   timings         Timing[]
   compartilhamentos ExperimentoCompartilhamento[]
+  responsaveis    ExperimentoResponsavel[]
   ordensServico   OrdemServico[]
   statusHistorico StatusHistorico[]
 
   @@index([instituicaoId])
   @@index([ownerId])
+}
+
+// Responsável pela COLETA de dados de um experimento (pesquisador/analista/
+// assistente atribuído). Define o escopo "atribuídos" no painel. @see RN-RBAC
+model ExperimentoResponsavel {
+  id            String   @id @default(cuid())
+  experimentoId String
+  userId        String
+  createdAt     DateTime @default(now())
+  experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  user          User        @relation("ResponsavelColeta", fields: [userId], references: [id])
+
+  @@unique([experimentoId, userId])
+  @@index([userId])
 }
 
 enum Ensaio {
