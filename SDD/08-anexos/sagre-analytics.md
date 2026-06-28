@@ -54,8 +54,8 @@ DIC, DBC, Split-plot (DIC/DBC), Sub-subparcela (3 fatores), Testemunhas adiciona
 Colunas: Tratamento/Fator1, Bloco (DBC), Fator2 (quali/quanti), Variável-resposta (numérica, pode ter NA), Local (conjunta), Covariável, Efeito aleatório. Import: normalizar nomes/níveis, coerção de tipo, validar mapeamento.
 
 ## Plano de port faseado (com golden tests)
-- **Fase A (MVP analítico):** pressupostos (Shapiro, Bartlett) + ANOVA DIC/DBC 1 fator + Tukey + Scott-Knott + tabela de médias/letras. _Golden:_ fixtures de DIC e DBC.
-- **Fase B:** fatorial 2 fatores (quali×quali + desdobramento), transformações, não-paramétrico (Kruskal, Friedman + post-hoc).
+- **Fase A (MVP analítico):** pressupostos (Bartlett) + ANOVA DIC/DBC 1 fator + LSD + tabela de médias/letras. ✅
+- **Fase B (em curso):** ✅ **Tukey (HSD)** e **Scott-Knott** — amplitude estudentizada `ptukey`/`qtukey` (Gauss-Legendre, espelha o R), Tukey-Kramer p/ n desigual, SK recursivo (λ ~ χ², ν=g/(π−2)); **default Tukey** como no SAGRE; seletor de método na API/UI (`?metodo=`). _Validado vs tabela de Tukey (24 testes)._ **Pendente:** fatorial 2 fatores (quali×quali + desdobramento), **split-plot (2 erros)**, transformações, não-paramétrico (Kruskal, Friedman + post-hoc), e **golden vs SAGRE** (rodar no R e comparar com tolerância — falta o ambiente R).
 - **Fase C:** GLM auto-família + HNP, conjunta multi-local, 3 fatores, split-plot, mistos, Tweedie.
 
 ## Riscos

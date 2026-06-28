@@ -9,7 +9,7 @@ Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de
 ## 2. Stack
 Monorepo TypeScript (pnpm + Turborepo):
 - `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **30 testes**.
-- `packages/analytics` — estatística pura: ANOVA, CV, Bartlett, LSD/letras, distribuições F/t/χ². **9 testes**.
+- `packages/analytics` — estatística pura: ANOVA, CV, Bartlett, **Tukey/Scott-Knott/LSD** (amplitude estudentizada `ptukey`/`qtukey`), distribuições F/t/χ². **24 testes**.
 - `apps/api` — NestJS + Prisma + **MySQL** (`expagrolab_dev`). JWT/bcrypt.
 - `apps/web` — Next.js (App Router), tema azul do TCC.
 - `apps/mobile` — Expo + expo-router (offline-first). **Fora do workspace pnpm** (usa npm).
@@ -25,7 +25,7 @@ Monorepo TypeScript (pnpm + Turborepo):
 | Croqui automático (DIC/DBC) + **drag-drop** + recasualizar | ✅ | aba Croqui; `gerarCroqui`/`salvarCroqui` |
 | Avaliações: cadastro + **lançar valor bruto** (web) | ✅ | aba Avaliações → Lançar; `AvaliacoesModule` |
 | Relatório de produtividade (kg/ha no relatório, não na coleta) | ✅ | aba Avaliações → Relatório |
-| **Análise estatística** (ANOVA DIC/DBC, CV, Bartlett, LSD/letras) | ✅ fase A | aba Avaliações → Análise; `GET /avaliacoes/:id/analise` |
+| **Análise estatística** (ANOVA DIC/DBC, CV, Bartlett, **Tukey/Scott-Knott/LSD**) | ✅ fase B parcial | aba Avaliações → Análise (seletor de método); `GET /avaliacoes/:id/analise?metodo=` |
 | **Relatório PPTX** (capa, resumo, ANOVA+médias+gráfico) | ✅ fase A | botão "Relatório PPTX"; `GET /experimentos/:id/relatorio.pptx` |
 | **Exportação Excel** | ✅ | botão "Excel"; `GET /experimentos/:id/export.xlsx` |
 | **Autenticação** (JWT/bcrypt) + registro de instituição | ✅ | `/login`; `AuthModule` |
@@ -43,7 +43,7 @@ Monorepo TypeScript (pnpm + Turborepo):
 Distinção **fatorial × parcela subdividida (split-plot)**. Domínio implementado e testado em `packages/domain/croqui.ts` (`gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal`) — **30 testes** no domain. Design em [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md). **Falta:** campos `esquema`/`grupoPrincipal` no schema Prisma + API, UX de arraste em 2 níveis no web, e ramificação da ANOVA (split-plot tem 2 erros → liga com analytics fase B).
 
 ## 4. Pendências / limitações conhecidas
-- **Analytics fase A usa LSD (Fisher).** O SAGRE usa **Tukey/Scott-Knott** por padrão → as **letras podem divergir**. Falta a **fase B**: Tukey/Scott-Knott (qtukey), fatorial 2–3, transformações, não-paramétrico, conjunta, e **golden tests vs SAGRE** (precisa de outputs do R).
+- **Analytics fase B parcial:** **Tukey (HSD)**, **Scott-Knott** e LSD já implementados (default Tukey, como o SAGRE) com `ptukey`/`qtukey` validados vs tabela de Tukey. **Falta:** fatorial 2–3 + desdobramento, **split-plot (2 erros)** — liga com o croqui [[06]], transformações (Box-Cox/log/√), não-paramétrico (Kruskal/Friedman + post-hoc), análise conjunta, e **golden tests vs SAGRE** (rodar os mesmos dados no R e comparar com tolerância — pendente por não ter o ambiente R aqui).
 - **PPTX fase A** tem layout próprio; falta aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx`.
 - **App mobile não foi rodado** (sem device/emulador no ambiente). Compila por `tsc`. Validar com Expo Go.
 - E-mails em modo **SIMULATE** (arquivos em `apps/api/email-previews/`), não envia de verdade.

@@ -205,16 +205,26 @@ function Relatorio({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
 
 function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
   const [a, setA] = useState<AnaliseResultado | null>(null);
+  const [metodo, setMetodo] = useState<"Tukey" | "ScottKnott" | "LSD">("Tukey");
   const [erro, setErro] = useState<string | null>(null);
   useEffect(() => {
-    api.analiseAvaliacao(aval.id).then(setA).catch((e) => setErro(e instanceof Error ? e.message : "falha"));
-  }, [aval.id]);
+    setA(null);
+    api.analiseAvaliacao(aval.id, metodo).then(setA).catch((e) => setErro(e instanceof Error ? e.message : "falha"));
+  }, [aval.id, metodo]);
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
         <button onClick={voltar} style={mini("#a9abbd")}>← voltar</button>
         <strong>Análise: {aval.nome}</strong>
+        <label style={{ marginLeft: "auto", fontSize: 13, color: "#1F2940" }}>
+          Comparação:{" "}
+          <select value={metodo} onChange={(e) => setMetodo(e.target.value as typeof metodo)} style={{ padding: 5, borderRadius: 6, border: "1px solid #d6d6e6" }}>
+            <option value="Tukey">Tukey (HSD)</option>
+            <option value="ScottKnott">Scott-Knott</option>
+            <option value="LSD">LSD (Fisher)</option>
+          </select>
+        </label>
       </div>
       {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
       {!a ? (!erro && <p style={{ color: "#7987A1" }}>Calculando…</p>) : (
@@ -259,7 +269,7 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
               </tbody>
             </table></div>
             <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8, maxWidth: 240 }}>
-              Letras iguais = sem diferença significativa (α={a.resultado.comparacao.alpha}). Fase A do port do SAGRE (LSD); Tukey/Scott-Knott e validação vs SAGRE na fase B.
+              Letras iguais = sem diferença significativa (α={a.resultado.comparacao.alpha}). Tukey/Scott-Knott/LSD portados do SAGRE; validação golden vs saída do R pendente.
             </p>
           </div>
         </div>

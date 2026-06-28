@@ -238,7 +238,8 @@ export const api = {
   lancarDados: (avaliacaoId: string, dados: Array<Partial<AvaliacaoDado>>) =>
     req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
   relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
-  analiseAvaliacao: (avaliacaoId: string) => req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise`),
+  analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
+    req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
 
   // cadastros gerais
   locais: () => req<Ref[]>("/cadastros/locais"),

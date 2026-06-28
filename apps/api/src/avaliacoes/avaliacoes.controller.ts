@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import {
   AvaliacoesService,
   type CriarAvaliacaoDto,
@@ -47,7 +47,11 @@ export class AvaliacoesController {
   }
 
   @Get("avaliacoes/:id/analise")
-  analise(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
-    return this.service.analise(id, user);
+  analise(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Query("metodo") metodo?: "LSD" | "Tukey" | "ScottKnott",
+  ) {
+    return this.service.analise(id, user, metodo);
   }
 }

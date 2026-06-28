@@ -17,7 +17,7 @@ EXP-AGROLAB: sistema de gestão de experimentos agronômicos e laboratoriais. Ca
 - Datas relativas → absolutas nos docs. Hoje a referência do projeto é 28/06/2026.
 
 ## Estado atual
-**Ler [STATUS.md](STATUS.md) primeiro** — handoff completo. Resumo: Marco 0/1 ✅, Auth+Multi-tenancy+Compartilhamento ✅, Ordem de Serviço (RF-26) ✅, Sync offline ✅, App mobile (scaffold, não testado em device), **Analytics fase A** (ANOVA/LSD) ✅, **Relatório PPTX fase A** ✅. Fluxo web **input→análise→relatório** completo. 39 testes (domain 30 + analytics 9). Releases até **v0.6.0**.
+**Ler [STATUS.md](STATUS.md) primeiro** — handoff completo. Resumo: Marco 0/1 ✅, Auth+Multi-tenancy+Compartilhamento ✅, Ordem de Serviço (RF-26) ✅, Sync offline ✅, App mobile (scaffold, não testado em device), **Analytics fase B parcial** (ANOVA + Tukey/Scott-Knott/LSD; default Tukey) ✅, **Relatório PPTX fase A** ✅, **RBAC 7 papéis + Departamento + Dashboard** ✅, **web responsiva** ✅. Fluxo web **input→análise→relatório** completo. 54 testes (domain 30 + analytics 24). Releases até **v0.6.0**.
 
 Próximos: feedback dos testes ([TESTES.md](TESTES.md)) · analytics fase B (Tukey/Scott-Knott + golden vs SAGRE) · relatório fiel ao modelo PPTX · testar mobile em device. Roadmap: [SDD/01-visao-geral/03-roadmap.md](SDD/01-visao-geral/03-roadmap.md).
 

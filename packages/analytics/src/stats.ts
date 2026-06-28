@@ -132,3 +132,26 @@ export function chiSqCdf(x: number, k: number): number {
 export function chiSqSf(x: number, k: number): number {
   return 1 - chiSqCdf(x, k);
 }
+
+/** Quantil da qui-quadrado (inversa) por bissecção. */
+export function chiSqInv(p: number, k: number): number {
+  let lo = 0, hi = 1e6;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (chiSqCdf(mid, k) < p) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/** Função erro (Abramowitz-Stegun 7.1.26, |erro| ≤ 1.5e-7). */
+function erf(x: number): number {
+  const t = 1 / (1 + 0.3275911 * Math.abs(x));
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return x >= 0 ? y : -y;
+}
+
+/** CDF da normal padrão Φ(x). */
+export function normCdf(x: number): number {
+  return 0.5 * (1 + erf(x / Math.SQRT2));
+}

@@ -1,5 +1,8 @@
 export type Delineamento = "DIC" | "DBC";
 
+/** Método de comparação de médias. SAGRE usa Tukey/Scott-Knott por padrão. */
+export type MetodoComparacao = "LSD" | "Tukey" | "ScottKnott";
+
 export interface Observacao {
   tratamento: string;
   bloco?: string | number;

@@ -147,7 +147,7 @@ export class AvaliacoesService {
    * ANÁLISE estatística (ANOVA 1 fator) sobre os valores de saída coletados.
    * Usa o delineamento do experimento (DIC/DBC). Port do SAGRE — fase A.
    */
-  async analise(avaliacaoId: string, user: UsuarioAtual) {
+  async analise(avaliacaoId: string, user: UsuarioAtual, metodo?: "LSD" | "Tukey" | "ScottKnott") {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     const aval = await this.prisma.avaliacao.findUnique({
       where: { id: avaliacaoId },
@@ -173,7 +173,7 @@ export class AvaliacoesService {
     const delineamento: Delineamento = nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
 
     try {
-      const resultado = anovaUmFator(obs, delineamento);
+      const resultado = anovaUmFator(obs, delineamento, { metodo: metodo ?? "Tukey" });
       return { avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida }, delineamento, n: obs.length, resultado };
     } catch (e) {
       throw new BadRequestException(e instanceof Error ? e.message : "Não foi possível analisar.");

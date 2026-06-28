@@ -1,7 +1,13 @@
 import { fSf } from "./stats.js";
 import { bartlett } from "./pressupostos.js";
-import { compararMediasLSD } from "./comparacao.js";
-import type { Delineamento, Observacao, ResultadoAnova, MediaTratamento } from "./types.js";
+import { compararMediasLSD, compararMediasTukey, compararMediasScottKnott } from "./comparacao.js";
+import type { Delineamento, Observacao, ResultadoAnova, MediaTratamento, MetodoComparacao } from "./types.js";
+
+const ROTULO_METODO: Record<MetodoComparacao, string> = {
+  LSD: "LSD (Fisher)",
+  Tukey: "Tukey (HSD)",
+  ScottKnott: "Scott-Knott",
+};
 
 function agrupar<T>(itens: T[], chave: (t: T) => string): Map<string, T[]> {
   const m = new Map<string, T[]>();
@@ -15,10 +21,17 @@ const soma = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 const media = (xs: number[]) => soma(xs) / xs.length;
 
 /**
- * ANOVA de 1 fator (DIC ou DBC) com CV, médias, Bartlett e comparação LSD.
+ * ANOVA de 1 fator (DIC ou DBC) com CV, médias, Bartlett e comparação de médias.
+ * Método padrão **Tukey** (como no SAGRE); aceita LSD ou Scott-Knott.
  * DBC assume balanceado (cada tratamento uma vez por bloco).
  */
-export function anovaUmFator(obs: Observacao[], delineamento: Delineamento, alpha = 0.05): ResultadoAnova {
+export function anovaUmFator(
+  obs: Observacao[],
+  delineamento: Delineamento,
+  opcoes: { metodo?: MetodoComparacao; alpha?: number } = {},
+): ResultadoAnova {
+  const metodo: MetodoComparacao = opcoes.metodo ?? "Tukey";
+  const alpha = opcoes.alpha ?? 0.05;
   if (obs.length < 3) throw new Error("Dados insuficientes para ANOVA.");
   const valores = obs.map((o) => o.valor);
   const N = valores.length;
@@ -67,7 +80,9 @@ export function anovaUmFator(obs: Observacao[], delineamento: Delineamento, alph
     const vs = porTrat.get(t)!.map((o) => o.valor);
     return { tratamento: t, media: media(vs), n: vs.length };
   });
-  const medias = compararMediasLSD(mediasBase, qmResiduo, glResiduo, alpha);
+  const comparar =
+    metodo === "Tukey" ? compararMediasTukey : metodo === "ScottKnott" ? compararMediasScottKnott : compararMediasLSD;
+  const medias = comparar(mediasBase, qmResiduo, glResiduo, alpha);
 
   const bart = bartlett(tratamentos.map((t) => porTrat.get(t)!.map((o) => o.valor)));
 
@@ -92,6 +107,6 @@ export function anovaUmFator(obs: Observacao[], delineamento: Delineamento, alph
     significativo: pTrat < alpha,
     medias,
     pressupostos: { bartlettEstatistica: bart.estatistica, bartlettP: bart.p, homogeneo: bart.p >= alpha },
-    comparacao: { metodo: "LSD (Fisher)", alpha },
+    comparacao: { metodo: ROTULO_METODO[metodo], alpha },
   };
 }
