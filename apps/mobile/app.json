@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "EXP-AGROLAB",
+    "slug": "exp-agrolab-mobile",
+    "version": "0.0.1",
+    "scheme": "expagrolab",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": true },
+    "android": { "package": "com.expagrolab.mobile" },
+    "plugins": ["expo-router"],
+    "extra": {
+      "apiBase": "http://192.168.0.10:3001"
+    }
+  }
+}

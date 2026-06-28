@@ -27,8 +27,9 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 
 ## Marco 2 — Coleta mobile offline-first — em andamento
 - ✅ **Fatia 1 — fundação de sync (28/06/2026):** helpers no `packages/domain` (`chaveColeta` idempotente, `resolverColeta` LWW, `dedupLote`) com 3 testes; API `SyncModule`: `GET /sync/experimentos/:id` (pacote offline: estrutura+croqui+avaliações+dados) e `POST /sync/push` (lote idempotente, dedup, **resolução de conflito** marcando — nunca descarta). Verificado: dedup, conflito por timestamp, origem `mobile`.
-- ⬜ Fatia 2: **app React Native (Expo)** — login, lista de protocolos (pull), coleta por parcela offline (fila local AsyncStorage/SQLite), botão sincronizar (push), fotos. _Requer device/emulador para validar — testar com o usuário._
-- **Entrega:** coletar avaliações sem internet e sincronizar.
+- ✅ **Fatia 2 — app Expo (28/06/2026):** `apps/mobile` (Expo SDK 52 + expo-router, **fora do workspace pnpm**). Telas: login, protocolos (lista via pull), coleta por parcela com **fila offline** (AsyncStorage) e botão **Sincronizar** (push, avisa conflitos). Helpers de sync em cópia local. **Compila (npm install + tsc OK); runtime a validar em device** — ver `apps/mobile/README.md` (definir `EXPO_PUBLIC_API_BASE` com o IP da máquina).
+- ⬜ Próximos (fatia 3): fotos por parcela, detecção automática de conectividade, persistência SQLite, e migrar coleta para usar `/sync/push` com `clientUpdatedAt` por campo.
+- **Entrega:** coletar avaliações sem internet e sincronizar (app pronto para teste em device).
 
 ## Marco 3 — Fluxos (comercial × interno) e aprovação
 - Orçamento (fluxo comercial): itens, valores, aprovação CAD; status do protocolo (Inserindo, Aprovado, Recusado…).
