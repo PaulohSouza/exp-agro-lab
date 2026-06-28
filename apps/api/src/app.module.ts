@@ -13,9 +13,10 @@ import { UsuariosModule } from "./usuarios/usuarios.module";
 import { CompartilhamentoModule } from "./compartilhamento/compartilhamento.module";
 import { InstituicaoModule } from "./instituicao/instituicao.module";
 import { OrdemServicoModule } from "./ordem-servico/ordem-servico.module";
+import { ExportModule } from "./export/export.module";
 
 @Module({
-  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule, InstituicaoModule, OrdemServicoModule],
+  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule, InstituicaoModule, OrdemServicoModule, ExportModule],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })

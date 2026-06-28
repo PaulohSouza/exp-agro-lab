@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api, type Experimento } from "../../../lib/api";
+import { api, baixarExperimentoXlsx, type Experimento } from "../../../lib/api";
 import { CroquiEditor } from "./CroquiEditor";
 import { TratamentosTab } from "./TratamentosTab";
 import { AvaliacoesTab } from "./AvaliacoesTab";
 import { GeralTab } from "./GeralTab";
+import { FatoresTab } from "./FatoresTab";
 import { CompartilharTab } from "./CompartilharTab";
 import { OrdemServicoTab } from "./OrdemServicoTab";
 import { Protected } from "../../../components/Protected";
@@ -17,7 +18,6 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
   const [exp, setExp] = useState<Experimento | null>(null);
   const [aba, setAba] = useState<Aba>("Geral");
   const [erro, setErro] = useState<string | null>(null);
-  const [niveisTxt, setNiveisTxt] = useState("Testemunha, Punto, Agefix, Tidil, Mistura");
 
   async function recarregar() {
     try {
@@ -30,24 +30,21 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
     recarregar();
   }, [params.id]);
 
-  async function definirFator(e: React.FormEvent) {
-    e.preventDefault();
-    const niveis = niveisTxt.split(",").map((s) => s.trim()).filter(Boolean);
-    if (!niveis.length) return;
-    const atualizado = await api.definirFatores(params.id, [{ ordem: 1, nome: "Produto", niveis }]);
-    setExp(atualizado);
-    setAba("Tratamentos");
-  }
-
   if (erro) return <Wrap><p style={{ color: "#F34343" }}>{erro}</p></Wrap>;
   if (!exp) return <Wrap><p style={{ color: "#7987A1" }}>Carregando…</p></Wrap>;
 
   return (
     <Wrap>
-      <div style={{ background: "#1F2940", color: "#fff", padding: "16px 20px", borderRadius: 10 }}>
+      <div style={{ background: "#1F2940", color: "#fff", padding: "16px 20px", borderRadius: 10, position: "relative" }}>
         <Link href="/experimentos" style={{ color: "#4EC2F0", fontSize: 13 }}>← Protocolos</Link>
         <h1 style={{ margin: "6px 0 0", fontSize: 22 }}>{exp.codigo ? `${exp.codigo} — ` : ""}{exp.titulo}</h1>
         <span style={{ color: "#9BD2F5", fontSize: 13 }}>{exp.ensaio} • {exp.status}</span>
+        <button
+          onClick={() => baixarExperimentoXlsx(exp.id, exp.codigo ?? exp.titulo)}
+          style={{ position: "absolute", top: 16, right: 20, background: "#4EC2F0", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontSize: 13 }}
+        >
+          Exportar Excel
+        </button>
       </div>
 
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid #e1e1ef", margin: "16px 0" }}>
@@ -64,13 +61,7 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
 
       {aba === "Fatores" && (
         <Card>
-          <form onSubmit={definirFator}>
-            <p style={{ marginTop: 0, color: "#1F2940", fontWeight: 600 }}>Fator 1 — Produto (níveis separados por vírgula)</p>
-            <input value={niveisTxt} onChange={(e) => setNiveisTxt(e.target.value)}
-              style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #d6d6e6" }} />
-            <p style={{ color: "#7987A1", fontSize: 13 }}>Ao salvar, os tratamentos são derivados automaticamente.</p>
-            <button type="submit" style={btn("#6FA830")}>Definir fator e derivar tratamentos</button>
-          </form>
+          <FatoresTab exp={exp} onChange={setExp} />
         </Card>
       )}
 
