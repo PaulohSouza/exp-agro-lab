@@ -1,0 +1,47 @@
+/* Base responsiva do EXP-AGROLAB. Estilos pontuais ficam inline nas telas. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tabelas largas: o container .tabela-scroll rola na horizontal em telas estreitas
+   em vez de cortar colunas (ex.: botões "adicionar"/"excluir"). */
+.tabela-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Linha de elementos que deve quebrar quando não couber. */
+.linha-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Barra de abas/itens roláveis horizontalmente sem cortar. */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .ocultar-mobile {
+    display: none !important;
+  }
+}

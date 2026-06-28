@@ -17,7 +17,7 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
   return (
     <div>
       <NovaAvaliacao exp={exp} onCriou={recarregar} />
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
+      <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
         <thead>
           <tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
             {["Seq", "Avaliação", "Tipo", "Unid. saída", "Timing", "Lançamentos", "Ações"].map((h) => (
@@ -44,7 +44,7 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
           ))}
           {avaliacoes.length === 0 && <tr><td style={td} colSpan={7}><span style={{ color: "#a9abbd" }}>Nenhuma avaliação.</span></td></tr>}
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }
@@ -115,14 +115,14 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12 }}>
         <button onClick={voltar} style={mini("#a9abbd")}>← voltar</button>
         <strong>Lançar: {aval.nome}</strong>
         <span style={{ color: "#7987A1", fontSize: 13 }}>valor bruto por parcela{usaArea ? " + apontamentos da colheita" : ""}</span>
         <button onClick={salvar} style={mini("#6FA830")}>Salvar</button>
         {msg && <span style={{ color: "#6FA830", fontSize: 13 }}>{msg}</span>}
       </div>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead><tr style={{ color: "#7987A1", textAlign: "left" }}>
           <th style={th}>Parcela</th><th style={th}>Bloco</th><th style={th}>Trat.</th>
           <th style={th}>Valor ({aval.unidadeColeta ?? "bruto"})</th>
@@ -144,7 +144,7 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
             );
           })}
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }
@@ -168,7 +168,7 @@ function Relatorio({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div>
             <h4 style={{ margin: "0 0 8px" }}>Por parcela</h4>
-            <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+            <div className="tabela-scroll"><table style={{ borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr style={{ color: "#7987A1", textAlign: "left" }}>
                 <th style={th}>Parc.</th><th style={th}>Trat.</th><th style={th}>Bruto</th><th style={th}>Área m²</th><th style={th}>{aval.unidadeSaida}</th>
               </tr></thead>
@@ -181,11 +181,11 @@ function Relatorio({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
           <div>
             <h4 style={{ margin: "0 0 8px" }}>Média por tratamento</h4>
-            <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+            <div className="tabela-scroll"><table style={{ borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr style={{ color: "#7987A1", textAlign: "left" }}><th style={th}>Trat.</th><th style={th}>Nome</th><th style={th}>Média ({aval.unidadeSaida})</th></tr></thead>
               <tbody>
                 {rel.medias.map((m) => (
@@ -194,7 +194,7 @@ function Relatorio({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
             <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8 }}>Médias simples (a análise estatística completa vem no Marco 4).</p>
           </div>
         </div>
@@ -221,7 +221,7 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
           <div>
             <h4 style={{ margin: "0 0 8px" }}>ANOVA ({a.delineamento}, n={a.n})</h4>
-            <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+            <div className="tabela-scroll"><table style={{ borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr style={{ color: "#7987A1", textAlign: "left" }}>
                 <th style={th}>Fonte</th><th style={th}>GL</th><th style={th}>SQ</th><th style={th}>QM</th><th style={th}>F</th><th style={th}>p</th>
               </tr></thead>
@@ -235,7 +235,7 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
             <p style={{ fontSize: 13, color: "#1F2940", marginTop: 8 }}>
               CV = <strong>{a.resultado.cv.toFixed(2)}%</strong> · média geral {a.resultado.mediaGeral.toFixed(1)} ·{" "}
               {a.resultado.significativo ? <span style={{ color: "#6FA830" }}>tratamento significativo</span> : <span style={{ color: "#F34343" }}>não significativo</span>}
@@ -246,7 +246,7 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
           </div>
           <div>
             <h4 style={{ margin: "0 0 8px" }}>Médias — {a.resultado.comparacao.metodo}</h4>
-            <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+            <div className="tabela-scroll"><table style={{ borderCollapse: "collapse", fontSize: 13 }}>
               <thead><tr style={{ color: "#7987A1", textAlign: "left" }}><th style={th}>Trat.</th><th style={th}>Média</th><th style={th}></th></tr></thead>
               <tbody>
                 {a.resultado.medias.map((m) => (
@@ -257,7 +257,7 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
             <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8, maxWidth: 240 }}>
               Letras iguais = sem diferença significativa (α={a.resultado.comparacao.alpha}). Fase A do port do SAGRE (LSD); Tukey/Scott-Knott e validação vs SAGRE na fase B.
             </p>

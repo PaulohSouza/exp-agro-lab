@@ -1,8 +1,14 @@
 import type { ReactNode } from "react";
+import "./globals.css";
 
 export const metadata = {
   title: "EXP-AGROLAB",
   description: "Gestão de experimentos agronômicos e laboratoriais",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

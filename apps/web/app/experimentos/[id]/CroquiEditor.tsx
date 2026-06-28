@@ -82,6 +82,7 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
         {msg && <span style={{ color: "#6FA830", fontSize: 13 }}>{msg}</span>}
       </div>
 
+      <div className="scroll-x">
       <div style={{ display: "inline-grid", gridTemplateColumns: `repeat(${numColunas}, 84px)`, gap: 6 }}>
         {grade.flatMap((linha, li) =>
           linha.map((p, ci) => {
@@ -113,6 +114,7 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
             );
           }),
         )}
+      </div>
       </div>
       <p style={{ color: "#7987A1", fontSize: 12, marginTop: 10 }}>
         Colunas = blocos (A, B, C…). ★ = ponto de início. Cores por tratamento.

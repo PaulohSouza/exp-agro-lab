@@ -13,7 +13,7 @@ export default function CadastrosPage() {
         <h1 style={{ margin: "6px 0 0", fontSize: 22 }}>Cadastros</h1>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginTop: 20 }}>
         <ListaSimples titulo="Locais" tipo="locais" carregar={api.locais} />
         <ListaSimples titulo="Safras" tipo="safras" carregar={api.safras} />
         <ListaSimples titulo="Áreas de pesquisa" tipo="areas" carregar={api.areas} />
@@ -68,7 +68,7 @@ function ObjetoEstudoCadastro() {
     <div style={{ ...card, marginTop: 16 }}>
       <h3 style={h3}>Objeto de estudo (genérico: categoria → subcategoria → objeto)</h3>
       <p style={{ color: "#7987A1", fontSize: 13, marginTop: 0 }}>Ex.: Cultura → Algodão → "FM 944 GL"; Máquina → Pulverizador → modelo; Pessoa → Atleta → indivíduo.</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
         <div>
           <strong style={lbl}>Categorias</strong>
           {categorias.map((c) => (

@@ -8,7 +8,7 @@ Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de
 
 ## 2. Stack
 Monorepo TypeScript (pnpm + Turborepo):
-- `packages/domain` — núcleo puro: croqui (DIC/DBC), RN-PROD (produtividade), fluxo de status, helpers de sync. **19 testes**.
+- `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **30 testes**.
 - `packages/analytics` — estatística pura: ANOVA, CV, Bartlett, LSD/letras, distribuições F/t/χ². **9 testes**.
 - `apps/api` — NestJS + Prisma + **MySQL** (`expagrolab_dev`). JWT/bcrypt.
 - `apps/web` — Next.js (App Router), tema azul do TCC.
@@ -34,6 +34,11 @@ Monorepo TypeScript (pnpm + Turborepo):
 | **Ordem de Serviço** (aprovação interna por política + cliente por e-mail/token) | ✅ | aba Ordem de Serviço; `/instituicao`; `/aprovacao/[token]` |
 | **Sincronização offline** (pull/push idempotente + conflito) | ✅ | `SyncModule`; helpers em `packages/domain` |
 | **App mobile** (login, protocolos, coleta offline, sincronizar) | ⚠️ scaffold | `apps/mobile` — compila; **não testado em device** |
+| **Papéis (RBAC) + Dashboard** (fatia 1) | ✅ fatia 1 | enum `Papel` (7) + `Departamento` no schema; JWT carrega `papel`; `GET /dashboard` escopado; tela `/dashboard`. Ver [SDD 07](SDD/04-design-detalhado/07-dashboard.md) / [RBAC](SDD/05-seguranca/03-papeis-rbac.md) |
+| **Web responsiva** (mobile/tablet) | ✅ | `globals.css` (viewport, box-sizing, `.tabela-scroll`/`.scroll-x`); tabelas roláveis, header/abas sem corte, grids `auto-fit`, containers fluidos. Auditoria das 16 telas. |
+
+## 3.1 Em andamento — croqui de 2+ fatores (esquema)
+Distinção **fatorial × parcela subdividida (split-plot)**. Domínio implementado e testado em `packages/domain/croqui.ts` (`gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal`) — **30 testes** no domain. Design em [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md). **Falta:** campos `esquema`/`grupoPrincipal` no schema Prisma + API, UX de arraste em 2 níveis no web, e ramificação da ANOVA (split-plot tem 2 erros → liga com analytics fase B).
 
 ## 4. Pendências / limitações conhecidas
 - **Analytics fase A usa LSD (Fisher).** O SAGRE usa **Tukey/Scott-Knott** por padrão → as **letras podem divergir**. Falta a **fase B**: Tukey/Scott-Knott (qtukey), fatorial 2–3, transformações, não-paramétrico, conjunta, e **golden tests vs SAGRE** (precisa de outputs do R).

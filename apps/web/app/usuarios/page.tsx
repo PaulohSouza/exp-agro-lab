@@ -41,7 +41,7 @@ export default function UsuariosPage() {
         </form>
         {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
 
-        <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", borderRadius: 10, overflow: "hidden" }}>
+        <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", borderRadius: 10, overflow: "hidden" }}>
           <thead><tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
             <th style={th}>Nome</th><th style={th}>E-mail</th><th style={th}>Papel</th><th style={th}>Ativo</th>
           </tr></thead>
@@ -54,7 +54,7 @@ export default function UsuariosPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </main>
     </Protected>
   );

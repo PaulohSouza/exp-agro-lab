@@ -57,7 +57,7 @@ export default function ExperimentosPage() {
       {carregando ? (
         <p style={{ color: "#7987A1" }}>Carregando…</p>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", borderRadius: 10, overflow: "hidden" }}>
+        <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", borderRadius: 10, overflow: "hidden" }}>
           <thead>
             <tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
               <th style={th}>Título</th>
@@ -89,7 +89,7 @@ export default function ExperimentosPage() {
               <tr><td style={td} colSpan={6}>Nenhum experimento ainda.</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       )}
     </main>
     </Protected>

@@ -49,7 +49,7 @@ export function OrdemServicoTab({ exp }: { exp: Experimento }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <span style={{ color: "#7987A1", fontSize: 13 }}>Fluxo comercial: aprovação interna (política da instituição) + aprovação do cliente por e-mail.</span>
         <button onClick={criar} style={btn("#6FA830")}>Nova OS</button>
       </div>

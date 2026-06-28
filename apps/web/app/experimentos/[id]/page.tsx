@@ -35,11 +35,13 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
 
   return (
     <Wrap>
-      <div style={{ background: "#1F2940", color: "#fff", padding: "16px 20px", borderRadius: 10, position: "relative" }}>
-        <Link href="/experimentos" style={{ color: "#4EC2F0", fontSize: 13 }}>← Protocolos</Link>
-        <h1 style={{ margin: "6px 0 0", fontSize: 22 }}>{exp.codigo ? `${exp.codigo} — ` : ""}{exp.titulo}</h1>
-        <span style={{ color: "#9BD2F5", fontSize: 13 }}>{exp.ensaio} • {exp.status}</span>
-        <div style={{ position: "absolute", top: 16, right: 20, display: "flex", gap: 8 }}>
+      <div style={{ background: "#1F2940", color: "#fff", padding: "16px 20px", borderRadius: 10, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div style={{ minWidth: 0 }}>
+          <Link href="/experimentos" style={{ color: "#4EC2F0", fontSize: 13 }}>← Protocolos</Link>
+          <h1 style={{ margin: "6px 0 0", fontSize: 22, overflowWrap: "anywhere" }}>{exp.codigo ? `${exp.codigo} — ` : ""}{exp.titulo}</h1>
+          <span style={{ color: "#9BD2F5", fontSize: 13 }}>{exp.ensaio} • {exp.status}</span>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => baixarExperimentoXlsx(exp.id, exp.codigo ?? exp.titulo)}
             style={{ background: "#4EC2F0", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontSize: 13 }}
@@ -55,7 +57,7 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid #e1e1ef", margin: "16px 0" }}>
+      <div className="scroll-x" style={{ display: "flex", gap: 4, borderBottom: "1px solid #e1e1ef", margin: "16px 0" }}>
         {ABAS.map((a) => (
           <button key={a} onClick={() => setAba(a)} style={tab(a === aba)}>{a}</button>
         ))}
@@ -121,6 +123,7 @@ function tab(ativo: boolean): React.CSSProperties {
     background: "none", border: "none", cursor: "pointer", padding: "10px 14px",
     color: ativo ? "#1F2940" : "#7987A1", fontWeight: ativo ? 700 : 400,
     borderBottom: ativo ? "2px solid #6FA830" : "2px solid transparent",
+    whiteSpace: "nowrap", flex: "0 0 auto",
   };
 }
 function btn(bg: string): React.CSSProperties {

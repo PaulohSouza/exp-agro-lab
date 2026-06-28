@@ -45,7 +45,7 @@ export function CompartilharTab({ exp }: { exp: Experimento }) {
       {msg && <p style={{ color: "#6FA830", fontSize: 13 }}>{msg}</p>}
       {erro && <p style={{ color: "#F34343", fontSize: 13 }}>{erro}</p>}
 
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
+      <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
         <thead><tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
           <th style={th}>Colaborador</th><th style={th}>E-mail</th><th style={th}>Nível</th><th style={th}>Status</th><th style={th}></th>
         </tr></thead>
@@ -61,7 +61,7 @@ export function CompartilharTab({ exp }: { exp: Experimento }) {
           ))}
           {shares.length === 0 && <tr><td style={td} colSpan={5}><span style={{ color: "#a9abbd" }}>Ainda não compartilhado.</span></td></tr>}
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }

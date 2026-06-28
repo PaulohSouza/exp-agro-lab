@@ -56,7 +56,7 @@ export function GeralTab({ exp, onChange }: { exp: Experimento; onChange: (e: Ex
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <span style={{ color: "#7987A1", fontSize: 13 }}>Edite os dados do experimento. O delineamento dirige o croqui.</span>
         <span>
           <Link href="/cadastros" style={{ color: "#2D6CDF", fontSize: 13, marginRight: 12 }}>gerenciar cadastros →</Link>
@@ -122,7 +122,7 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   return <label style={{ display: "block", marginBottom: 10 }}><div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>{label}</div>{children}</label>;
 }
 
-const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 };
+const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 };
 const inp: React.CSSProperties = { width: "100%", padding: 8, borderRadius: 8, border: "1px solid #d6d6e6", boxSizing: "border-box" };
 const ta: React.CSSProperties = { ...inp, minHeight: 48, resize: "vertical" };
 const fs: React.CSSProperties = { border: "1px solid #e1e1ef", borderRadius: 8, padding: 12, margin: "12px 0" };

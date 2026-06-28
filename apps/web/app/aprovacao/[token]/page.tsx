@@ -20,7 +20,7 @@ export default function AprovacaoPage({ params }: { params: { token: string } })
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#141B2D" }}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 420 }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 420, margin: "0 16px" }}>
         <h1 style={{ margin: "0 0 4px", color: "#1F2940" }}>Aprovação de Ordem de Serviço</h1>
         {resultado ? (
           <div>

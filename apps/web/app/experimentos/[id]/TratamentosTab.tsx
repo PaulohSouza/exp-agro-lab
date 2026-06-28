@@ -78,7 +78,8 @@ function TratamentoCard({
           style={{ flex: 1, padding: 6, borderRadius: 6, border: "none" }} />
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <div className="tabela-scroll">
+      <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
           <tr style={{ color: "#7987A1", textAlign: "left" }}>
             {["Seq", "Produto", "Modo", "Dose", "Vol. Calda L/ha", "Referência", "Timing", "Atividade", ""].map((h) => (
@@ -138,6 +139,7 @@ function TratamentoCard({
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

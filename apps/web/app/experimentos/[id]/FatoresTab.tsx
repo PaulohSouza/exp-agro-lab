@@ -41,7 +41,7 @@ export function FatoresTab({ exp, onChange }: { exp: Experimento; onChange: (e: 
       </p>
 
       {fatores.map((f, i) => (
-        <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        <div key={i} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 8 }}>
           <span style={{ color: "#7987A1", width: 56, fontSize: 13 }}>Fator {i + 1}</span>
           <input placeholder="nome (ex.: Produto, Dose)" value={f.nome} onChange={(e) => setF(i, "nome", e.target.value)} style={{ ...inp, width: 180 }} />
           <input placeholder="níveis separados por vírgula" value={f.niveis} onChange={(e) => setF(i, "niveis", e.target.value)} style={{ ...inp, flex: 1 }} />
