@@ -1,10 +1,13 @@
 import { API_BASE } from "./api";
 
+import type { Papel } from "./api";
+
 export interface SessionUser {
   id: string;
   nome: string;
   email: string;
   instituicaoId: string;
+  papel?: Papel;
   isAdminInstituicao: boolean;
 }
 

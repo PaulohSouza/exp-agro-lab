@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
+import type { Papel } from "@prisma/client";
 import { UsuariosService } from "./usuarios.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -15,7 +16,7 @@ export class UsuariosController {
   @Post()
   criar(
     @CurrentUser() user: UsuarioAtual,
-    @Body() dto: { nome: string; email: string; senha: string; isAdminInstituicao?: boolean; unidadeId?: string },
+    @Body() dto: { nome: string; email: string; senha: string; papel?: Papel; isAdminInstituicao?: boolean; unidadeId?: string },
   ) {
     return this.service.criar(user, dto);
   }

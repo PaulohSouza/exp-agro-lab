@@ -159,9 +159,38 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-export interface Usuario { id: string; nome: string; email: string; isAdminInstituicao: boolean; ativo: boolean }
+export interface Usuario { id: string; nome: string; email: string; papel?: Papel; isAdminInstituicao: boolean; ativo: boolean }
+
+export type Papel =
+  | "admin_sistema"
+  | "gestao_instituicao"
+  | "gestao_departamento"
+  | "coordenador_area"
+  | "pesquisador"
+  | "analista"
+  | "assistente";
+
+export interface Contagem { rotulo: string; n: number }
+export interface ChecklistItem {
+  avaliacao: string;
+  experimento: string;
+  experimentoId: string;
+  dataPrevista: string | null;
+  estado: "realizada" | "pendente" | "atrasada";
+}
+export interface Dashboard {
+  escopo: Papel;
+  totais: { experimentos: number; emConducao: number };
+  porStatus: Contagem[];
+  porEnsaio: Contagem[];
+  porLocal: Contagem[];
+  porArea: Contagem[];
+  porSafra: Contagem[];
+  checklist: { previstas: number; realizadas: number; pendentes: number; atrasadas: number; itens: ChecklistItem[] };
+}
 
 export const api = {
+  dashboard: () => req<Dashboard>("/dashboard"),
   listar: () => req<Experimento[]>("/experimentos"),
   obter: (id: string) => req<Experimento>(`/experimentos/${id}`),
   criar: (body: Record<string, unknown>) =>

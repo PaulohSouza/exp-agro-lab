@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import type { Papel } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -7,6 +8,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   instituicaoId: string;
+  papel: Papel;
   isAdminInstituicao: boolean;
 }
 
@@ -50,6 +52,7 @@ export class AuthService {
         nome: dto.adminNome,
         email: dto.adminEmail,
         senhaHash: AuthService.hash(dto.adminSenha),
+        papel: "gestao_instituicao",
         isAdminInstituicao: true,
       },
     });
@@ -61,12 +64,14 @@ export class AuthService {
     nome: string;
     email: string;
     instituicaoId: string;
+    papel: Papel;
     isAdminInstituicao: boolean;
   }) {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       instituicaoId: user.instituicaoId,
+      papel: user.papel,
       isAdminInstituicao: user.isAdminInstituicao,
     };
     return {
@@ -76,6 +81,7 @@ export class AuthService {
         nome: user.nome,
         email: user.email,
         instituicaoId: user.instituicaoId,
+        papel: user.papel,
         isAdminInstituicao: user.isAdminInstituicao,
       },
     };

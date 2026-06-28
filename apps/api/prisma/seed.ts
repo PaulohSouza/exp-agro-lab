@@ -45,6 +45,7 @@ async function main() {
       nome: "Admin Demo",
       email: "admin@demo.com",
       senhaHash: hash("admin123"),
+      papel: "gestao_instituicao",
       isAdminInstituicao: true,
     },
   });
@@ -56,6 +57,7 @@ async function main() {
       nome: "Analista Demo",
       email: "analista@demo.com",
       senhaHash: hash("analista123"),
+      papel: "analista",
       isAdminInstituicao: false,
     },
   });

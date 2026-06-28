@@ -79,11 +79,13 @@ syncedAt, createdAt, updatedAt, deletedAt
 - **Cliente** (`id, nome, ...`). (legado `clientes`)
 - **Orcamento** (`id, experimentoId, clienteId, status, total`) + **OrcamentoItem** (`id, orcamentoId, tipo: avaliacao|atividade|produto, refId, quantidade, valorUnit, valorTotal`). (legado `orcamentos`/`servicos_orc`/`produtos_orc`)
 
-### Multi-tenancy (instituição / unidade)
+### Multi-tenancy (instituição / departamento / unidade)
+Hierarquia: `Instituicao → Departamento → Unidade(laboratorio) → Experimento`.
 - **Instituicao** (`id, nome, cnpj?, ativo`) — tenant raiz. (RF-20)
-- **Unidade** (`id, instituicaoId, nome, tipo: enum(unidade|laboratorio), ativo`). (RF-21)
-- **User** (`id, instituicaoId, unidadeId?, nome, email (unique), senhaHash, isAdminInstituicao (bool), ativo`). Admin da instituição cadastra usuários. (RF-22)
-- **Papel/Permissao** — ver [05-seguranca](../05-seguranca/01-autenticacao-autorizacao.md) (legado `acessos`/`grupo_acessos`/`usuarios_permissoes`). Escopo por `instituicaoId` (RN-TENANT).
+- **Departamento** (`id, instituicaoId, nome, ativo`) — **entidade nova**, nó entre instituição e unidade.
+- **Unidade** (`id, instituicaoId, departamentoId?, nome, tipo: enum(unidade|laboratorio), ativo`). `tipo=laboratorio` é reaproveitada como **área/laboratório** de pesquisa. (RF-21)
+- **User** (`id, instituicaoId, departamentoId?, unidadeId?, nome, email (unique), senhaHash, papel: enum Papel, isAdminInstituicao (bool, retrocompat), ativo`). (RF-22)
+- **Papel** (enum, em `User.papel`): `admin_sistema | gestao_instituicao | gestao_departamento | coordenador_area | pesquisador | analista | assistente`. Substitui gradualmente o boolean `isAdminInstituicao` (mantido por retrocompat na fatia 1). Escopo/ações e migração: ver [05-seguranca/03-papeis-rbac.md](../05-seguranca/03-papeis-rbac.md) (RN-RBAC). Escopo por `instituicaoId` (RN-TENANT); `admin_sistema` é global.
 
 ### Compartilhamento de experimento (RF-23..25)
 - **ExperimentoCompartilhamento** (`id, experimentoId, userId (com quem), nivel: enum(input|edit), criadoPorId (dono), aceito (bool), convidadoEmail?, token?, createdAt`). `Experimento.ownerId` define o dono. Timeline agrega experimentos próprios + compartilhados.

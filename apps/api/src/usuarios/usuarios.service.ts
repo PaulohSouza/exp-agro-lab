@@ -1,7 +1,11 @@
 import { Injectable, ForbiddenException, ConflictException } from "@nestjs/common";
+import type { Papel } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
+
+/** Papéis que conferem administração da instituição (RN-RBAC). */
+const PAPEIS_ADMIN: Papel[] = ["admin_sistema", "gestao_instituicao"];
 
 @Injectable()
 export class UsuariosService {
@@ -11,16 +15,21 @@ export class UsuariosService {
     return this.prisma.user.findMany({
       where: { instituicaoId: user.instituicaoId },
       orderBy: { nome: "asc" },
-      select: { id: true, nome: true, email: true, isAdminInstituicao: true, ativo: true, unidadeId: true },
+      select: { id: true, nome: true, email: true, papel: true, isAdminInstituicao: true, ativo: true, unidadeId: true },
     });
   }
 
-  async criar(user: UsuarioAtual, dto: { nome: string; email: string; senha: string; isAdminInstituicao?: boolean; unidadeId?: string }) {
+  async criar(
+    user: UsuarioAtual,
+    dto: { nome: string; email: string; senha: string; papel?: Papel; isAdminInstituicao?: boolean; unidadeId?: string },
+  ) {
     if (!user.isAdminInstituicao) {
       throw new ForbiddenException("Apenas o admin da instituição pode cadastrar usuários.");
     }
     const existe = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existe) throw new ConflictException("E-mail já cadastrado.");
+    // papel é a fonte da verdade; isAdminInstituicao é mantido em sincronia (retrocompat).
+    const papel: Papel = dto.papel ?? (dto.isAdminInstituicao ? "gestao_instituicao" : "analista");
     const novo = await this.prisma.user.create({
       data: {
         instituicaoId: user.instituicaoId,
@@ -28,9 +37,10 @@ export class UsuariosService {
         nome: dto.nome,
         email: dto.email,
         senhaHash: bcrypt.hashSync(dto.senha, 10),
-        isAdminInstituicao: dto.isAdminInstituicao ?? false,
+        papel,
+        isAdminInstituicao: PAPEIS_ADMIN.includes(papel),
       },
-      select: { id: true, nome: true, email: true, isAdminInstituicao: true, ativo: true },
+      select: { id: true, nome: true, email: true, papel: true, isAdminInstituicao: true, ativo: true },
     });
     return novo;
   }

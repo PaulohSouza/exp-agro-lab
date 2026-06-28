@@ -23,6 +23,7 @@ model Instituicao {
   updatedAt         DateTime @updatedAt
 
   unidades     Unidade[]
+  departamentos Departamento[]
   usuarios     User[]
   experimentos Experimento[]
   aprovadores  AprovadorInstituicao[]
@@ -33,13 +34,29 @@ enum PoliticaAprovacao {
   n_de_m
 }
 
+// Departamento agrupa unidades/laboratórios dentro da instituição (RF-21b).
+model Departamento {
+  id            String   @id @default(cuid())
+  instituicaoId String
+  nome          String
+  ativo         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
+  unidades      Unidade[]
+  usuarios      User[]
+
+  @@index([instituicaoId])
+}
+
 model Unidade {
   id            String   @id @default(cuid())
   instituicaoId String
+  departamentoId String?
   nome          String
   tipo          TipoUnidade @default(unidade)
   ativo         Boolean  @default(true)
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
+  departamento  Departamento? @relation(fields: [departamentoId], references: [id])
   usuarios      User[]
   experimentos  Experimento[]
 }
@@ -53,9 +70,12 @@ model User {
   id                 String   @id @default(cuid())
   instituicaoId      String
   unidadeId          String?
+  departamentoId     String?
   nome               String
   email              String   @unique
   senhaHash          String
+  papel              Papel    @default(analista)
+  // Mantido por retrocompatibilidade na fatia 1; papel é a nova fonte da verdade. @see RN-RBAC
   isAdminInstituicao Boolean  @default(false)
   ativo              Boolean  @default(true)
   createdAt          DateTime @default(now())
@@ -63,9 +83,21 @@ model User {
 
   instituicao        Instituicao @relation(fields: [instituicaoId], references: [id])
   unidade            Unidade?    @relation(fields: [unidadeId], references: [id])
+  departamento       Departamento? @relation(fields: [departamentoId], references: [id])
   experimentosOwner  Experimento[] @relation("ExperimentoOwner")
   compartilhamentos  ExperimentoCompartilhamento[] @relation("CompartilhadoCom")
   aprovadorEm        AprovadorInstituicao[]
+}
+
+// Papéis com escopo (RN-RBAC). admin_sistema é GLOBAL (cross-institution).
+enum Papel {
+  admin_sistema
+  gestao_instituicao
+  gestao_departamento
+  coordenador_area
+  pesquisador
+  analista
+  assistente
 }
 
 // ----------------------------- Cadastros base ---------------------------- 
