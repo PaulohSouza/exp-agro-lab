@@ -1,0 +1,26 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# build
+dist/
+.next/
+out/
+*.tsbuildinfo
+
+# env / secrets
+.env
+.env.local
+**/.env
+!**/.env.example
+apps/api/email-previews/
+
+# misc
+.DS_Store
+*.log
+.turbo/
+coverage/
+
+# Pastas-base / materiais de referência (mantidos localmente, fora do repo)
+/base-projeto/
+/projeto pesquisa comercial/

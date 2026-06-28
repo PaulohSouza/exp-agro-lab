@@ -1,0 +1,409 @@
+// EXP-AGROLAB — schema inicial (Marco 0).
+// Ver SDD/04-design-detalhado/01-modelo-dados.md
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ----------------------------- Multi-tenancy ----------------------------- 
+
+model Instituicao {
+  id                String   @id @default(cuid())
+  nome              String
+  cnpj              String?
+  politicaAprovacao PoliticaAprovacao @default(todos)
+  nAprovadores      Int      @default(1)
+  ativo             Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  unidades     Unidade[]
+  usuarios     User[]
+  experimentos Experimento[]
+  aprovadores  AprovadorInstituicao[]
+}
+
+enum PoliticaAprovacao {
+  todos
+  n_de_m
+}
+
+model Unidade {
+  id            String   @id @default(cuid())
+  instituicaoId String
+  nome          String
+  tipo          TipoUnidade @default(unidade)
+  ativo         Boolean  @default(true)
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
+  usuarios      User[]
+  experimentos  Experimento[]
+}
+
+enum TipoUnidade {
+  unidade
+  laboratorio
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  instituicaoId      String
+  unidadeId          String?
+  nome               String
+  email              String   @unique
+  senhaHash          String
+  isAdminInstituicao Boolean  @default(false)
+  ativo              Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  instituicao        Instituicao @relation(fields: [instituicaoId], references: [id])
+  unidade            Unidade?    @relation(fields: [unidadeId], references: [id])
+  experimentosOwner  Experimento[] @relation("ExperimentoOwner")
+  compartilhamentos  ExperimentoCompartilhamento[] @relation("CompartilhadoCom")
+  aprovadorEm        AprovadorInstituicao[]
+}
+
+// ----------------------------- Cadastros base ---------------------------- 
+
+model Categoria {
+  id    String @id @default(cuid())
+  nome  String
+  ativo Boolean @default(true)
+  subcategorias Subcategoria[]
+}
+
+model Subcategoria {
+  id          String @id @default(cuid())
+  categoriaId String
+  nome        String
+  ativo       Boolean @default(true)
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  objetos     ObjetoEstudo[]
+}
+
+model ObjetoEstudo {
+  id             String @id @default(cuid())
+  subcategoriaId String
+  nome           String
+  obs            String?
+  ativo          Boolean @default(true)
+  subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
+  experimentos   Experimento[]
+}
+
+model Local {
+  id           String @id @default(cuid())
+  nome         String
+  experimentos Experimento[]
+}
+
+model Safra {
+  id           String @id @default(cuid())
+  nome         String
+  experimentos Experimento[]
+}
+
+model AreaPesquisa {
+  id           String @id @default(cuid())
+  nome         String
+  experimentos Experimento[]
+}
+
+model Delineamento {
+  id           String @id @default(cuid())
+  nome         String
+  experimentos Experimento[]
+}
+
+// ------------------------------ Experimento ------------------------------ 
+
+model Experimento {
+  id               String   @id @default(cuid())
+  codigo           String?
+  titulo           String
+  objetivo         String?  @db.Text
+  ensaio           Ensaio   @default(interno)
+  status           StatusExperimento @default(Inserindo)
+
+  instituicaoId    String
+  unidadeId        String?
+  ownerId          String
+  objetoEstudoId   String?
+  localId          String?
+  safraId          String?
+  areaPesquisaId   String?
+  delineamentoId   String?
+
+  cultivar         String?
+  tipoExecucao     String?
+  metodologia      String?  @db.Text
+  justificativa    String?  @db.Text
+  observacoes      String?  @db.Text
+
+  parcelaLarguraM     Float?
+  parcelaComprimentoM Float?
+  parcelaNumLinhas    Int?
+  espacamentoLinhasM  Float?
+  numRepeticoes       Int?
+  numTratamentos      Int?
+  totalParcelas       Int?
+
+  previsaoSemeadura DateTime?
+  dataSemeadura     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  instituicao   Instituicao   @relation(fields: [instituicaoId], references: [id])
+  unidade       Unidade?      @relation(fields: [unidadeId], references: [id])
+  owner         User          @relation("ExperimentoOwner", fields: [ownerId], references: [id])
+  objetoEstudo  ObjetoEstudo? @relation(fields: [objetoEstudoId], references: [id])
+  local         Local?        @relation(fields: [localId], references: [id])
+  safra         Safra?        @relation(fields: [safraId], references: [id])
+  areaPesquisa  AreaPesquisa? @relation(fields: [areaPesquisaId], references: [id])
+  delineamento  Delineamento? @relation(fields: [delineamentoId], references: [id])
+
+  fatores         Fator[]
+  tratamentos     Tratamento[]
+  parcelas        Parcela[]
+  avaliacoes      Avaliacao[]
+  compartilhamentos ExperimentoCompartilhamento[]
+  ordensServico   OrdemServico[]
+  statusHistorico StatusHistorico[]
+
+  @@index([instituicaoId])
+  @@index([ownerId])
+}
+
+enum Ensaio {
+  interno
+  comercial
+}
+
+enum StatusExperimento {
+  Inserindo
+  AprovadoCAD
+  RecusadoCAD
+  EmConducao
+  Concluido
+}
+
+model Fator {
+  id            String @id @default(cuid())
+  experimentoId String
+  ordem         Int
+  nome          String
+  tipo          TipoFator @default(qualitativo)
+  experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  niveis        NivelFator[]
+}
+
+enum TipoFator {
+  qualitativo
+  quantitativo
+}
+
+model NivelFator {
+  id      String @id @default(cuid())
+  fatorId String
+  valor   String
+  rotulo  String?
+  fator   Fator @relation(fields: [fatorId], references: [id], onDelete: Cascade)
+}
+
+model Tratamento {
+  id            String @id @default(cuid())
+  experimentoId String
+  numeroRef     Int
+  tag           String?
+  nome          String?
+  descricao     String? @db.Text
+  experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  parcelas      Parcela[]
+}
+
+model Parcela {
+  id            String @id @default(cuid())
+  experimentoId String
+  tratamentoId  String
+  bloco         Int
+  numero        Int
+  posLinha      Int
+  posColuna     Int
+  isInicio      Boolean @default(false)
+  experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  tratamento    Tratamento  @relation(fields: [tratamentoId], references: [id])
+  dados         AvaliacaoDado[]
+
+  @@index([experimentoId])
+}
+
+// ------------------------------ Avaliações ------------------------------- 
+
+model Avaliacao {
+  id            String @id @default(cuid())
+  experimentoId String
+  nome          String
+  metodologia   String? @db.Text
+  unidadeColeta String?
+  unidadeSaida  String?
+  formula       String?
+  tipo          TipoAvaliacao @default(calendarizada)
+  personalizada Boolean @default(false)
+  ordem         Int     @default(0)
+  experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  dados         AvaliacaoDado[]
+}
+
+enum TipoAvaliacao {
+  calendarizada
+  condicional
+}
+
+model AvaliacaoDado {
+  id                 String @id @default(cuid())
+  avaliacaoId        String
+  parcelaId          String
+  numAmostra         Int     @default(1)
+  // Valor BRUTO coletado no campo. A produtividade (kg/ha) é apresentada no relatório.
+  valorColetado      Float?
+  // Apontamentos da ATIVIDADE de colheita (RN-PROD): registrados no momento da atividade.
+  numLinhasColhidas  Int?
+  comprimentoColhidoM Float?
+  areaUtilM2         Float?
+  obs                String? @db.Text
+  status             String?
+  fotoUrl            String?
+  origem             OrigemColeta @default(web)
+  dispositivoId      String?
+  syncedAt           DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  deletedAt          DateTime?
+
+  avaliacao          Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
+  parcela            Parcela   @relation(fields: [parcelaId], references: [id])
+
+  @@unique([avaliacaoId, parcelaId, numAmostra])
+}
+
+enum OrigemColeta {
+  web
+  mobile
+}
+
+// -------------------- Compartilhamento / Ordem de Serviço ---------------- 
+
+model ExperimentoCompartilhamento {
+  id             String @id @default(cuid())
+  experimentoId  String
+  userId         String?
+  convidadoEmail String?
+  nivel          NivelCompartilhamento @default(input)
+  aceito         Boolean @default(false)
+  token          String? @unique
+  createdAt      DateTime @default(now())
+  experimento    Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  user           User?       @relation("CompartilhadoCom", fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+enum NivelCompartilhamento {
+  input
+  edit
+}
+
+model OrdemServico {
+  id            String @id @default(cuid())
+  experimentoId String
+  status        StatusOS @default(rascunho)
+  createdAt     DateTime @default(now())
+  experimento   Experimento @relation(fields: [experimentoId], references: [id])
+  aprovacoesInternas AprovacaoOSInterna[]
+  aprovacaoCliente   AprovacaoCliente?
+}
+
+enum StatusOS {
+  rascunho
+  aguardando_aprovacao_interna
+  aguardando_aprovacao_cliente
+  aprovada
+  recusada
+}
+
+model AprovadorInstituicao {
+  id            String @id @default(cuid())
+  instituicaoId String
+  userId        String
+  ativo         Boolean @default(true)
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+
+  @@unique([instituicaoId, userId])
+}
+
+model AprovacaoOSInterna {
+  id             String @id @default(cuid())
+  ordemServicoId String
+  aprovadorUserId String
+  decisao        Decisao
+  motivo         String?
+  at             DateTime @default(now())
+  ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+}
+
+model AprovacaoCliente {
+  id             String @id @default(cuid())
+  ordemServicoId String @unique
+  clienteEmail   String
+  token          String @unique
+  decisao        Decisao @default(pendente)
+  motivo         String?
+  decididoEm     DateTime?
+  ip             String?
+  ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+}
+
+enum Decisao {
+  pendente
+  aprovado
+  recusado
+}
+
+// -------------------------------- Suporte -------------------------------- 
+
+model EmailLog {
+  id        String @id @default(cuid())
+  tipo      String
+  para      String
+  assunto   String
+  htmlPath  String?
+  status    StatusEmail @default(simulado)
+  erro      String? @db.Text
+  refTipo   String?
+  refId     String?
+  createdAt DateTime @default(now())
+}
+
+enum StatusEmail {
+  simulado
+  enviado
+  erro
+}
+
+model StatusHistorico {
+  id            String @id @default(cuid())
+  experimentoId String
+  de            String?
+  para          String
+  userId        String?
+  at            DateTime @default(now())
+  experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+}
