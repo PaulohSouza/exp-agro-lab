@@ -84,6 +84,22 @@ export interface OrdemServico {
 }
 export interface Instituicao { id: string; nome: string; politicaAprovacao: string; nAprovadores: number }
 export interface Aprovador { id: string; userId: string; ativo: boolean; user: { id: string; nome: string; email: string } }
+export interface AnaliseResultado {
+  avaliacao: { nome: string; unidadeSaida: string | null };
+  delineamento: string;
+  n: number;
+  resultado: {
+    tabela: { fonte: string; gl: number; sq: number; qm: number; f?: number; p?: number }[];
+    mediaGeral: number;
+    cv: number;
+    fTratamento: number;
+    pTratamento: number;
+    significativo: boolean;
+    medias: { tratamento: string; media: number; n: number; letra?: string }[];
+    pressupostos: { bartlettEstatistica: number; bartlettP: number; homogeneo: boolean };
+    comparacao: { metodo: string; alpha: number };
+  };
+}
 export interface Experimento {
   id: string;
   codigo: string | null;
@@ -179,6 +195,7 @@ export const api = {
   lancarDados: (avaliacaoId: string, dados: Array<Partial<AvaliacaoDado>>) =>
     req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
   relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
+  analiseAvaliacao: (avaliacaoId: string) => req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise`),
 
   // cadastros gerais
   locais: () => req<Ref[]>("/cadastros/locais"),

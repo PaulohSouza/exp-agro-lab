@@ -45,4 +45,9 @@ export class AvaliacoesController {
   relatorio(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
     return this.service.relatorio(id, user);
   }
+
+  @Get("avaliacoes/:id/analise")
+  analise(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
+    return this.service.analise(id, user);
+  }
 }

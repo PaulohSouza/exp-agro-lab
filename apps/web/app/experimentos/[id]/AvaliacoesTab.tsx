@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { api, type Avaliacao, type AvaliacaoDado, type Experimento, type RelatorioAvaliacao } from "../../../lib/api";
+import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type Experimento, type RelatorioAvaliacao } from "../../../lib/api";
 
 export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (e: Experimento) => void }) {
-  const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao }>({ tipo: "lista" });
+  const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao } | { tipo: "analise"; aval: Avaliacao }>({ tipo: "lista" });
   const avaliacoes = exp.avaliacoes ?? [];
 
   async function recarregar() {
@@ -12,6 +12,7 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
 
   if (modo.tipo === "lancar") return <Lancar exp={exp} aval={modo.aval} voltar={() => { setModo({ tipo: "lista" }); recarregar(); }} />;
   if (modo.tipo === "relatorio") return <Relatorio aval={modo.aval} voltar={() => setModo({ tipo: "lista" })} />;
+  if (modo.tipo === "analise") return <Analise aval={modo.aval} voltar={() => setModo({ tipo: "lista" })} />;
 
   return (
     <div>
@@ -36,6 +37,7 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
               <td style={td}>
                 <button onClick={() => setModo({ tipo: "lancar", aval: a })} style={mini("#6FA830")}>Lançar</button>{" "}
                 {a.formula && <button onClick={() => setModo({ tipo: "relatorio", aval: a })} style={mini("#4EC2F0")}>Relatório</button>}{" "}
+                <button onClick={() => setModo({ tipo: "analise", aval: a })} style={mini("#2D6CDF")}>Análise</button>{" "}
                 <button onClick={async () => { await api.removerAvaliacao(a.id); recarregar(); }} style={mini("#F34343")}>x</button>
               </td>
             </tr>
@@ -194,6 +196,71 @@ function Relatorio({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
               </tbody>
             </table>
             <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8 }}>Médias simples (a análise estatística completa vem no Marco 4).</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
+  const [a, setA] = useState<AnaliseResultado | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  useEffect(() => {
+    api.analiseAvaliacao(aval.id).then(setA).catch((e) => setErro(e instanceof Error ? e.message : "falha"));
+  }, [aval.id]);
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+        <button onClick={voltar} style={mini("#a9abbd")}>← voltar</button>
+        <strong>Análise: {aval.nome}</strong>
+      </div>
+      {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
+      {!a ? (!erro && <p style={{ color: "#7987A1" }}>Calculando…</p>) : (
+        <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+          <div>
+            <h4 style={{ margin: "0 0 8px" }}>ANOVA ({a.delineamento}, n={a.n})</h4>
+            <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr style={{ color: "#7987A1", textAlign: "left" }}>
+                <th style={th}>Fonte</th><th style={th}>GL</th><th style={th}>SQ</th><th style={th}>QM</th><th style={th}>F</th><th style={th}>p</th>
+              </tr></thead>
+              <tbody>
+                {a.resultado.tabela.map((l, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #f0f0f8" }}>
+                    <td style={td}>{l.fonte}</td><td style={td}>{l.gl}</td>
+                    <td style={td}>{l.sq.toFixed(2)}</td><td style={td}>{l.qm.toFixed(2)}</td>
+                    <td style={td}>{l.f != null ? l.f.toFixed(2) : "—"}</td>
+                    <td style={td}>{l.p != null ? (l.p < 0.001 ? "<0.001" : l.p.toFixed(3)) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{ fontSize: 13, color: "#1F2940", marginTop: 8 }}>
+              CV = <strong>{a.resultado.cv.toFixed(2)}%</strong> · média geral {a.resultado.mediaGeral.toFixed(1)} ·{" "}
+              {a.resultado.significativo ? <span style={{ color: "#6FA830" }}>tratamento significativo</span> : <span style={{ color: "#F34343" }}>não significativo</span>}
+            </p>
+            <p style={{ fontSize: 12, color: "#7987A1" }}>
+              Bartlett p = {a.resultado.pressupostos.bartlettP.toFixed(3)} ({a.resultado.pressupostos.homogeneo ? "homogêneo" : "heterogêneo"})
+            </p>
+          </div>
+          <div>
+            <h4 style={{ margin: "0 0 8px" }}>Médias — {a.resultado.comparacao.metodo}</h4>
+            <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr style={{ color: "#7987A1", textAlign: "left" }}><th style={th}>Trat.</th><th style={th}>Média</th><th style={th}></th></tr></thead>
+              <tbody>
+                {a.resultado.medias.map((m) => (
+                  <tr key={m.tratamento} style={{ borderBottom: "1px solid #f0f0f8" }}>
+                    <td style={td}><strong>{m.tratamento}</strong></td>
+                    <td style={td}>{m.media.toFixed(1)}</td>
+                    <td style={{ ...td, fontWeight: 700, color: "#2D6CDF" }}>{m.letra}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8, maxWidth: 240 }}>
+              Letras iguais = sem diferença significativa (α={a.resultado.comparacao.alpha}). Fase A do port do SAGRE (LSD); Tukey/Scott-Knott e validação vs SAGRE na fase B.
+            </p>
           </div>
         </div>
       )}

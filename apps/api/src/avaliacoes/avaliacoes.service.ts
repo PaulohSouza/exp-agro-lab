@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { calcularSaida } from "@exp/domain";
+import { anovaUmFator, type Observacao, type Delineamento } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -140,6 +141,43 @@ export class AvaliacoesService {
       });
     }
     return this.listarDados(avaliacaoId, user);
+  }
+
+  /**
+   * ANÁLISE estatística (ANOVA 1 fator) sobre os valores de saída coletados.
+   * Usa o delineamento do experimento (DIC/DBC). Port do SAGRE — fase A.
+   */
+  async analise(avaliacaoId: string, user: UsuarioAtual) {
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
+    const aval = await this.prisma.avaliacao.findUnique({
+      where: { id: avaliacaoId },
+      include: { experimento: { include: { delineamento: true } } },
+    });
+    if (!aval) throw new NotFoundException("Avaliação não encontrada.");
+    const dados = await this.prisma.avaliacaoDado.findMany({
+      where: { avaliacaoId, deletedAt: null, valorColetado: { not: null } },
+      include: { parcela: { include: { tratamento: true } } },
+    });
+
+    const espac = aval.experimento.espacamentoLinhasM ?? undefined;
+    const obs: Observacao[] = dados.map((d) => {
+      const areaUtil = d.areaUtilM2 ?? (d.numLinhasColhidas && d.comprimentoColhidoM && espac ? d.numLinhasColhidas * espac * d.comprimentoColhidoM : undefined);
+      let valor = d.valorColetado as number;
+      if (aval.formula) {
+        try { valor = calcularSaida({ valorColetado: d.valorColetado as number, formula: aval.formula, params: areaUtil ? { areaUtil } : {} }); } catch { /* mantém bruto */ }
+      }
+      return { tratamento: d.parcela.tratamento?.tag ?? "?", bloco: d.parcela.bloco, valor };
+    });
+
+    const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
+    const delineamento: Delineamento = nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
+
+    try {
+      const resultado = anovaUmFator(obs, delineamento);
+      return { avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida }, delineamento, n: obs.length, resultado };
+    } catch (e) {
+      throw new BadRequestException(e instanceof Error ? e.message : "Não foi possível analisar.");
+    }
   }
 
   /** RELATÓRIO: conversão para a unidade de saída acontece AQUI (não na coleta). */

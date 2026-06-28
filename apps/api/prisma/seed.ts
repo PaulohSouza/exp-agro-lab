@@ -180,32 +180,33 @@ async function main() {
     },
   });
 
-  // ATIVIDADE de colheita: valor bruto + apontamentos (linhas, comprimento, área útil).
-  const parcelaInicio = await prisma.parcela.findFirst({
-    where: { experimentoId: exp.id, isInicio: true },
+  // ATIVIDADE de colheita: valor bruto + apontamentos em TODAS as parcelas
+  // (dados plausíveis e determinísticos p/ testar input → análise → relatório).
+  const todasParcelas = await prisma.parcela.findMany({
+    where: { experimentoId: exp.id },
+    include: { tratamento: true },
   });
-  if (parcelaInicio) {
-    const areaUtilM2 = calcularAreaUtilColhida({
-      numLinhasColhidas: 4,
-      espacamentoLinhasM: exp.espacamentoLinhasM ?? 0.45,
-      comprimentoColhidoM: 5,
-    });
+  const areaUtilM2 = calcularAreaUtilColhida({ numLinhasColhidas: 4, espacamentoLinhasM: exp.espacamentoLinhasM ?? 0.45, comprimentoColhidoM: 5 });
+  const baseKg = [7.0, 8.6, 8.0, 9.6, 8.2]; // por tratamento (T1..T5), kg/parcela
+  for (const p of todasParcelas) {
+    const base = baseKg[(p.tratamento!.numeroRef - 1) % baseKg.length];
+    const efeitoBloco = (p.bloco - 2.5) * 0.18;
+    const wiggle = ((p.numero % 5) - 2) * 0.06;
+    const valor = Math.round((base + efeitoBloco + wiggle) * 100) / 100;
     await prisma.avaliacaoDado.create({
       data: {
         avaliacaoId: aval.id,
-        parcelaId: parcelaInicio.id,
-        valorColetado: 8.5, // kg/parcela (bruto)
+        parcelaId: p.id,
+        valorColetado: valor,
         numLinhasColhidas: 4,
         comprimentoColhidoM: 5,
-        areaUtilM2, // apontamento da atividade
+        areaUtilM2,
         origem: "web",
       },
     });
-
-    // PRODUTIVIDADE: apresentada apenas no relatório (não persistida na coleta).
-    const kgha = calcularProdutividadeKgHa({ valorKgParcela: 8.5, areaUtilM2 });
-    console.log(`  [relatório] 8,5 kg ÷ ${areaUtilM2} m² → ${kgha.toFixed(0)} kg/ha`);
   }
+  const exemplo = calcularProdutividadeKgHa({ valorKgParcela: baseKg[3], areaUtilM2 });
+  console.log(`  produtividade lançada em ${todasParcelas.length} parcelas (ex.: T4 ${baseKg[3]} kg → ${exemplo.toFixed(0)} kg/ha)`);
 
   const nParcelas = await prisma.parcela.count({ where: { experimentoId: exp.id } });
   console.log(`Seed concluído: experimento ${exp.codigo}, ${nParcelas} parcelas, croqui ${croqui.numLinhas}×${croqui.numColunas}.`);

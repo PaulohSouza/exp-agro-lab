@@ -36,10 +36,10 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 - Fluxo interno (TCC) sem custo. Trilha de auditoria de status.
 - **Entrega:** lista de protocolos com filtros (igual ao print) e ciclo de aprovação.
 
-## Marco 4 — Análise estatística (port do SAGRE)
-- `packages/analytics`: ANOVA, comparação de médias (Tukey/Scott-Knott), fatorial, não-paramétrico, conjunta multi-local.
-- **Golden tests** contra saídas do SAGRE. Ver [08-anexos/sagre-analytics.md](../08-anexos/sagre-analytics.md).
-- **Entrega:** análise de um experimento real com resultado equivalente ao SAGRE.
+## Marco 4 — Análise estatística (port do SAGRE) — em andamento
+- ✅ **Fase A (28/06/2026):** `packages/analytics` puro — distribuições (F, t, qui-quadrado via beta/gama incompleta), **ANOVA 1 fator DIC/DBC** (decomposição, CV, F, p), **Bartlett** (homogeneidade) e **comparação de médias LSD (Fisher) com letras**. 9 testes (distribuições vs tabela, ANOVA F=13.5 exato, letras). API: `GET /avaliacoes/:id/analise` (usa o delineamento + valores de saída). Web: painel **Análise** na aba Avaliações (tabela ANOVA, médias+letras, CV, Bartlett). Seed popula as 20 parcelas → análise real (F≈373, CV 1,2%).
+- ⬜ **Fase B:** Tukey/Scott-Knott (qtukey), fatorial 2–3, transformações, não-paramétrico, conjunta multi-local, e **golden tests vs SAGRE** (precisa dos outputs do R). Ver [08-anexos/sagre-analytics.md](../08-anexos/sagre-analytics.md).
+- **Entrega:** análise de um experimento real (fase A entregue; equivalência exata ao SAGRE na fase B).
 
 ## Marco 5 — Relatório PPTX
 - Geração do relatório no formato `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (lib JS de PPTX) a partir da análise.
