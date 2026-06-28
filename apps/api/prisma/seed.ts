@@ -11,6 +11,10 @@ async function main() {
   await prisma.avaliacaoDado.deleteMany();
   await prisma.avaliacao.deleteMany();
   await prisma.parcela.deleteMany();
+  await prisma.tratamentoProduto.deleteMany();
+  await prisma.timing.deleteMany();
+  await prisma.produto.deleteMany();
+  await prisma.atividade.deleteMany();
   await prisma.tratamento.deleteMany();
   await prisma.nivelFator.deleteMany();
   await prisma.fator.deleteMany();
@@ -98,6 +102,38 @@ async function main() {
       data: { experimentoId: exp.id, numeroRef: i + 1, tag: `T${i + 1}`, nome: niveis[i] },
     });
     tratamentos.push({ id: t.id, numeroRef: t.numeroRef });
+  }
+
+  // Produtos, atividade e timing + vínculo nos tratamentos (aba Tratamentos do print)
+  const punto = await prisma.produto.create({ data: { nome: "Punto" } });
+  const agefix = await prisma.produto.create({ data: { nome: "Agefix" } });
+  const tidil = await prisma.produto.create({ data: { nome: "TIDIL/WakeUp" } });
+  const atividade = await prisma.atividade.create({
+    data: { nome: "Aplicação Produtos Líquidos em Parcelas de forma Manual" },
+  });
+  const timing1 = await prisma.timing.create({
+    data: { experimentoId: exp.id, nome: "1ª Aplicação", ordem: 1 },
+  });
+  const vinc: Array<[number, string, number, string]> = [
+    [2, punto.id, 0.17, "ml/ha"], // T2 Punto
+    [3, agefix.id, 0.3, "l/ha"], // T3 Agefix
+    [4, tidil.id, 0.23, "ml/ha"], // T4 Tidil/WakeUp
+  ];
+  for (const [tn, produtoId, dose, unidade] of vinc) {
+    const t = tratamentos.find((x) => x.numeroRef === tn)!;
+    await prisma.tratamentoProduto.create({
+      data: {
+        tratamentoId: t.id,
+        seq: 1,
+        produtoId,
+        modoAplicacao: "Pulverização",
+        dose,
+        unidadeDose: unidade,
+        volumeCaldaLha: 120,
+        timingId: timing1.id,
+        atividadeId: atividade.id,
+      },
+    });
   }
 
   // Croqui DBC 5×4 (20 parcelas) — núcleo de domínio

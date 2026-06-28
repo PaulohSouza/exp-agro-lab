@@ -59,9 +59,18 @@ export class ExperimentosService {
         areaPesquisa: true,
         delineamento: true,
         fatores: { include: { niveis: true }, orderBy: { ordem: "asc" } },
-        tratamentos: { orderBy: { numeroRef: "asc" } },
+        tratamentos: {
+          orderBy: { numeroRef: "asc" },
+          include: {
+            produtos: {
+              orderBy: { seq: "asc" },
+              include: { produto: true, timing: true, atividade: true },
+            },
+          },
+        },
         parcelas: { orderBy: [{ posColuna: "asc" }, { posLinha: "asc" }] },
         avaliacoes: { orderBy: { ordem: "asc" } },
+        timings: { orderBy: { ordem: "asc" } },
       },
     });
     if (!exp) throw new NotFoundException("Experimento não encontrado.");

@@ -173,6 +173,7 @@ model Experimento {
   tratamentos     Tratamento[]
   parcelas        Parcela[]
   avaliacoes      Avaliacao[]
+  timings         Timing[]
   compartilhamentos ExperimentoCompartilhamento[]
   ordensServico   OrdemServico[]
   statusHistorico StatusHistorico[]
@@ -226,6 +227,55 @@ model Tratamento {
   descricao     String? @db.Text
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
   parcelas      Parcela[]
+  produtos      TratamentoProduto[]
+}
+
+// Cadastros de produtos/atividades e timings do experimento
+model Produto {
+  id    String @id @default(cuid())
+  nome  String
+  marca String?
+  ativo Boolean @default(true)
+  usos  TratamentoProduto[]
+}
+
+model Atividade {
+  id         String @id @default(cuid())
+  nome       String
+  valorVenda Float?
+  ativo      Boolean @default(true)
+  usos       TratamentoProduto[]
+}
+
+model Timing {
+  id            String @id @default(cuid())
+  experimentoId String
+  nome          String
+  ordem         Int    @default(0)
+  experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  usos          TratamentoProduto[]
+}
+
+// Produto aplicado em um tratamento (linha da aba Tratamentos do print)
+model TratamentoProduto {
+  id             String @id @default(cuid())
+  tratamentoId   String
+  seq            Int     @default(1)
+  produtoId      String
+  modoAplicacao  String?
+  dose           Float?
+  unidadeDose    String?
+  volumeCaldaLha Float?
+  referencia     String?
+  timingId       String?
+  atividadeId    String?
+  descricao      String? @db.Text
+  tratamento     Tratamento @relation(fields: [tratamentoId], references: [id], onDelete: Cascade)
+  produto        Produto    @relation(fields: [produtoId], references: [id])
+  timing         Timing?    @relation(fields: [timingId], references: [id])
+  atividade      Atividade? @relation(fields: [atividadeId], references: [id])
+
+  @@index([tratamentoId])
 }
 
 model Parcela {

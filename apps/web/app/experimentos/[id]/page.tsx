@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, type Experimento } from "../../../lib/api";
 import { CroquiEditor } from "./CroquiEditor";
+import { TratamentosTab } from "./TratamentosTab";
 
 const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui"] as const;
 type Aba = (typeof ABAS)[number];
@@ -75,21 +76,7 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
 
       {aba === "Tratamentos" && (
         <Card>
-          {(exp.tratamentos ?? []).length === 0 ? (
-            <p style={{ color: "#7987A1" }}>Defina os fatores primeiro (aba Fatores).</p>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
-                <th style={th}>Trat.</th><th style={th}>Nome</th></tr></thead>
-              <tbody>
-                {(exp.tratamentos ?? []).map((t) => (
-                  <tr key={t.id} style={{ borderBottom: "1px solid #eaecf3" }}>
-                    <td style={td}><strong>{t.tag}</strong></td><td style={td}>{t.nome}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <TratamentosTab exp={exp} onChange={setExp} />
         </Card>
       )}
 

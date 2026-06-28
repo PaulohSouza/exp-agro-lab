@@ -13,7 +13,8 @@ Sequência incremental, cada marco entrega uma fatia utilizável. Datas são rel
 ## Marco 1 — Núcleo do experimento + croqui (MVP-1) ⭐ — em andamento
 Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funcionais.md) RF-01..RF-12.
 - ✅ **Fatia 1 (28/06/2026):** API de experimentos (criar/listar/detalhar), **fatores→tratamentos** (produto cartesiano), **geração de croqui** (DIC/DBC via `@exp/domain`) e **salvar layout**. Web: lista + criação + detalhe com abas (Geral/Fatores/Tratamentos/Croqui) e **editor de croqui clique-e-arraste** (swap de tratamentos, recasualizar, salvar). E2E verificado.
-- ⬜ Próximo: tratamentos com produtos/dose/timing; objeto de estudo genérico + cadastros (local, safra…) na UI; delineamento fatorial 2–3 na UI; avaliações (cadastro + lançamento) e **cálculo de unidade de saída no relatório**.
+- ✅ **Fatia 2 (28/06/2026):** Tratamentos ricos — modelos `Produto`/`Atividade`/`Timing`/`TratamentoProduto`; API de cadastros (produtos/atividades), timings por experimento e CRUD de produtos do tratamento; aba **Tratamentos** editável na web (nome + linhas de produto com modo/dose/unidade/volume de calda/referência/timing/atividade, add/excluir), espelhando o print. Seed PC1699 com Punto/Agefix/Tidil. E2E verificado.
+- ⬜ Próximo: objeto de estudo genérico + cadastros (local, safra…) na UI; delineamento fatorial 2–3 na UI; avaliações (cadastro + lançamento) e **apresentação de produtividade no relatório**.
 - **Entrega-alvo:** criar um experimento completo ponta-a-ponta na web; cenário E2E em [06-testes/02-casos-testes.md](../06-testes/02-casos-testes.md).
 
 ## Marco 2 — Coleta mobile offline-first

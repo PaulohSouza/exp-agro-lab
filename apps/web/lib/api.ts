@@ -1,10 +1,30 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3001";
 
+export interface Produto { id: string; nome: string; marca?: string | null }
+export interface Atividade { id: string; nome: string }
+export interface Timing { id: string; nome: string; ordem: number }
+export interface TratamentoProduto {
+  id: string;
+  seq: number;
+  produtoId: string;
+  modoAplicacao: string | null;
+  dose: number | null;
+  unidadeDose: string | null;
+  volumeCaldaLha: number | null;
+  referencia: string | null;
+  timingId: string | null;
+  atividadeId: string | null;
+  produto?: Produto;
+  timing?: Timing | null;
+  atividade?: Atividade | null;
+}
 export interface Tratamento {
   id: string;
   numeroRef: number;
   tag: string | null;
   nome: string | null;
+  descricao?: string | null;
+  produtos?: TratamentoProduto[];
 }
 export interface Parcela {
   id: string;
@@ -53,6 +73,18 @@ export const api = {
     req<Experimento>(`/experimentos/${id}/croqui/gerar`, { method: "POST", body: JSON.stringify(body) }),
   salvarCroqui: (id: string, parcelas: Parcela[]) =>
     req<Experimento>(`/experimentos/${id}/croqui`, { method: "PUT", body: JSON.stringify({ parcelas }) }),
+
+  // cadastros e tratamentos
+  listarProdutos: () => req<Produto[]>("/cadastros/produtos"),
+  criarProduto: (nome: string) => req<Produto>("/cadastros/produtos", { method: "POST", body: JSON.stringify({ nome }) }),
+  listarAtividades: () => req<Atividade[]>("/cadastros/atividades"),
+  listarTimings: (id: string) => req<Timing[]>(`/experimentos/${id}/timings`),
+  criarTiming: (id: string, nome: string) => req<Timing>(`/experimentos/${id}/timings`, { method: "POST", body: JSON.stringify({ nome }) }),
+  atualizarTratamento: (id: string, body: { nome?: string; descricao?: string }) =>
+    req<Tratamento>(`/tratamentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  adicionarProduto: (tratamentoId: string, body: Partial<TratamentoProduto>) =>
+    req<TratamentoProduto>(`/tratamentos/${tratamentoId}/produtos`, { method: "POST", body: JSON.stringify(body) }),
+  removerProduto: (id: string) => req<{ ok: boolean }>(`/tratamento-produtos/${id}`, { method: "DELETE" }),
 };
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */
