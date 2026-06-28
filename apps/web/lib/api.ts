@@ -105,14 +105,25 @@ export interface Experimento {
 }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("exp_token") : null;
   const r = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     cache: "no-store",
     ...init,
   });
+  if (r.status === 401 && typeof window !== "undefined") {
+    window.localStorage.removeItem("exp_token");
+    if (window.location.pathname !== "/login") window.location.href = "/login";
+    throw new Error("Sessão expirada.");
+  }
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
   return r.json() as Promise<T>;
 }
+
+export interface Usuario { id: string; nome: string; email: string; isAdminInstituicao: boolean; ativo: boolean }
 
 export const api = {
   listar: () => req<Experimento[]>("/experimentos"),
@@ -163,6 +174,11 @@ export const api = {
     req<Ref>("/cadastros/subcategorias", { method: "POST", body: JSON.stringify({ categoriaId, nome }) }),
   criarObjeto: (subcategoriaId: string, nome: string) =>
     req<ObjetoEstudo>("/cadastros/objetos", { method: "POST", body: JSON.stringify({ subcategoriaId, nome }) }),
+
+  // usuários (admin da instituição)
+  listarUsuarios: () => req<Usuario[]>("/usuarios"),
+  criarUsuario: (body: { nome: string; email: string; senha: string; isAdminInstituicao?: boolean }) =>
+    req<Usuario>("/usuarios", { method: "POST", body: JSON.stringify(body) }),
 };
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */

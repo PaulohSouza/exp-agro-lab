@@ -6,6 +6,7 @@ import { CroquiEditor } from "./CroquiEditor";
 import { TratamentosTab } from "./TratamentosTab";
 import { AvaliacoesTab } from "./AvaliacoesTab";
 import { GeralTab } from "./GeralTab";
+import { Protected } from "../../../components/Protected";
 
 const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui", "Avaliações"] as const;
 type Aba = (typeof ABAS)[number];
@@ -93,7 +94,11 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
 }
 
 function Wrap({ children }: { children: React.ReactNode }) {
-  return <main style={{ maxWidth: 900, margin: "32px auto", padding: 24 }}>{children}</main>;
+  return (
+    <Protected>
+      <main style={{ maxWidth: 900, margin: "32px auto", padding: 24 }}>{children}</main>
+    </Protected>
+  );
 }
 function Card({ children }: { children: React.ReactNode }) {
   return <div style={{ background: "#fff", borderRadius: 10, padding: 20 }}>{children}</div>;

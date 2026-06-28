@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { gerarCroqui, type Delineamento, type TratamentoRef } from "@exp/domain";
 import { PrismaService } from "../prisma/prisma.service";
+import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 export interface CriarExperimentoDto {
   titulo: string;
@@ -17,8 +18,16 @@ export interface CriarExperimentoDto {
   parcelaNumLinhas?: number;
   espacamentoLinhasM?: number;
   numRepeticoes?: number;
-  instituicaoId?: string;
-  ownerId?: string;
+}
+
+export interface AtualizarExperimentoDto extends Partial<CriarExperimentoDto> {
+  codigo?: string;
+  metodologia?: string;
+  justificativa?: string;
+  observacoes?: string;
+  tipoExecucao?: string;
+  previsaoSemeadura?: string;
+  dataSemeadura?: string;
 }
 
 export interface DefinirFatoresDto {
@@ -34,9 +43,10 @@ export interface DefinirFatoresDto {
 export class ExperimentosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listar() {
-    return this.prisma.experimento.findMany({
-      where: { deletedAt: null },
+  /** Lista experimentos da instituição do usuário (+ compartilhados — etapa C). */
+  async listar(user: UsuarioAtual) {
+    const proprios = await this.prisma.experimento.findMany({
+      where: { deletedAt: null, instituicaoId: user.instituicaoId },
       orderBy: { createdAt: "desc" },
       include: {
         objetoEstudo: true,
@@ -44,12 +54,58 @@ export class ExperimentosService {
         safra: true,
         areaPesquisa: true,
         delineamento: true,
+        owner: { select: { id: true, nome: true } },
         _count: { select: { tratamentos: true, parcelas: true } },
       },
     });
+    const compartilhados = await this.prisma.experimento.findMany({
+      where: {
+        deletedAt: null,
+        instituicaoId: { not: user.instituicaoId },
+        compartilhamentos: { some: { userId: user.userId } },
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        objetoEstudo: true, local: true, safra: true, areaPesquisa: true, delineamento: true,
+        owner: { select: { id: true, nome: true } },
+        _count: { select: { tratamentos: true, parcelas: true } },
+      },
+    });
+    return [
+      ...proprios.map((e) => ({ ...e, compartilhadoComigo: false })),
+      ...compartilhados.map((e) => ({ ...e, compartilhadoComigo: true })),
+    ];
   }
 
-  async obter(id: string) {
+  /** Verifica acesso do usuário ao experimento. Retorna o nível: own | edit | input. */
+  async garantirAcesso(id: string, user: UsuarioAtual, exigir?: "edit"): Promise<"own" | "edit" | "input"> {
+    const exp = await this.prisma.experimento.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        instituicaoId: true,
+        ownerId: true,
+        compartilhamentos: { where: { userId: user.userId }, select: { nivel: true } },
+      },
+    });
+    if (!exp) throw new NotFoundException("Experimento não encontrado.");
+
+    let nivel: "own" | "edit" | "input" | null = null;
+    if (exp.instituicaoId === user.instituicaoId) nivel = "own";
+    else if (exp.compartilhamentos.length) nivel = exp.compartilhamentos[0].nivel === "edit" ? "edit" : "input";
+
+    if (!nivel) throw new ForbiddenException("Sem acesso a este experimento.");
+    if (exigir === "edit" && nivel === "input") {
+      throw new ForbiddenException("Permissão apenas de inserção de dados (input).");
+    }
+    return nivel;
+  }
+
+  async obter(id: string, user: UsuarioAtual) {
+    await this.garantirAcesso(id, user);
+    return this.carregar(id);
+  }
+
+  private async carregar(id: string) {
     const exp = await this.prisma.experimento.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -58,6 +114,7 @@ export class ExperimentosService {
         safra: true,
         areaPesquisa: true,
         delineamento: true,
+        owner: { select: { id: true, nome: true } },
         fatores: { include: { niveis: true }, orderBy: { ordem: "asc" } },
         tratamentos: {
           orderBy: { numeroRef: "asc" },
@@ -74,25 +131,38 @@ export class ExperimentosService {
           include: { timing: true, _count: { select: { dados: true } } },
         },
         timings: { orderBy: { ordem: "asc" } },
+        compartilhamentos: { include: { user: { select: { id: true, nome: true, email: true } } } },
       },
     });
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
     return exp;
   }
 
-  /** Atualiza os campos da aba Geral. */
-  async atualizar(id: string, dto: Partial<CriarExperimentoDto> & {
-    codigo?: string;
-    metodologia?: string;
-    justificativa?: string;
-    observacoes?: string;
-    tipoExecucao?: string;
-    parcelaComprimentoM?: number;
-    previsaoSemeadura?: string;
-    dataSemeadura?: string;
-  }) {
-    const exp = await this.prisma.experimento.findFirst({ where: { id, deletedAt: null } });
-    if (!exp) throw new NotFoundException("Experimento não encontrado.");
+  async criar(user: UsuarioAtual, dto: CriarExperimentoDto) {
+    return this.prisma.experimento.create({
+      data: {
+        titulo: dto.titulo,
+        objetivo: dto.objetivo,
+        ensaio: dto.ensaio ?? "interno",
+        cultivar: dto.cultivar,
+        objetoEstudoId: dto.objetoEstudoId,
+        localId: dto.localId,
+        safraId: dto.safraId,
+        areaPesquisaId: dto.areaPesquisaId,
+        delineamentoId: dto.delineamentoId,
+        parcelaLarguraM: dto.parcelaLarguraM,
+        parcelaComprimentoM: dto.parcelaComprimentoM,
+        parcelaNumLinhas: dto.parcelaNumLinhas,
+        espacamentoLinhasM: dto.espacamentoLinhasM,
+        numRepeticoes: dto.numRepeticoes,
+        instituicaoId: user.instituicaoId,
+        ownerId: user.userId,
+      },
+    });
+  }
+
+  async atualizar(id: string, user: UsuarioAtual, dto: AtualizarExperimentoDto) {
+    await this.garantirAcesso(id, user, "edit");
     await this.prisma.experimento.update({
       where: { id },
       data: {
@@ -119,60 +189,18 @@ export class ExperimentosService {
         dataSemeadura: dto.dataSemeadura ? new Date(dto.dataSemeadura) : undefined,
       },
     });
-    return this.obter(id);
-  }
-
-  /** Defaults para o ambiente sem auth (Marco 1): usa a primeira instituição/usuário. */
-  private async defaults() {
-    const inst = await this.prisma.instituicao.findFirst();
-    const user = inst
-      ? await this.prisma.user.findFirst({ where: { instituicaoId: inst.id } })
-      : null;
-    return { instituicaoId: inst?.id, ownerId: user?.id };
-  }
-
-  async criar(dto: CriarExperimentoDto) {
-    const def = await this.defaults();
-    const instituicaoId = dto.instituicaoId ?? def.instituicaoId;
-    const ownerId = dto.ownerId ?? def.ownerId;
-    if (!instituicaoId || !ownerId) {
-      throw new BadRequestException(
-        "instituicaoId/ownerId ausentes e sem defaults no banco (rode o seed).",
-      );
-    }
-    return this.prisma.experimento.create({
-      data: {
-        titulo: dto.titulo,
-        objetivo: dto.objetivo,
-        ensaio: dto.ensaio ?? "interno",
-        cultivar: dto.cultivar,
-        objetoEstudoId: dto.objetoEstudoId,
-        localId: dto.localId,
-        safraId: dto.safraId,
-        areaPesquisaId: dto.areaPesquisaId,
-        delineamentoId: dto.delineamentoId,
-        parcelaLarguraM: dto.parcelaLarguraM,
-        parcelaComprimentoM: dto.parcelaComprimentoM,
-        parcelaNumLinhas: dto.parcelaNumLinhas,
-        espacamentoLinhasM: dto.espacamentoLinhasM,
-        numRepeticoes: dto.numRepeticoes,
-        instituicaoId,
-        ownerId,
-      },
-    });
+    return this.carregar(id);
   }
 
   /** Define fatores/níveis e DERIVA os tratamentos (produto cartesiano dos níveis). */
-  async definirFatores(id: string, dto: DefinirFatoresDto) {
-    const exp = await this.prisma.experimento.findUnique({ where: { id } });
-    if (!exp) throw new NotFoundException("Experimento não encontrado.");
+  async definirFatores(id: string, user: UsuarioAtual, dto: DefinirFatoresDto) {
+    await this.garantirAcesso(id, user, "edit");
     if (!dto.fatores?.length) throw new BadRequestException("Informe ao menos 1 fator.");
     if (dto.fatores.length > 3) throw new BadRequestException("Máximo de 3 fatores.");
     for (const f of dto.fatores) {
       if (!f.niveis?.length) throw new BadRequestException(`Fator '${f.nome}' sem níveis.`);
     }
 
-    // limpa estrutura anterior (dados de avaliação, parcelas, tratamentos, fatores)
     await this.prisma.avaliacaoDado.deleteMany({ where: { parcela: { experimentoId: id } } });
     await this.prisma.parcela.deleteMany({ where: { experimentoId: id } });
     await this.prisma.tratamento.deleteMany({ where: { experimentoId: id } });
@@ -191,31 +219,26 @@ export class ExperimentosService {
       });
     }
 
-    // produto cartesiano dos níveis → tratamentos
     const combos = cartesiano(fatoresOrdenados.map((f) => f.niveis));
     let n = 1;
     for (const combo of combos) {
       await this.prisma.tratamento.create({
-        data: {
-          experimentoId: id,
-          numeroRef: n,
-          tag: `T${n}`,
-          nome: combo.join(" + "),
-        },
+        data: { experimentoId: id, numeroRef: n, tag: `T${n}`, nome: combo.join(" + ") },
       });
       n++;
     }
 
-    await this.prisma.experimento.update({
-      where: { id },
-      data: { numTratamentos: combos.length },
-    });
-
-    return this.obter(id);
+    await this.prisma.experimento.update({ where: { id }, data: { numTratamentos: combos.length } });
+    return this.carregar(id);
   }
 
   /** Gera o croqui a partir do delineamento e dos tratamentos (núcleo de domínio). */
-  async gerarCroqui(id: string, opts: { delineamento?: Delineamento; blocos?: number; seed?: number; numeroInicial?: number }) {
+  async gerarCroqui(
+    id: string,
+    user: UsuarioAtual,
+    opts: { delineamento?: Delineamento; blocos?: number; seed?: number; numeroInicial?: number },
+  ) {
+    await this.garantirAcesso(id, user, "edit");
     const exp = await this.prisma.experimento.findUnique({
       where: { id },
       include: { tratamentos: { orderBy: { numeroRef: "asc" } }, delineamento: true },
@@ -232,7 +255,6 @@ export class ExperimentosService {
       numeroInicial: opts.numeroInicial ?? 1,
     });
 
-    // regenerar o croqui descarta lançamentos atrelados às parcelas antigas
     await this.prisma.avaliacaoDado.deleteMany({ where: { parcela: { experimentoId: id } } });
     await this.prisma.parcela.deleteMany({ where: { experimentoId: id } });
     await this.prisma.parcela.createMany({
@@ -251,13 +273,16 @@ export class ExperimentosService {
       data: { numRepeticoes: blocos, totalParcelas: croqui.parcelas.length },
     });
 
-    return this.obter(id);
+    return this.carregar(id);
   }
 
-  /** Salva o layout editado (drag-drop): lista de parcelas com posição/tratamento. */
-  async salvarCroqui(id: string, parcelas: Array<{ id: string; tratamentoId: string; bloco: number; posLinha: number; posColuna: number; numero: number; isInicio?: boolean }>) {
-    const exp = await this.prisma.experimento.findUnique({ where: { id } });
-    if (!exp) throw new NotFoundException("Experimento não encontrado.");
+  /** Salva o layout editado (drag-drop). Exige nível edit. */
+  async salvarCroqui(
+    id: string,
+    user: UsuarioAtual,
+    parcelas: Array<{ id: string; tratamentoId: string; bloco: number; posLinha: number; posColuna: number; numero: number; isInicio?: boolean }>,
+  ) {
+    await this.garantirAcesso(id, user, "edit");
     await this.prisma.$transaction(
       parcelas.map((p) =>
         this.prisma.parcela.update({
@@ -273,7 +298,7 @@ export class ExperimentosService {
         }),
       ),
     );
-    return this.obter(id);
+    return this.carregar(id);
   }
 }
 

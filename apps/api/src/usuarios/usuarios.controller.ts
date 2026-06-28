@@ -1,0 +1,22 @@
+import { Body, Controller, Get, Post } from "@nestjs/common";
+import { UsuariosService } from "./usuarios.service";
+import { CurrentUser } from "../auth/current-user.decorator";
+import type { UsuarioAtual } from "../auth/jwt.strategy";
+
+@Controller("usuarios")
+export class UsuariosController {
+  constructor(private readonly service: UsuariosService) {}
+
+  @Get()
+  listar(@CurrentUser() user: UsuarioAtual) {
+    return this.service.listar(user);
+  }
+
+  @Post()
+  criar(
+    @CurrentUser() user: UsuarioAtual,
+    @Body() dto: { nome: string; email: string; senha: string; isAdminInstituicao?: boolean; unidadeId?: string },
+  ) {
+    return this.service.criar(user, dto);
+  }
+}

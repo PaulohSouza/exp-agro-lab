@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, type Experimento } from "../../lib/api";
+import { Protected } from "../../components/Protected";
 
 export default function ExperimentosPage() {
   const [lista, setLista] = useState<Experimento[]>([]);
@@ -36,6 +37,7 @@ export default function ExperimentosPage() {
   }
 
   return (
+    <Protected>
     <main style={{ maxWidth: 900, margin: "32px auto", padding: 24 }}>
       <div style={{ background: "#1F2940", color: "#fff", padding: "16px 20px", borderRadius: 10 }}>
         <h1 style={{ margin: 0, fontSize: 22 }}>Protocolos / Experimentos</h1>
@@ -86,6 +88,7 @@ export default function ExperimentosPage() {
         </table>
       )}
     </main>
+    </Protected>
   );
 }
 

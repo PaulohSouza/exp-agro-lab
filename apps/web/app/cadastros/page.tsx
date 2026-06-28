@@ -2,9 +2,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, type ObjetoEstudo, type Ref } from "../../lib/api";
+import { Protected } from "../../components/Protected";
 
 export default function CadastrosPage() {
   return (
+    <Protected>
     <main style={{ maxWidth: 980, margin: "32px auto", padding: 24 }}>
       <div style={{ background: "#1F2940", color: "#fff", padding: "16px 20px", borderRadius: 10 }}>
         <Link href="/experimentos" style={{ color: "#4EC2F0", fontSize: 13 }}>← Protocolos</Link>
@@ -20,6 +22,7 @@ export default function CadastrosPage() {
 
       <ObjetoEstudoCadastro />
     </main>
+    </Protected>
   );
 }
 
