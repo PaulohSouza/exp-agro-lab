@@ -1,7 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { gerarCroqui, calcularAreaUtilColhida, calcularProdutividadeKgHa } from "@exp/domain";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const hash = (s: string) => bcrypt.hashSync(s, 10);
 
 async function main() {
   console.log("Seed: cenário PC1699 (Tidil Desfolhante)…");
@@ -41,8 +43,19 @@ async function main() {
       unidadeId: unidade.id,
       nome: "Admin Demo",
       email: "admin@demo.com",
-      senhaHash: "x", // substituir por hash real no auth (Marco 3)
+      senhaHash: hash("admin123"),
       isAdminInstituicao: true,
+    },
+  });
+  // segundo usuário da mesma instituição (para testar compartilhamento)
+  await prisma.user.create({
+    data: {
+      instituicaoId: inst.id,
+      unidadeId: unidade.id,
+      nome: "Analista Demo",
+      email: "analista@demo.com",
+      senhaHash: hash("analista123"),
+      isAdminInstituicao: false,
     },
   });
 

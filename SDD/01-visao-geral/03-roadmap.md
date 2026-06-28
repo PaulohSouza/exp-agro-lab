@@ -19,6 +19,11 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 - ⬜ Próximo: delineamento fatorial 2–3 na UI; exportações (Excel/PDF/PPTX); autenticação + compartilhamento (RF-23..25); início do Marco 2 (mobile offline).
 - **Entrega-alvo:** criar um experimento completo ponta-a-ponta na web; cenário E2E em [06-testes/02-casos-testes.md](../06-testes/02-casos-testes.md).
 
+## Autenticação & compartilhamento (RF-20..26) — em andamento
+- ✅ **Etapa A (28/06/2026):** auth backend — login JWT + bcrypt, registro de instituição (cria instituição + admin), `/auth/me` protegido, guard + decorators (`@Public`, `@CurrentUser`). Seed com `admin@demo.com`/`admin123` e `analista@demo.com`/`analista123`.
+- ⬜ Etapa B: guard global + **escopo por instituição** (RN-TENANT) + gestão de usuários (admin cadastra) + login no web.
+- ⬜ Etapa C: **compartilhamento** de experimentos (input/edit), timeline compartilhada (RF-23..25) e aprovações de OS (RF-26).
+
 ## Marco 2 — Coleta mobile offline-first
 - App RN: download do protocolo/croqui, lançamento de avaliações por parcela, fotos.
 - Persistência local (SQLite/WatermelonDB) + fila de sincronização + resolução de conflito.
