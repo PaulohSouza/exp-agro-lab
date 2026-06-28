@@ -53,8 +53,17 @@ departamento/área é eixo **adicional** dentro do tenant, não o substitui.
 - O boolean `isAdminInstituicao` é **MANTIDO por retrocompat** na **fatia 1**
   (depreca em fatia futura). O **JWT passa a carregar `papel`**.
 
-## Aplicação (futuro)
-Decorator/guard **`@RequirePapel(...)`** + **policy** central (recurso × ação ×
-escopo) no NestJS, derivando do `papel` do JWT e do escopo de tenant/depto/área.
-Na fatia 1 o gate fino por depto/área ainda é grosso (instituição inteira para a
-gestão) — ver [07-dashboard.md](../04-design-detalhado/07-dashboard.md).
+## Aplicação
+Decorator/guard **`@RequirePapel(...)`** (`apps/api/src/auth/papel.{decorator,guard}.ts`),
+registrado como `APP_GUARD` após o JWT — `admin_sistema` passa sempre; sem o
+decorator, qualquer autenticado é permitido. **Fatia 2 (parte 1, feito):** guard
+aplicado às rotas de gestão (criar/editar usuário, CRUD de Departamento);
+**CRUD de Departamento** (`/departamentos`) e **atribuição** de `papel`/
+`departamentoId`/`unidadeId` a usuários (`PUT /usuarios/:id`); o escopo do
+dashboard refina por depto/área (gestao_departamento → unidade do seu
+departamento; coordenador_area → sua unidade) — ver
+[07-dashboard.md](../04-design-detalhado/07-dashboard.md).
+
+**Pendente (fatia 2 parte 2):** super-admin global cross-institution de fato;
+responsável de coleta por experimento; depreciar `isAdminInstituicao`; **policy**
+central recurso × ação × escopo substituindo as checagens pontuais restantes.

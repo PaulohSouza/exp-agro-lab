@@ -23,20 +23,33 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Filtro de experimentos conforme o papel (RN-RBAC). Fatia 1:
+   * Filtro de experimentos conforme o papel (RN-RBAC):
    * - admin_sistema → todas as instituições;
-   * - gestão/coordenação → a instituição inteira (refino por depto/área é fatia 2);
+   * - gestao_instituicao → a instituição inteira;
+   * - gestao_departamento → experimentos cuja unidade pertence ao seu departamento;
+   * - coordenador_area → experimentos da sua unidade/laboratório;
    * - pesquisador/analista/assistente → próprios + atribuídos (compartilhados).
+   * O escopo por depto/área usa o vínculo atual do usuário no banco (não o JWT).
    */
-  private escopo(user: UsuarioAtual): Prisma.ExperimentoWhereInput {
+  private escopo(
+    user: UsuarioAtual,
+    me: { departamentoId: string | null; unidadeId: string | null },
+  ): Prisma.ExperimentoWhereInput {
     const base: Prisma.ExperimentoWhereInput = { deletedAt: null };
     switch (user.papel) {
       case "admin_sistema":
         return base;
       case "gestao_instituicao":
-      case "gestao_departamento":
-      case "coordenador_area":
         return { ...base, instituicaoId: user.instituicaoId };
+      case "gestao_departamento":
+        // sem departamento configurado → cai para a instituição (não quebra)
+        return me.departamentoId
+          ? { ...base, instituicaoId: user.instituicaoId, unidade: { departamentoId: me.departamentoId } }
+          : { ...base, instituicaoId: user.instituicaoId };
+      case "coordenador_area":
+        return me.unidadeId
+          ? { ...base, instituicaoId: user.instituicaoId, unidadeId: me.unidadeId }
+          : { ...base, instituicaoId: user.instituicaoId };
       default:
         return {
           ...base,
@@ -46,7 +59,11 @@ export class DashboardService {
   }
 
   async resumo(user: UsuarioAtual) {
-    const where = this.escopo(user);
+    const me = await this.prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { departamentoId: true, unidadeId: true },
+    });
+    const where = this.escopo(user, me ?? { departamentoId: null, unidadeId: null });
 
     const exps = await this.prisma.experimento.findMany({
       where,

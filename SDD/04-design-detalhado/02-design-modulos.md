@@ -18,7 +18,7 @@ Estatística pura, golden-validada. **Port faseado** — ver [sagre-analytics](.
 Componentes React + **tema azul** (ver [design-system](05-design-system.md)). Inclui o **GridCroqui** (renderização de parcelas) reutilizável.
 
 ## apps/api (NestJS)
-Módulos: `auth`, `instituicoes` (instituição/departamento/unidade/usuários), `cadastros` (objeto de estudo, locais, produtos…), `experimentos`, `compartilhamento`, `tratamentos`, `croqui`, `avaliacoes`, `coleta-sync`, `orcamentos`, `ordem-servico` (aprovações), `dashboard`, `analytics`, `relatorios`, `email`.
+Módulos: `auth`, `instituicoes` (instituição/departamento/unidade/usuários), `cadastros` (objeto de estudo, locais, produtos…), `experimentos`, `compartilhamento`, `tratamentos`, `croqui`, `avaliacoes`, `coleta-sync`, `orcamentos`, `ordem-servico` (aprovações), `dashboard`, `departamentos` (CRUD + atribuição, guard `@RequirePapel`), `analytics`, `relatorios`, `email`.
 - `coleta-sync`: endpoints de download (protocolo+croqui+avaliações) e upload em lote idempotente (ver [diagramas](../03-arquitetura/02-diagramas.md)).
 - `relatorios`: orquestra `analytics` → `pptxgenjs` no formato do modelo.
 - <a id="email"></a>**`email`** (adaptado do SAGRE — blastula→nodemailer): dispatcher com **modo SIMULATE** (renderiza HTML em `email-previews/` + registra `EmailLog` em vez de enviar) e modo real (nodemailer/SMTP). Templates: convite de compartilhamento, aprovação de OS pelo cliente (link/token), recuperação de senha. Variáveis: `EMAIL_ENABLED`, `EMAIL_USER`, `SMTP_PASSWORD`, `SMTP_HOST/PORT`, `SIMULATE_SEND`, `SIMULATE_OUTPUT_DIR`, `EMAIL_BASE_URL`.

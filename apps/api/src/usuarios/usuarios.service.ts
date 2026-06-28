@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, ConflictException } from "@nestjs/common";
+import { Injectable, ForbiddenException, ConflictException, NotFoundException } from "@nestjs/common";
 import type { Papel } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
@@ -43,5 +43,33 @@ export class UsuariosService {
       select: { id: true, nome: true, email: true, papel: true, isAdminInstituicao: true, ativo: true },
     });
     return novo;
+  }
+
+  /** Atribui papel/departamento/unidade a um usuário da instituição (RN-RBAC). */
+  async atualizar(
+    user: UsuarioAtual,
+    id: string,
+    dto: { papel?: Papel; departamentoId?: string | null; unidadeId?: string | null; ativo?: boolean },
+  ) {
+    if (!user.isAdminInstituicao) {
+      throw new ForbiddenException("Apenas o admin da instituição pode editar usuários.");
+    }
+    const alvo = await this.prisma.user.findUnique({ where: { id }, select: { instituicaoId: true } });
+    if (!alvo) throw new NotFoundException("Usuário não encontrado.");
+    if (alvo.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+      throw new ForbiddenException("Usuário de outra instituição.");
+    }
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        papel: dto.papel,
+        departamentoId: dto.departamentoId === undefined ? undefined : dto.departamentoId,
+        unidadeId: dto.unidadeId === undefined ? undefined : dto.unidadeId,
+        ativo: dto.ativo,
+        // mantém o boolean em sincronia quando o papel muda (retrocompat)
+        ...(dto.papel ? { isAdminInstituicao: PAPEIS_ADMIN.includes(dto.papel) } : {}),
+      },
+      select: { id: true, nome: true, email: true, papel: true, departamentoId: true, unidadeId: true, isAdminInstituicao: true, ativo: true },
+    });
   }
 }
