@@ -17,9 +17,11 @@ EXP-AGROLAB: sistema de gestão de experimentos agronômicos e laboratoriais. Ca
 - Datas relativas → absolutas nos docs. Hoje a referência do projeto é 28/06/2026.
 
 ## Estado atual
-**Marco 0 concluído** (28/06/2026): monorepo de pé — `packages/domain` (16 testes ok), `apps/api` (NestJS+Prisma, banco `expagrolab_dev`, seed PC1699, health, e-mail SIMULATE), `apps/web` (Next.js shell). Como rodar: [DEVELOPMENT.md](DEVELOPMENT.md). Próximo: **Marco 1** (experimento + croqui). Roadmap: [SDD/01-visao-geral/03-roadmap.md](SDD/01-visao-geral/03-roadmap.md).
+**Ler [STATUS.md](STATUS.md) primeiro** — handoff completo. Resumo: Marco 0/1 ✅, Auth+Multi-tenancy+Compartilhamento ✅, Ordem de Serviço (RF-26) ✅, Sync offline ✅, App mobile (scaffold, não testado em device), **Analytics fase A** (ANOVA/LSD) ✅, **Relatório PPTX fase A** ✅. Fluxo web **input→análise→relatório** completo. 28 testes (domain 19 + analytics 9). Releases até **v0.6.0**.
 
-> Nota dev: `pnpm` está em `~/.local/bin` (symlink). Banco MySQL local: root acessível via socket (`mysql -u root`); app usa o user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar o schema `sagre`). Credencial dev em `apps/api/.env` (não versionado).
+Próximos: feedback dos testes ([TESTES.md](TESTES.md)) · analytics fase B (Tukey/Scott-Knott + golden vs SAGRE) · relatório fiel ao modelo PPTX · testar mobile em device. Roadmap: [SDD/01-visao-geral/03-roadmap.md](SDD/01-visao-geral/03-roadmap.md).
+
+> Nota dev: `pnpm` em `~/.local/bin` (symlink). MySQL local: root via socket (`mysql -u root`); app usa user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar schema `sagre`). Credencial dev em `apps/api/.env` (não versionado). Push/release liberados.
 
 ## Glossário rápido
 Protocolo = experimento. Parcela = unidade experimental (célula do croqui). Bloco = repetição. Tratamento (T1..Tn). Timing = momento (aplicação/avaliação). Avaliação = variável coletada. Delineamento = DIC/DBC/fatorial. Ver [SDD/08-anexos/glossario.md](SDD/08-anexos/glossario.md).
