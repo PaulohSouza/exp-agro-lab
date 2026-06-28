@@ -161,6 +161,7 @@ async function main() {
       unidadeSaida: "kg/ha",
       formula: "(valor / areaUtil) * 10000",
       tipo: "condicional",
+      timingId: timing1.id,
       ordem: 1,
     },
   });

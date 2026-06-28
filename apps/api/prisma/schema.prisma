@@ -254,6 +254,7 @@ model Timing {
   ordem         Int    @default(0)
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
   usos          TratamentoProduto[]
+  avaliacoes    Avaliacao[]
 }
 
 // Produto aplicado em um tratamento (linha da aba Tratamentos do print)
@@ -306,8 +307,12 @@ model Avaliacao {
   formula       String?
   tipo          TipoAvaliacao @default(calendarizada)
   personalizada Boolean @default(false)
+  escala        String?
+  timingId      String?
+  dataPrevista  DateTime?
   ordem         Int     @default(0)
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  timing        Timing?  @relation(fields: [timingId], references: [id])
   dados         AvaliacaoDado[]
 }
 

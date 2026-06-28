@@ -69,7 +69,10 @@ export class ExperimentosService {
           },
         },
         parcelas: { orderBy: [{ posColuna: "asc" }, { posLinha: "asc" }] },
-        avaliacoes: { orderBy: { ordem: "asc" } },
+        avaliacoes: {
+          orderBy: { ordem: "asc" },
+          include: { timing: true, _count: { select: { dados: true } } },
+        },
         timings: { orderBy: { ordem: "asc" } },
       },
     });

@@ -35,6 +35,36 @@ export interface Parcela {
   posColuna: number;
   isInicio: boolean;
 }
+export interface Avaliacao {
+  id: string;
+  nome: string;
+  metodologia: string | null;
+  unidadeColeta: string | null;
+  unidadeSaida: string | null;
+  formula: string | null;
+  tipo: string;
+  ordem: number;
+  timingId: string | null;
+  dataPrevista: string | null;
+  timing?: Timing | null;
+  _count?: { dados: number };
+}
+export interface AvaliacaoDado {
+  id: string;
+  parcelaId: string;
+  numAmostra: number;
+  valorColetado: number | null;
+  numLinhasColhidas: number | null;
+  comprimentoColhidoM: number | null;
+  areaUtilM2: number | null;
+  obs: string | null;
+  parcela?: Parcela & { tratamento?: Tratamento };
+}
+export interface RelatorioAvaliacao {
+  avaliacao: { nome: string; unidadeColeta: string | null; unidadeSaida: string | null; formula: string | null };
+  linhas: Array<{ parcela: number; bloco: number; tratamento: string; tratamentoNome: string; valorColetado: number | null; areaUtilM2: number | null; valorSaida: number | null }>;
+  medias: Array<{ tratamento: string; nome: string; media: number }>;
+}
 export interface Experimento {
   id: string;
   codigo: string | null;
@@ -49,6 +79,8 @@ export interface Experimento {
   tratamentos?: Tratamento[];
   parcelas?: Parcela[];
   fatores?: Array<{ id: string; nome: string; ordem: number; niveis: { id: string; valor: string }[] }>;
+  avaliacoes?: Avaliacao[];
+  timings?: Timing[];
   _count?: { tratamentos: number; parcelas: number };
 }
 
@@ -85,6 +117,15 @@ export const api = {
   adicionarProduto: (tratamentoId: string, body: Partial<TratamentoProduto>) =>
     req<TratamentoProduto>(`/tratamentos/${tratamentoId}/produtos`, { method: "POST", body: JSON.stringify(body) }),
   removerProduto: (id: string) => req<{ ok: boolean }>(`/tratamento-produtos/${id}`, { method: "DELETE" }),
+
+  // avaliações
+  criarAvaliacao: (id: string, body: Partial<Avaliacao>) =>
+    req<Avaliacao>(`/experimentos/${id}/avaliacoes`, { method: "POST", body: JSON.stringify(body) }),
+  removerAvaliacao: (id: string) => req<{ ok: boolean }>(`/avaliacoes/${id}`, { method: "DELETE" }),
+  listarDados: (avaliacaoId: string) => req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`),
+  lancarDados: (avaliacaoId: string, dados: Array<Partial<AvaliacaoDado>>) =>
+    req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
+  relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
 };
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */

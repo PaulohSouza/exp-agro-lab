@@ -4,8 +4,9 @@ import Link from "next/link";
 import { api, type Experimento } from "../../../lib/api";
 import { CroquiEditor } from "./CroquiEditor";
 import { TratamentosTab } from "./TratamentosTab";
+import { AvaliacoesTab } from "./AvaliacoesTab";
 
-const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui"] as const;
+const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui", "Avaliações"] as const;
 type Aba = (typeof ABAS)[number];
 
 export default function DetalheExperimento({ params }: { params: { id: string } }) {
@@ -83,6 +84,12 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
       {aba === "Croqui" && (
         <Card>
           <CroquiEditor exp={exp} onChange={setExp} />
+        </Card>
+      )}
+
+      {aba === "Avaliações" && (
+        <Card>
+          <AvaliacoesTab exp={exp} onChange={setExp} />
         </Card>
       )}
     </Wrap>
