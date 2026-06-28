@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api, baixarExperimentoXlsx, type Experimento } from "../../../lib/api";
+import { api, baixarExperimentoXlsx, baixarRelatorioPptx, type Experimento } from "../../../lib/api";
 import { CroquiEditor } from "./CroquiEditor";
 import { TratamentosTab } from "./TratamentosTab";
 import { AvaliacoesTab } from "./AvaliacoesTab";
@@ -39,12 +39,20 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
         <Link href="/experimentos" style={{ color: "#4EC2F0", fontSize: 13 }}>← Protocolos</Link>
         <h1 style={{ margin: "6px 0 0", fontSize: 22 }}>{exp.codigo ? `${exp.codigo} — ` : ""}{exp.titulo}</h1>
         <span style={{ color: "#9BD2F5", fontSize: 13 }}>{exp.ensaio} • {exp.status}</span>
-        <button
-          onClick={() => baixarExperimentoXlsx(exp.id, exp.codigo ?? exp.titulo)}
-          style={{ position: "absolute", top: 16, right: 20, background: "#4EC2F0", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontSize: 13 }}
-        >
-          Exportar Excel
-        </button>
+        <div style={{ position: "absolute", top: 16, right: 20, display: "flex", gap: 8 }}>
+          <button
+            onClick={() => baixarExperimentoXlsx(exp.id, exp.codigo ?? exp.titulo)}
+            style={{ background: "#4EC2F0", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontSize: 13 }}
+          >
+            Excel
+          </button>
+          <button
+            onClick={() => baixarRelatorioPptx(exp.id, `relatorio-${exp.codigo ?? exp.titulo}`)}
+            style={{ background: "#6FA830", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontSize: 13 }}
+          >
+            Relatório PPTX
+          </button>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid #e1e1ef", margin: "16px 0" }}>

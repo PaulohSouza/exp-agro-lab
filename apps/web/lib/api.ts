@@ -258,6 +258,22 @@ export async function baixarExperimentoXlsx(expId: string, nomeArquivo: string) 
   URL.revokeObjectURL(url);
 }
 
+/** Baixa o relatório PPTX (com token), via blob. */
+export async function baixarRelatorioPptx(expId: string, nomeArquivo: string) {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("exp_token") : null;
+  const r = await fetch(`${API_BASE}/experimentos/${expId}/relatorio.pptx`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!r.ok) throw new Error("Falha ao gerar relatório.");
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${nomeArquivo}.pptx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 /** Decisão pública do cliente (sem auth) — usada na página /aprovacao/[token]. */
 export async function decisaoCliente(token: string, decisao: "aprovado" | "recusado", motivo?: string) {
   const r = await fetch(`${API_BASE}/aprovacao-cliente/${token}`, {

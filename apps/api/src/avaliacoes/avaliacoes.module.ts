@@ -7,5 +7,6 @@ import { ExperimentosModule } from "../experimentos/experimentos.module";
   imports: [ExperimentosModule],
   providers: [AvaliacoesService],
   controllers: [AvaliacoesController],
+  exports: [AvaliacoesService],
 })
 export class AvaliacoesModule {}

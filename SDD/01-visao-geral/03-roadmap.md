@@ -41,9 +41,10 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 - ⬜ **Fase B:** Tukey/Scott-Knott (qtukey), fatorial 2–3, transformações, não-paramétrico, conjunta multi-local, e **golden tests vs SAGRE** (precisa dos outputs do R). Ver [08-anexos/sagre-analytics.md](../08-anexos/sagre-analytics.md).
 - **Entrega:** análise de um experimento real (fase A entregue; equivalência exata ao SAGRE na fase B).
 
-## Marco 5 — Relatório PPTX
-- Geração do relatório no formato `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (lib JS de PPTX) a partir da análise.
-- **Entrega:** relatório baixável idêntico em estrutura ao modelo.
+## Marco 5 — Relatório PPTX — em andamento
+- ✅ **Fase A (28/06/2026):** geração de **PPTX** (`pptxgenjs`) — capa (tema azul), resumo do experimento e, por avaliação, slide com **tabela ANOVA + médias/letras + gráfico de barras**. API `GET /experimentos/:id/relatorio.pptx` (auth + acesso); botão **Relatório PPTX** no web (download por blob). Verificado: PPTX válido, 3 slides no PC1699.
+- ⬜ Fase B: aproximar do layout exato de `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (logos, seções, formatação) e incluir gráficos de interação/regressão quando a fase B do analytics existir.
+- **Entrega:** relatório baixável (fase A entregue; fidelidade ao modelo na fase B).
 
 ## Marco 6 — Endurecimento
 - Segurança (papéis/permissões finos), observabilidade, backup, performance do croqui em telas grandes, acessibilidade.
