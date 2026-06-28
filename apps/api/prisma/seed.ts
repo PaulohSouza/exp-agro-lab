@@ -10,6 +10,7 @@ async function main() {
 
   // limpeza idempotente mínima
   await prisma.emailLog.deleteMany();
+  await prisma.ordemServico.deleteMany(); // cascata: aprovações interna/cliente
   await prisma.avaliacaoDado.deleteMany();
   await prisma.avaliacao.deleteMany();
   await prisma.parcela.deleteMany();

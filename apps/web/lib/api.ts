@@ -74,6 +74,16 @@ export interface RelatorioAvaliacao {
   linhas: Array<{ parcela: number; bloco: number; tratamento: string; tratamentoNome: string; valorColetado: number | null; areaUtilM2: number | null; valorSaida: number | null }>;
   medias: Array<{ tratamento: string; nome: string; media: number }>;
 }
+export interface AprovacaoInterna { id: string; aprovadorUserId: string; decisao: string; motivo: string | null; at: string }
+export interface AprovacaoCliente { id: string; clienteEmail: string; token: string; decisao: string; motivo: string | null }
+export interface OrdemServico {
+  id: string;
+  status: string;
+  aprovacoesInternas: AprovacaoInterna[];
+  aprovacaoCliente: AprovacaoCliente | null;
+}
+export interface Instituicao { id: string; nome: string; politicaAprovacao: string; nAprovadores: number }
+export interface Aprovador { id: string; userId: string; ativo: boolean; user: { id: string; nome: string; email: string } }
 export interface Experimento {
   id: string;
   codigo: string | null;
@@ -196,7 +206,35 @@ export const api = {
     req<Compartilhamento>(`/experimentos/${expId}/compartilhar`, { method: "POST", body: JSON.stringify(body) }),
   revogarCompartilhamento: (shareId: string) =>
     req<{ ok: boolean }>(`/compartilhamentos/${shareId}`, { method: "DELETE" }),
+
+  // instituição + aprovadores
+  obterInstituicao: () => req<Instituicao>("/instituicao"),
+  atualizarInstituicao: (body: { politicaAprovacao?: string; nAprovadores?: number }) =>
+    req<Instituicao>("/instituicao", { method: "PUT", body: JSON.stringify(body) }),
+  listarAprovadores: () => req<Aprovador[]>("/instituicao/aprovadores"),
+  adicionarAprovador: (userId: string) =>
+    req<Aprovador>("/instituicao/aprovadores", { method: "POST", body: JSON.stringify({ userId }) }),
+  removerAprovador: (id: string) => req<{ ok: boolean }>(`/instituicao/aprovadores/${id}`, { method: "DELETE" }),
+
+  // ordem de serviço
+  listarOS: (expId: string) => req<OrdemServico[]>(`/experimentos/${expId}/ordens-servico`),
+  criarOS: (expId: string) => req<OrdemServico>(`/experimentos/${expId}/ordens-servico`, { method: "POST" }),
+  submeterOS: (osId: string, clienteEmail: string) =>
+    req<OrdemServico>(`/ordens-servico/${osId}/submeter`, { method: "POST", body: JSON.stringify({ clienteEmail }) }),
+  aprovarInternoOS: (osId: string, decisao: "aprovado" | "recusado", motivo?: string) =>
+    req<OrdemServico>(`/ordens-servico/${osId}/aprovar-interno`, { method: "POST", body: JSON.stringify({ decisao, motivo }) }),
 };
+
+/** Decisão pública do cliente (sem auth) — usada na página /aprovacao/[token]. */
+export async function decisaoCliente(token: string, decisao: "aprovado" | "recusado", motivo?: string) {
+  const r = await fetch(`${API_BASE}/aprovacao-cliente/${token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ decisao, motivo }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ ok: boolean; experimento: string; decisao: string }>;
+}
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */
 export function corTratamento(numeroRef: number): string {

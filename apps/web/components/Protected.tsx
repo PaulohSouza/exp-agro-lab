@@ -26,6 +26,7 @@ export function Protected({ children }: { children: React.ReactNode }) {
           <Link href="/experimentos" style={navlink}>Protocolos</Link>
           <Link href="/cadastros" style={navlink}>Cadastros</Link>
           {user?.isAdminInstituicao && <Link href="/usuarios" style={navlink}>Usuários</Link>}
+          {user?.isAdminInstituicao && <Link href="/instituicao" style={navlink}>Instituição</Link>}
         </nav>
         <span style={{ marginLeft: "auto", fontSize: 13, color: "#9BD2F5" }}>
           {user?.nome}{user?.isAdminInstituicao ? " (admin)" : ""}

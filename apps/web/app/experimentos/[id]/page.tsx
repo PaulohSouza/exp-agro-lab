@@ -7,9 +7,10 @@ import { TratamentosTab } from "./TratamentosTab";
 import { AvaliacoesTab } from "./AvaliacoesTab";
 import { GeralTab } from "./GeralTab";
 import { CompartilharTab } from "./CompartilharTab";
+import { OrdemServicoTab } from "./OrdemServicoTab";
 import { Protected } from "../../../components/Protected";
 
-const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui", "Avaliações", "Compartilhar"] as const;
+const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui", "Avaliações", "Compartilhar", "Ordem de Serviço"] as const;
 type Aba = (typeof ABAS)[number];
 
 export default function DetalheExperimento({ params }: { params: { id: string } }) {
@@ -94,6 +95,12 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
       {aba === "Compartilhar" && (
         <Card>
           <CompartilharTab exp={exp} />
+        </Card>
+      )}
+
+      {aba === "Ordem de Serviço" && (
+        <Card>
+          <OrdemServicoTab exp={exp} />
         </Card>
       )}
     </Wrap>
