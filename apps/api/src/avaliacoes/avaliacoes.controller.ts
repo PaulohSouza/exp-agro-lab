@@ -4,43 +4,45 @@ import {
   type CriarAvaliacaoDto,
   type LancarDadoDto,
 } from "./avaliacoes.service";
+import { CurrentUser } from "../auth/current-user.decorator";
+import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 @Controller()
 export class AvaliacoesController {
   constructor(private readonly service: AvaliacoesService) {}
 
   @Get("experimentos/:id/avaliacoes")
-  listar(@Param("id") id: string) {
-    return this.service.listar(id);
+  listar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
+    return this.service.listar(id, user);
   }
 
   @Post("experimentos/:id/avaliacoes")
-  criar(@Param("id") id: string, @Body() dto: CriarAvaliacaoDto) {
-    return this.service.criar(id, dto);
+  criar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: CriarAvaliacaoDto) {
+    return this.service.criar(id, user, dto);
   }
 
   @Put("avaliacoes/:id")
-  atualizar(@Param("id") id: string, @Body() dto: Partial<CriarAvaliacaoDto>) {
-    return this.service.atualizar(id, dto);
+  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: Partial<CriarAvaliacaoDto>) {
+    return this.service.atualizar(id, user, dto);
   }
 
   @Delete("avaliacoes/:id")
-  remover(@Param("id") id: string) {
-    return this.service.remover(id);
+  remover(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
+    return this.service.remover(id, user);
   }
 
   @Get("avaliacoes/:id/dados")
-  listarDados(@Param("id") id: string) {
-    return this.service.listarDados(id);
+  listarDados(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
+    return this.service.listarDados(id, user);
   }
 
   @Post("avaliacoes/:id/dados")
-  lancar(@Param("id") id: string, @Body() body: { dados: LancarDadoDto[] }) {
-    return this.service.lancar(id, body.dados);
+  lancar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() body: { dados: LancarDadoDto[] }) {
+    return this.service.lancar(id, user, body.dados);
   }
 
   @Get("avaliacoes/:id/relatorio")
-  relatorio(@Param("id") id: string) {
-    return this.service.relatorio(id);
+  relatorio(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
+    return this.service.relatorio(id, user);
   }
 }

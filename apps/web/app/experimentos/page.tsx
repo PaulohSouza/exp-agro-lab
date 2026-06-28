@@ -71,7 +71,11 @@ export default function ExperimentosPage() {
           <tbody>
             {lista.map((e) => (
               <tr key={e.id} style={{ borderBottom: "1px solid #eaecf3" }}>
-                <td style={td}>{e.codigo ? `${e.codigo} — ` : ""}{e.titulo}</td>
+                <td style={td}>
+                  {e.codigo ? `${e.codigo} — ` : ""}{e.titulo}
+                  {e.compartilhadoComigo && <span style={{ marginLeft: 8, background: "#9BD2F5", color: "#1F2940", padding: "1px 7px", borderRadius: 6, fontSize: 11 }}>compartilhado</span>}
+                  {e.owner && <div style={{ fontSize: 11, color: "#a9abbd" }}>dono: {e.owner.nome}</div>}
+                </td>
                 <td style={td}>{e.ensaio}</td>
                 <td style={td}>{e.status}</td>
                 <td style={td}>{e._count?.tratamentos ?? e.numTratamentos ?? 0}</td>

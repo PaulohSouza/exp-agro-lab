@@ -10,9 +10,10 @@ import { CadastrosModule } from "./cadastros/cadastros.module";
 import { TratamentosModule } from "./tratamentos/tratamentos.module";
 import { AvaliacoesModule } from "./avaliacoes/avaliacoes.module";
 import { UsuariosModule } from "./usuarios/usuarios.module";
+import { CompartilhamentoModule } from "./compartilhamento/compartilhamento.module";
 
 @Module({
-  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule],
+  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })

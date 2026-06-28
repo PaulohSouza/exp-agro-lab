@@ -1,6 +1,13 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3001";
 
 export interface Ref { id: string; nome: string }
+export interface Compartilhamento {
+  id: string;
+  nivel: "input" | "edit";
+  aceito: boolean;
+  convidadoEmail: string | null;
+  user?: { id: string; nome: string; email: string } | null;
+}
 export interface ObjetoEstudo { id: string; nome: string; subcategoriaId: string }
 export interface Produto { id: string; nome: string; marca?: string | null }
 export interface Atividade { id: string; nome: string }
@@ -101,6 +108,9 @@ export interface Experimento {
   fatores?: Array<{ id: string; nome: string; ordem: number; niveis: { id: string; valor: string }[] }>;
   avaliacoes?: Avaliacao[];
   timings?: Timing[];
+  owner?: { id: string; nome: string } | null;
+  compartilhadoComigo?: boolean;
+  compartilhamentos?: Compartilhamento[];
   _count?: { tratamentos: number; parcelas: number };
 }
 
@@ -179,6 +189,13 @@ export const api = {
   listarUsuarios: () => req<Usuario[]>("/usuarios"),
   criarUsuario: (body: { nome: string; email: string; senha: string; isAdminInstituicao?: boolean }) =>
     req<Usuario>("/usuarios", { method: "POST", body: JSON.stringify(body) }),
+
+  // compartilhamento
+  listarCompartilhamentos: (expId: string) => req<Compartilhamento[]>(`/experimentos/${expId}/compartilhamentos`),
+  compartilhar: (expId: string, body: { email: string; nivel: "input" | "edit" }) =>
+    req<Compartilhamento>(`/experimentos/${expId}/compartilhar`, { method: "POST", body: JSON.stringify(body) }),
+  revogarCompartilhamento: (shareId: string) =>
+    req<{ ok: boolean }>(`/compartilhamentos/${shareId}`, { method: "DELETE" }),
 };
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */

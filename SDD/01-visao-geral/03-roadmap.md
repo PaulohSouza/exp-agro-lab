@@ -22,7 +22,8 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 ## Autenticação & compartilhamento (RF-20..26) — em andamento
 - ✅ **Etapa A (28/06/2026):** auth backend — login JWT + bcrypt, registro de instituição (cria instituição + admin), `/auth/me` protegido, guard + decorators (`@Public`, `@CurrentUser`). Seed com `admin@demo.com`/`admin123` e `analista@demo.com`/`analista123`.
 - ✅ **Etapa B (28/06/2026):** guard JWT **global** (`@Public` em login/registro/health), **escopo por instituição** (RN-TENANT) nos experimentos (lista/acesso/CRUD com `garantirAcesso`, owner = usuário atual), módulo **Usuários** (admin cadastra/lista). Web: **/login** (entrar + registrar instituição), **Protected** (header com usuário/logout + nav), **/usuarios**, e token JWT anexado a todas as chamadas (401 → /login). Verificado: 401 sem token, outra instituição vê 0 e recebe 403, não-admin 403 ao criar usuário.
-- ⬜ Etapa C: **compartilhamento** de experimentos (input/edit), timeline compartilhada (RF-23..25) e aprovações de OS (RF-26).
+- ✅ **Etapa C (28/06/2026):** **compartilhamento** de experimentos (RF-23..25). API: compartilhar por e-mail com nível **input/edit** (auto-aceito se usuário existe; senão **convite por e-mail simulado** com token), listar e revogar (dono/admin). Lista inclui **compartilhados comigo**. Enforcement do nível: `garantirAcesso` aplicado em avaliações (lançar = input; cadastrar/editar = edit) e tratamentos (edit). Web: aba **Compartilhar** (form e-mail+nível, lista, revogar) + badge "compartilhado" na lista. Verificado: input lança mas não edita (403); edit edita; revogar tira acesso.
+- ⬜ Etapa D (futuro / Marco 3): aprovações de **Ordem de Serviço** (RF-26) — aprovadores internos + aprovação do cliente por e-mail (modelos já no schema).
 
 ## Marco 2 — Coleta mobile offline-first
 - App RN: download do protocolo/croqui, lançamento de avaliações por parcela, fotos.

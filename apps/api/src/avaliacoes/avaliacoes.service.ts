@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { calcularSaida } from "@exp/domain";
 import { PrismaService } from "../prisma/prisma.service";
+import { ExperimentosService } from "../experimentos/experimentos.service";
+import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 export interface CriarAvaliacaoDto {
   nome: string;
@@ -29,9 +31,20 @@ export interface LancarDadoDto {
 
 @Injectable()
 export class AvaliacoesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly experimentos: ExperimentosService,
+  ) {}
 
-  listar(experimentoId: string) {
+  /** Resolve o experimento de uma avaliação (para checagem de acesso). */
+  private async expIdDaAvaliacao(avaliacaoId: string): Promise<string> {
+    const a = await this.prisma.avaliacao.findUnique({ where: { id: avaliacaoId }, select: { experimentoId: true } });
+    if (!a) throw new NotFoundException("Avaliação não encontrada.");
+    return a.experimentoId;
+  }
+
+  async listar(experimentoId: string, user: UsuarioAtual) {
+    await this.experimentos.garantirAcesso(experimentoId, user);
     return this.prisma.avaliacao.findMany({
       where: { experimentoId },
       orderBy: { ordem: "asc" },
@@ -39,11 +52,9 @@ export class AvaliacoesService {
     });
   }
 
-  async criar(experimentoId: string, dto: CriarAvaliacaoDto) {
-    const exp = await this.prisma.experimento.findUnique({ where: { id: experimentoId } });
-    if (!exp) throw new NotFoundException("Experimento não encontrado.");
-    const ordem =
-      dto.ordem ?? (await this.prisma.avaliacao.count({ where: { experimentoId } })) + 1;
+  async criar(experimentoId: string, user: UsuarioAtual, dto: CriarAvaliacaoDto) {
+    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    const ordem = dto.ordem ?? (await this.prisma.avaliacao.count({ where: { experimentoId } })) + 1;
     return this.prisma.avaliacao.create({
       data: {
         experimentoId,
@@ -63,7 +74,8 @@ export class AvaliacoesService {
     });
   }
 
-  async atualizar(id: string, dto: Partial<CriarAvaliacaoDto>) {
+  async atualizar(id: string, user: UsuarioAtual, dto: Partial<CriarAvaliacaoDto>) {
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(id), user, "edit");
     return this.prisma.avaliacao.update({
       where: { id },
       data: {
@@ -82,13 +94,15 @@ export class AvaliacoesService {
     });
   }
 
-  async remover(id: string) {
+  async remover(id: string, user: UsuarioAtual) {
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(id), user, "edit");
     await this.prisma.avaliacaoDado.deleteMany({ where: { avaliacaoId: id } });
     await this.prisma.avaliacao.delete({ where: { id } });
     return { ok: true };
   }
 
-  listarDados(avaliacaoId: string) {
+  async listarDados(avaliacaoId: string, user: UsuarioAtual) {
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     return this.prisma.avaliacaoDado.findMany({
       where: { avaliacaoId, deletedAt: null },
       include: { parcela: { include: { tratamento: true } } },
@@ -96,16 +110,13 @@ export class AvaliacoesService {
     });
   }
 
-  /** Lança/atualiza o VALOR BRUTO por parcela (upsert idempotente). Sem cálculo aqui. */
-  async lancar(avaliacaoId: string, dados: LancarDadoDto[]) {
-    const aval = await this.prisma.avaliacao.findUnique({ where: { id: avaliacaoId } });
-    if (!aval) throw new NotFoundException("Avaliação não encontrada.");
+  /** Lança/atualiza o VALOR BRUTO por parcela (acesso >= input). */
+  async lancar(avaliacaoId: string, user: UsuarioAtual, dados: LancarDadoDto[]) {
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     for (const d of dados) {
       const numAmostra = d.numAmostra ?? 1;
       await this.prisma.avaliacaoDado.upsert({
-        where: {
-          avaliacaoId_parcelaId_numAmostra: { avaliacaoId, parcelaId: d.parcelaId, numAmostra },
-        },
+        where: { avaliacaoId_parcelaId_numAmostra: { avaliacaoId, parcelaId: d.parcelaId, numAmostra } },
         create: {
           avaliacaoId,
           parcelaId: d.parcelaId,
@@ -128,20 +139,22 @@ export class AvaliacoesService {
         },
       });
     }
-    return this.listarDados(avaliacaoId);
+    return this.listarDados(avaliacaoId, user);
   }
 
-  /**
-   * RELATÓRIO: a conversão para a unidade de saída acontece AQUI (não na coleta).
-   * Para cada parcela calcula o valor de saída via fórmula; agrega média por tratamento.
-   */
-  async relatorio(avaliacaoId: string) {
+  /** RELATÓRIO: conversão para a unidade de saída acontece AQUI (não na coleta). */
+  async relatorio(avaliacaoId: string, user: UsuarioAtual) {
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     const aval = await this.prisma.avaliacao.findUnique({
       where: { id: avaliacaoId },
       include: { experimento: true },
     });
     if (!aval) throw new NotFoundException("Avaliação não encontrada.");
-    const dados = await this.listarDados(avaliacaoId);
+    const dados = await this.prisma.avaliacaoDado.findMany({
+      where: { avaliacaoId, deletedAt: null },
+      include: { parcela: { include: { tratamento: true } } },
+      orderBy: { parcela: { numero: "asc" } },
+    });
     const espac = aval.experimento.espacamentoLinhasM ?? undefined;
 
     const linhas = dados.map((d) => {
@@ -173,7 +186,6 @@ export class AvaliacoesService {
       };
     });
 
-    // média por tratamento do valor de saída (prévia de análise)
     const porTrat = new Map<string, { soma: number; n: number; nome: string }>();
     for (const l of linhas) {
       if (l.valorSaida == null) continue;
