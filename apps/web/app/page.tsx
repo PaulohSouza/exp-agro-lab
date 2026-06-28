@@ -26,8 +26,13 @@ export default async function Home() {
             {health ? `${health.status} · db ${health.db}` : "API offline"}
           </strong>
         </p>
+        <p style={{ marginTop: 16 }}>
+          <a href="/experimentos" style={{ background: "#6FA830", color: "#fff", padding: "10px 16px", borderRadius: 8, textDecoration: "none" }}>
+            Abrir Protocolos / Experimentos →
+          </a>
+        </p>
         <p style={{ color: "#7987A1" }}>
-          Próximo: telas do experimento (Geral, Croqui, Tratamentos, Avaliações) — Marco 1.
+          Marco 1: experimento (Geral · Fatores · Tratamentos) + editor de croqui clique-e-arraste.
         </p>
       </section>
     </main>

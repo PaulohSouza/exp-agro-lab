@@ -10,13 +10,11 @@ Sequência incremental, cada marco entrega uma fatia utilizável. Datas são rel
 - **Entregue:** `pnpm i`, migrate, seed, API em :3001 e Web em :3000. Ver [DEVELOPMENT.md](../../DEVELOPMENT.md).
 - Pendente (não bloqueante): `packages/analytics`/`packages/ui` (entram nos Marcos 4 e 1), CI no GitHub.
 
-## Marco 1 — Núcleo do experimento + croqui (MVP-1) ⭐
+## Marco 1 — Núcleo do experimento + croqui (MVP-1) ⭐ — em andamento
 Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funcionais.md) RF-01..RF-12.
-- Cadastro de experimento (1–3 fatores), objeto de estudo genérico, local, safra, parcela, repetições.
-- Tratamentos (T1..Tn) com produtos/timings.
-- Delineamento (DIC, DBC, fatorial) + **geração automática do croqui** e **edição clique-e-arraste** (web).
-- Avaliações: cadastro condicional/calendarizado/personalizado + **cálculo de unidade de saída** (kg/parcela → kg/ha).
-- **Entrega:** criar um experimento completo ponta-a-ponta na web; cenário E2E em [06-testes/02-casos-testes.md](../06-testes/02-casos-testes.md).
+- ✅ **Fatia 1 (28/06/2026):** API de experimentos (criar/listar/detalhar), **fatores→tratamentos** (produto cartesiano), **geração de croqui** (DIC/DBC via `@exp/domain`) e **salvar layout**. Web: lista + criação + detalhe com abas (Geral/Fatores/Tratamentos/Croqui) e **editor de croqui clique-e-arraste** (swap de tratamentos, recasualizar, salvar). E2E verificado.
+- ⬜ Próximo: tratamentos com produtos/dose/timing; objeto de estudo genérico + cadastros (local, safra…) na UI; delineamento fatorial 2–3 na UI; avaliações (cadastro + lançamento) e **cálculo de unidade de saída no relatório**.
+- **Entrega-alvo:** criar um experimento completo ponta-a-ponta na web; cenário E2E em [06-testes/02-casos-testes.md](../06-testes/02-casos-testes.md).
 
 ## Marco 2 — Coleta mobile offline-first
 - App RN: download do protocolo/croqui, lançamento de avaliações por parcela, fotos.
