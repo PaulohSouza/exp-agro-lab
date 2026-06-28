@@ -1,5 +1,7 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3001";
 
+export interface Ref { id: string; nome: string }
+export interface ObjetoEstudo { id: string; nome: string; subcategoriaId: string }
 export interface Produto { id: string; nome: string; marca?: string | null }
 export interface Atividade { id: string; nome: string }
 export interface Timing { id: string; nome: string; ordem: number }
@@ -69,13 +71,31 @@ export interface Experimento {
   id: string;
   codigo: string | null;
   titulo: string;
+  objetivo?: string | null;
   ensaio: string;
   status: string;
+  cultivar?: string | null;
+  tipoExecucao?: string | null;
+  metodologia?: string | null;
+  justificativa?: string | null;
+  observacoes?: string | null;
+  objetoEstudoId?: string | null;
+  localId?: string | null;
+  safraId?: string | null;
+  areaPesquisaId?: string | null;
+  delineamentoId?: string | null;
+  parcelaLarguraM?: number | null;
+  parcelaComprimentoM?: number | null;
+  parcelaNumLinhas?: number | null;
   numTratamentos: number | null;
   numRepeticoes: number | null;
   totalParcelas: number | null;
   espacamentoLinhasM: number | null;
-  delineamento?: { nome: string } | null;
+  objetoEstudo?: Ref | null;
+  local?: Ref | null;
+  safra?: Ref | null;
+  areaPesquisa?: Ref | null;
+  delineamento?: { id?: string; nome: string } | null;
   tratamentos?: Tratamento[];
   parcelas?: Parcela[];
   fatores?: Array<{ id: string; nome: string; ordem: number; niveis: { id: string; valor: string }[] }>;
@@ -99,6 +119,8 @@ export const api = {
   obter: (id: string) => req<Experimento>(`/experimentos/${id}`),
   criar: (body: Record<string, unknown>) =>
     req<Experimento>("/experimentos", { method: "POST", body: JSON.stringify(body) }),
+  atualizar: (id: string, body: Record<string, unknown>) =>
+    req<Experimento>(`/experimentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   definirFatores: (id: string, fatores: Array<{ ordem: number; nome: string; niveis: string[] }>) =>
     req<Experimento>(`/experimentos/${id}/fatores`, { method: "POST", body: JSON.stringify({ fatores }) }),
   gerarCroqui: (id: string, body: { delineamento?: string; blocos?: number; seed?: number; numeroInicial?: number }) =>
@@ -126,6 +148,21 @@ export const api = {
   lancarDados: (avaliacaoId: string, dados: Array<Partial<AvaliacaoDado>>) =>
     req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
   relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
+
+  // cadastros gerais
+  locais: () => req<Ref[]>("/cadastros/locais"),
+  safras: () => req<Ref[]>("/cadastros/safras"),
+  areas: () => req<Ref[]>("/cadastros/areas"),
+  delineamentos: () => req<Ref[]>("/cadastros/delineamentos"),
+  categorias: () => req<Ref[]>("/cadastros/categorias"),
+  subcategorias: (categoriaId: string) => req<Ref[]>(`/cadastros/subcategorias?categoriaId=${categoriaId}`),
+  objetos: (subcategoriaId: string) => req<ObjetoEstudo[]>(`/cadastros/objetos?subcategoriaId=${subcategoriaId}`),
+  criarCadastro: (tipo: "locais" | "safras" | "areas" | "delineamentos" | "categorias", nome: string) =>
+    req<Ref>(`/cadastros/${tipo}`, { method: "POST", body: JSON.stringify({ nome }) }),
+  criarSubcategoria: (categoriaId: string, nome: string) =>
+    req<Ref>("/cadastros/subcategorias", { method: "POST", body: JSON.stringify({ categoriaId, nome }) }),
+  criarObjeto: (subcategoriaId: string, nome: string) =>
+    req<ObjetoEstudo>("/cadastros/objetos", { method: "POST", body: JSON.stringify({ subcategoriaId, nome }) }),
 };
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */

@@ -5,6 +5,7 @@ import { api, type Experimento } from "../../../lib/api";
 import { CroquiEditor } from "./CroquiEditor";
 import { TratamentosTab } from "./TratamentosTab";
 import { AvaliacoesTab } from "./AvaliacoesTab";
+import { GeralTab } from "./GeralTab";
 
 const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui", "Avaliações"] as const;
 type Aba = (typeof ABAS)[number];
@@ -54,12 +55,7 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
 
       {aba === "Geral" && (
         <Card>
-          <Linha k="Ensaio" v={exp.ensaio} />
-          <Linha k="Delineamento" v={exp.delineamento?.nome ?? "—"} />
-          <Linha k="Tratamentos" v={String(exp.numTratamentos ?? exp.tratamentos?.length ?? 0)} />
-          <Linha k="Repetições/blocos" v={String(exp.numRepeticoes ?? "—")} />
-          <Linha k="Total parcelas" v={String(exp.totalParcelas ?? exp.parcelas?.length ?? 0)} />
-          <Linha k="Espaçamento linhas (m)" v={String(exp.espacamentoLinhasM ?? "—")} />
+          <GeralTab exp={exp} onChange={setExp} />
         </Card>
       )}
 
@@ -102,15 +98,6 @@ function Wrap({ children }: { children: React.ReactNode }) {
 function Card({ children }: { children: React.ReactNode }) {
   return <div style={{ background: "#fff", borderRadius: 10, padding: 20 }}>{children}</div>;
 }
-function Linha({ k, v }: { k: string; v: string }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f8" }}>
-      <span style={{ color: "#7987A1" }}>{k}</span><strong style={{ color: "#1F2940" }}>{v}</strong>
-    </div>
-  );
-}
-const th: React.CSSProperties = { padding: "10px 12px", fontSize: 13 };
-const td: React.CSSProperties = { padding: "10px 12px", fontSize: 14 };
 function tab(ativo: boolean): React.CSSProperties {
   return {
     background: "none", border: "none", cursor: "pointer", padding: "10px 14px",

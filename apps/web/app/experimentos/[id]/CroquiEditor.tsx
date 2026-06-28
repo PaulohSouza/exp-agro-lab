@@ -49,8 +49,8 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
 
   async function regenerar() {
     const seed = Math.floor(Math.random() * 1e9);
+    // delineamento omitido => API usa o delineamento cadastrado no experimento
     const atualizado = await api.gerarCroqui(exp.id, {
-      delineamento: exp.delineamento?.nome?.toUpperCase().includes("DBC") ? "DBC" : "DBC",
       blocos: exp.numRepeticoes ?? 4,
       seed,
       numeroInicial: 1,

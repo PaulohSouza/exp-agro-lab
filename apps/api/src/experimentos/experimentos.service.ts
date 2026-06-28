@@ -80,6 +80,48 @@ export class ExperimentosService {
     return exp;
   }
 
+  /** Atualiza os campos da aba Geral. */
+  async atualizar(id: string, dto: Partial<CriarExperimentoDto> & {
+    codigo?: string;
+    metodologia?: string;
+    justificativa?: string;
+    observacoes?: string;
+    tipoExecucao?: string;
+    parcelaComprimentoM?: number;
+    previsaoSemeadura?: string;
+    dataSemeadura?: string;
+  }) {
+    const exp = await this.prisma.experimento.findFirst({ where: { id, deletedAt: null } });
+    if (!exp) throw new NotFoundException("Experimento não encontrado.");
+    await this.prisma.experimento.update({
+      where: { id },
+      data: {
+        titulo: dto.titulo,
+        codigo: dto.codigo,
+        objetivo: dto.objetivo,
+        ensaio: dto.ensaio,
+        cultivar: dto.cultivar,
+        tipoExecucao: dto.tipoExecucao,
+        metodologia: dto.metodologia,
+        justificativa: dto.justificativa,
+        observacoes: dto.observacoes,
+        objetoEstudoId: dto.objetoEstudoId === undefined ? undefined : dto.objetoEstudoId || null,
+        localId: dto.localId === undefined ? undefined : dto.localId || null,
+        safraId: dto.safraId === undefined ? undefined : dto.safraId || null,
+        areaPesquisaId: dto.areaPesquisaId === undefined ? undefined : dto.areaPesquisaId || null,
+        delineamentoId: dto.delineamentoId === undefined ? undefined : dto.delineamentoId || null,
+        parcelaLarguraM: dto.parcelaLarguraM,
+        parcelaComprimentoM: dto.parcelaComprimentoM,
+        parcelaNumLinhas: dto.parcelaNumLinhas,
+        espacamentoLinhasM: dto.espacamentoLinhasM,
+        numRepeticoes: dto.numRepeticoes,
+        previsaoSemeadura: dto.previsaoSemeadura ? new Date(dto.previsaoSemeadura) : undefined,
+        dataSemeadura: dto.dataSemeadura ? new Date(dto.dataSemeadura) : undefined,
+      },
+    });
+    return this.obter(id);
+  }
+
   /** Defaults para o ambiente sem auth (Marco 1): usa a primeira instituição/usuário. */
   private async defaults() {
     const inst = await this.prisma.instituicao.findFirst();
@@ -130,7 +172,8 @@ export class ExperimentosService {
       if (!f.niveis?.length) throw new BadRequestException(`Fator '${f.nome}' sem níveis.`);
     }
 
-    // limpa estrutura anterior (fatores, tratamentos, parcelas dependentes)
+    // limpa estrutura anterior (dados de avaliação, parcelas, tratamentos, fatores)
+    await this.prisma.avaliacaoDado.deleteMany({ where: { parcela: { experimentoId: id } } });
     await this.prisma.parcela.deleteMany({ where: { experimentoId: id } });
     await this.prisma.tratamento.deleteMany({ where: { experimentoId: id } });
     await this.prisma.fator.deleteMany({ where: { experimentoId: id } });
@@ -189,6 +232,8 @@ export class ExperimentosService {
       numeroInicial: opts.numeroInicial ?? 1,
     });
 
+    // regenerar o croqui descarta lançamentos atrelados às parcelas antigas
+    await this.prisma.avaliacaoDado.deleteMany({ where: { parcela: { experimentoId: id } } });
     await this.prisma.parcela.deleteMany({ where: { experimentoId: id } });
     await this.prisma.parcela.createMany({
       data: croqui.parcelas.map((p) => ({

@@ -5,6 +5,8 @@ import {
   type DefinirFatoresDto,
 } from "./experimentos.service";
 
+type AtualizarExperimentoDto = Partial<CriarExperimentoDto> & Record<string, unknown>;
+
 @Controller("experimentos")
 export class ExperimentosController {
   constructor(private readonly service: ExperimentosService) {}
@@ -22,6 +24,11 @@ export class ExperimentosController {
   @Post()
   criar(@Body() dto: CriarExperimentoDto) {
     return this.service.criar(dto);
+  }
+
+  @Put(":id")
+  atualizar(@Param("id") id: string, @Body() dto: AtualizarExperimentoDto) {
+    return this.service.atualizar(id, dto);
   }
 
   @Post(":id/fatores")
