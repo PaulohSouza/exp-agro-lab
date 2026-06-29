@@ -10,8 +10,18 @@ import {
 const sistema: ModeloEscopoRef = { id: "sis", escopo: "sistema" };
 const instA: ModeloEscopoRef = { id: "iA", escopo: "instituicao", instituicaoId: "A" };
 const instB: ModeloEscopoRef = { id: "iB", escopo: "instituicao", instituicaoId: "B" };
-const deptA1: ModeloEscopoRef = { id: "d1", escopo: "departamento", instituicaoId: "A", departamentoId: "D1" };
-const deptA2: ModeloEscopoRef = { id: "d2", escopo: "departamento", instituicaoId: "A", departamentoId: "D2" };
+const deptA1: ModeloEscopoRef = {
+  id: "d1",
+  escopo: "departamento",
+  instituicaoId: "A",
+  departamentoId: "D1",
+};
+const deptA2: ModeloEscopoRef = {
+  id: "d2",
+  escopo: "departamento",
+  instituicaoId: "A",
+  departamentoId: "D2",
+};
 
 describe("visibilidade por escopo", () => {
   const ctx = { instituicaoId: "A", departamentoId: "D1" };
@@ -72,7 +82,10 @@ describe("fechamento transitivo de pré-requisitos", () => {
   ];
 
   it("auto-adiciona o pré-requisito direto", () => {
-    const r = resolverPrerequisitos(["produtividade"], [{ modeloId: "produtividade", prerequisitoId: "umidade" }]);
+    const r = resolverPrerequisitos(
+      ["produtividade"],
+      [{ modeloId: "produtividade", prerequisitoId: "umidade" }],
+    );
     expect(r.todos).toEqual(["produtividade", "umidade"]);
     expect(r.adicionados).toEqual(["umidade"]);
   });

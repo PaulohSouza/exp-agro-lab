@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { podeGerenciarEscopo, type EscopoModelo, type PapelGestao } from "@exp/domain";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -14,13 +19,15 @@ interface ModeloDto {
   escopo: EscopoModelo;
   departamentoId?: string; // exigido quando escopo = departamento
   baseadoEmId?: string;
-  prerequisitoIds?: string[];          // pré-requisitos de avaliação
+  prerequisitoIds?: string[]; // pré-requisitos de avaliação
   prerequisitoAtividadeIds?: string[]; // pré-requisitos de atividade
 }
 
 const INCLUDE_PREREQS = {
   prerequisitos: { include: { prerequisito: { select: { id: true, nome: true } } } },
-  prerequisitosAtividade: { include: { modeloAtividade: { select: { id: true, nome: true, tipo: true } } } },
+  prerequisitosAtividade: {
+    include: { modeloAtividade: { select: { id: true, nome: true, tipo: true } } },
+  },
 } as const;
 
 @Injectable()
@@ -49,9 +56,7 @@ export class ModeloAvaliacaoService {
             OR: [
               { escopo: "sistema" as const },
               { escopo: "instituicao" as const, instituicaoId: user.instituicaoId },
-              ...(departamentoId
-                ? [{ escopo: "departamento" as const, departamentoId }]
-                : []),
+              ...(departamentoId ? [{ escopo: "departamento" as const, departamentoId }] : []),
             ],
           };
     return this.prisma.modeloAvaliacao.findMany({
@@ -84,7 +89,11 @@ export class ModeloAvaliacaoService {
           ? { create: dto.prerequisitoIds.map((prerequisitoId) => ({ prerequisitoId })) }
           : undefined,
         prerequisitosAtividade: dto.prerequisitoAtividadeIds?.length
-          ? { create: dto.prerequisitoAtividadeIds.map((modeloAtividadeId) => ({ modeloAtividadeId })) }
+          ? {
+              create: dto.prerequisitoAtividadeIds.map((modeloAtividadeId) => ({
+                modeloAtividadeId,
+              })),
+            }
           : undefined,
       },
       include: INCLUDE_PREREQS,
@@ -94,7 +103,8 @@ export class ModeloAvaliacaoService {
   async atualizar(user: UsuarioAtual, id: string, dto: Partial<ModeloDto>) {
     await this.garantirAcesso(user, id);
     if (dto.prerequisitoIds) await this.validarPrerequisitos(dto.prerequisitoIds, id);
-    if (dto.prerequisitoAtividadeIds) await this.validarPrereqAtividades(dto.prerequisitoAtividadeIds);
+    if (dto.prerequisitoAtividadeIds)
+      await this.validarPrereqAtividades(dto.prerequisitoAtividadeIds);
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.prerequisitoIds) {
@@ -109,7 +119,10 @@ export class ModeloAvaliacaoService {
         await tx.modeloAvaliacaoPrereqAtividade.deleteMany({ where: { modeloAvaliacaoId: id } });
         if (dto.prerequisitoAtividadeIds.length) {
           await tx.modeloAvaliacaoPrereqAtividade.createMany({
-            data: dto.prerequisitoAtividadeIds.map((modeloAtividadeId) => ({ modeloAvaliacaoId: id, modeloAtividadeId })),
+            data: dto.prerequisitoAtividadeIds.map((modeloAtividadeId) => ({
+              modeloAvaliacaoId: id,
+              modeloAtividadeId,
+            })),
           });
         }
       }
@@ -148,9 +161,11 @@ export class ModeloAvaliacaoService {
   /** Resolve e valida os donos (instituição/departamento) conforme o escopo. */
   private async donoDoEscopo(user: UsuarioAtual, dto: ModeloDto) {
     if (dto.escopo === "sistema") return { instituicaoId: null, departamentoId: null };
-    if (dto.escopo === "instituicao") return { instituicaoId: user.instituicaoId, departamentoId: null };
+    if (dto.escopo === "instituicao")
+      return { instituicaoId: user.instituicaoId, departamentoId: null };
     // departamento
-    if (!dto.departamentoId) throw new BadRequestException("departamentoId é obrigatório no escopo de departamento.");
+    if (!dto.departamentoId)
+      throw new BadRequestException("departamentoId é obrigatório no escopo de departamento.");
     const depto = await this.prisma.departamento.findUnique({
       where: { id: dto.departamentoId },
       select: { instituicaoId: true },
@@ -164,7 +179,8 @@ export class ModeloAvaliacaoService {
 
   private async validarPrerequisitos(ids: string[] | undefined, selfId?: string) {
     if (!ids?.length) return;
-    if (selfId && ids.includes(selfId)) throw new BadRequestException("Um modelo não pode ser pré-requisito de si mesmo.");
+    if (selfId && ids.includes(selfId))
+      throw new BadRequestException("Um modelo não pode ser pré-requisito de si mesmo.");
     const achados = await this.prisma.modeloAvaliacao.count({ where: { id: { in: ids } } });
     if (achados !== new Set(ids).size) throw new BadRequestException("Pré-requisito inexistente.");
   }
@@ -172,7 +188,8 @@ export class ModeloAvaliacaoService {
   private async validarPrereqAtividades(ids: string[] | undefined) {
     if (!ids?.length) return;
     const achados = await this.prisma.modeloAtividade.count({ where: { id: { in: ids } } });
-    if (achados !== new Set(ids).size) throw new BadRequestException("Pré-requisito de atividade inexistente.");
+    if (achados !== new Set(ids).size)
+      throw new BadRequestException("Pré-requisito de atividade inexistente.");
   }
 
   /** Carrega o modelo e confere papel + posse para gestão. */
@@ -183,7 +200,11 @@ export class ModeloAvaliacaoService {
     });
     if (!m) throw new NotFoundException("Modelo não encontrado.");
     this.exigirGestao(user.papel, m.escopo);
-    if (m.escopo !== "sistema" && m.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+    if (
+      m.escopo !== "sistema" &&
+      m.instituicaoId !== user.instituicaoId &&
+      user.papel !== "admin_sistema"
+    ) {
       throw new ForbiddenException("Modelo de outra instituição.");
     }
     return m;

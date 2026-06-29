@@ -16,7 +16,15 @@ export class AuthController {
 
   @Public()
   @Post("register-instituicao")
-  registrar(@Body() dto: { instituicaoNome: string; adminNome: string; adminEmail: string; adminSenha: string }) {
+  registrar(
+    @Body()
+    dto: {
+      instituicaoNome: string;
+      adminNome: string;
+      adminEmail: string;
+      adminSenha: string;
+    },
+  ) {
     return this.auth.registrarInstituicao(dto);
   }
 

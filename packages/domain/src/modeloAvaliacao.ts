@@ -68,7 +68,8 @@ export type PapelGestao =
 export function podeGerenciarEscopo(papel: PapelGestao, escopo: EscopoModelo): boolean {
   if (papel === "admin_sistema") return true;
   if (papel === "gestao_instituicao") return escopo === "instituicao" || escopo === "departamento";
-  if (papel === "gestao_departamento" || papel === "coordenador_area") return escopo === "departamento";
+  if (papel === "gestao_departamento" || papel === "coordenador_area")
+    return escopo === "departamento";
   return false;
 }
 

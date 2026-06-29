@@ -97,7 +97,11 @@ export function marcosPadrao(eCultura: boolean): MarcoTipo[] {
  * Status de um marco do cronograma. Datas em ISO (yyyy-mm-dd) — comparação
  * lexicográfica. `hojeISO` é injetado (domínio puro, sem relógio).
  */
-export function statusMarco(input: { dataPrevista?: string | null; confirmada: boolean; hojeISO: string }): StatusMarco {
+export function statusMarco(input: {
+  dataPrevista?: string | null;
+  confirmada: boolean;
+  hojeISO: string;
+}): StatusMarco {
   if (input.confirmada) return "confirmado";
   if (input.dataPrevista && input.dataPrevista.slice(0, 10) < input.hojeISO) return "atrasado";
   return "pendente";

@@ -1,6 +1,17 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { podeGerenciarEscopo, type EscopoModelo, type PapelGestao, type TipoAtividade, type TipoCampo } from "@exp/domain";
+import {
+  podeGerenciarEscopo,
+  type EscopoModelo,
+  type PapelGestao,
+  type TipoAtividade,
+  type TipoCampo,
+} from "@exp/domain";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 interface CampoDto {
@@ -25,7 +36,10 @@ export class ModeloAtividadeService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async departamentoDoUsuario(user: UsuarioAtual): Promise<string | null> {
-    const u = await this.prisma.user.findUnique({ where: { id: user.userId }, select: { departamentoId: true } });
+    const u = await this.prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { departamentoId: true },
+    });
     return u?.departamentoId ?? null;
   }
 
@@ -61,9 +75,18 @@ export class ModeloAtividadeService {
         escopo: dto.escopo,
         instituicaoId,
         departamentoId,
-        campos: dto.tipo === "apontamento" && dto.campos?.length
-          ? { create: dto.campos.map((c, i) => ({ rotulo: c.rotulo, tipo: c.tipo ?? "numero", unidade: c.unidade, obrigatorio: c.obrigatorio ?? false, ordem: c.ordem ?? i })) }
-          : undefined,
+        campos:
+          dto.tipo === "apontamento" && dto.campos?.length
+            ? {
+                create: dto.campos.map((c, i) => ({
+                  rotulo: c.rotulo,
+                  tipo: c.tipo ?? "numero",
+                  unidade: c.unidade,
+                  obrigatorio: c.obrigatorio ?? false,
+                  ordem: c.ordem ?? i,
+                })),
+              }
+            : undefined,
       },
       include: { campos: { orderBy: { ordem: "asc" } } },
     });
@@ -76,7 +99,14 @@ export class ModeloAtividadeService {
         await tx.modeloAtividadeCampo.deleteMany({ where: { modeloId: id } });
         if (dto.campos.length) {
           await tx.modeloAtividadeCampo.createMany({
-            data: dto.campos.map((c, i) => ({ modeloId: id, rotulo: c.rotulo, tipo: c.tipo ?? "numero", unidade: c.unidade, obrigatorio: c.obrigatorio ?? false, ordem: c.ordem ?? i })),
+            data: dto.campos.map((c, i) => ({
+              modeloId: id,
+              rotulo: c.rotulo,
+              tipo: c.tipo ?? "numero",
+              unidade: c.unidade,
+              obrigatorio: c.obrigatorio ?? false,
+              ordem: c.ordem ?? i,
+            })),
           });
         }
       }
@@ -109,9 +139,14 @@ export class ModeloAtividadeService {
 
   private async donoDoEscopo(user: UsuarioAtual, dto: ModeloAtividadeDto) {
     if (dto.escopo === "sistema") return { instituicaoId: null, departamentoId: null };
-    if (dto.escopo === "instituicao") return { instituicaoId: user.instituicaoId, departamentoId: null };
-    if (!dto.departamentoId) throw new BadRequestException("departamentoId é obrigatório no escopo de departamento.");
-    const depto = await this.prisma.departamento.findUnique({ where: { id: dto.departamentoId }, select: { instituicaoId: true } });
+    if (dto.escopo === "instituicao")
+      return { instituicaoId: user.instituicaoId, departamentoId: null };
+    if (!dto.departamentoId)
+      throw new BadRequestException("departamentoId é obrigatório no escopo de departamento.");
+    const depto = await this.prisma.departamento.findUnique({
+      where: { id: dto.departamentoId },
+      select: { instituicaoId: true },
+    });
     if (!depto) throw new NotFoundException("Departamento não encontrado.");
     if (depto.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
       throw new ForbiddenException("Departamento de outra instituição.");
@@ -120,10 +155,17 @@ export class ModeloAtividadeService {
   }
 
   private async garantirAcesso(user: UsuarioAtual, id: string) {
-    const m = await this.prisma.modeloAtividade.findUnique({ where: { id }, select: { id: true, escopo: true, instituicaoId: true } });
+    const m = await this.prisma.modeloAtividade.findUnique({
+      where: { id },
+      select: { id: true, escopo: true, instituicaoId: true },
+    });
     if (!m) throw new NotFoundException("Modelo de atividade não encontrado.");
     this.exigirGestao(user.papel, m.escopo);
-    if (m.escopo !== "sistema" && m.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+    if (
+      m.escopo !== "sistema" &&
+      m.instituicaoId !== user.instituicaoId &&
+      user.papel !== "admin_sistema"
+    ) {
       throw new ForbiddenException("Modelo de outra instituição.");
     }
     return m;

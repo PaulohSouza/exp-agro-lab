@@ -13,7 +13,11 @@ export interface ColetaOffline {
 }
 
 /** Chave idempotente de uma coleta (evita duplicação em reenvios). */
-export function chaveColeta(c: { avaliacaoId: string; parcelaId: string; numAmostra: number }): string {
+export function chaveColeta(c: {
+  avaliacaoId: string;
+  parcelaId: string;
+  numAmostra: number;
+}): string {
   return `${c.avaliacaoId}:${c.parcelaId}:${c.numAmostra}`;
 }
 
@@ -24,7 +28,10 @@ export type ResultadoColeta = "aplicar" | "conflito";
  * Se o servidor tem uma versão MAIS NOVA que a edição local → conflito
  * (mantém o servidor, marca para revisão; nunca descarta em silêncio).
  */
-export function resolverColeta(clientUpdatedAt: number, serverUpdatedAt: number | null): ResultadoColeta {
+export function resolverColeta(
+  clientUpdatedAt: number,
+  serverUpdatedAt: number | null,
+): ResultadoColeta {
   if (serverUpdatedAt != null && serverUpdatedAt > clientUpdatedAt) return "conflito";
   return "aplicar";
 }

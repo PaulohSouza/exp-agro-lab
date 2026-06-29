@@ -50,7 +50,9 @@ export class EmailService {
       const safe = `${Date.now()}-${input.tipo}-${input.para}`.replace(/[^a-zA-Z0-9._@-]/g, "_");
       const file = path.join(dir, `${safe}.html`);
       await fs.writeFile(file, this.envelopeHtml(input), "utf8");
-      this.logger.log(`[SIMULATE] e-mail "${input.assunto}" → ${input.para} renderizado em ${file}`);
+      this.logger.log(
+        `[SIMULATE] e-mail "${input.assunto}" → ${input.para} renderizado em ${file}`,
+      );
       await this.log({ ...input, status: "simulado", htmlPath: file });
       return { ok: true, status: "simulado", htmlPath: file };
     }
@@ -118,7 +120,9 @@ export class EmailService {
         </div></body></html>`;
   }
 
-  private async log(d: EmailInput & { status: "simulado" | "enviado" | "erro"; htmlPath?: string; erro?: string }) {
+  private async log(
+    d: EmailInput & { status: "simulado" | "enviado" | "erro"; htmlPath?: string; erro?: string },
+  ) {
     try {
       await this.prisma.emailLog.create({
         data: {

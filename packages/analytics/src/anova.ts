@@ -1,7 +1,13 @@
 import { fSf } from "./stats.js";
 import { bartlett } from "./pressupostos.js";
 import { compararMediasLSD, compararMediasTukey, compararMediasScottKnott } from "./comparacao.js";
-import type { Delineamento, Observacao, ResultadoAnova, MediaTratamento, MetodoComparacao } from "./types.js";
+import type {
+  Delineamento,
+  Observacao,
+  ResultadoAnova,
+  MediaTratamento,
+  MetodoComparacao,
+} from "./types.js";
 
 const ROTULO_METODO: Record<MetodoComparacao, string> = {
   LSD: "LSD (Fisher)",
@@ -81,7 +87,11 @@ export function anovaUmFator(
     return { tratamento: t, media: media(vs), n: vs.length };
   });
   const comparar =
-    metodo === "Tukey" ? compararMediasTukey : metodo === "ScottKnott" ? compararMediasScottKnott : compararMediasLSD;
+    metodo === "Tukey"
+      ? compararMediasTukey
+      : metodo === "ScottKnott"
+        ? compararMediasScottKnott
+        : compararMediasLSD;
   const medias = comparar(mediasBase, qmResiduo, glResiduo, alpha);
 
   const bart = bartlett(tratamentos.map((t) => porTrat.get(t)!.map((o) => o.valor)));
@@ -89,7 +99,14 @@ export function anovaUmFator(
   const tabela = [];
   if (delineamento === "DBC") {
     const qmBloco = sqBloco / glBloco;
-    tabela.push({ fonte: "Bloco", gl: glBloco, sq: sqBloco, qm: qmBloco, f: qmBloco / qmResiduo, p: fSf(qmBloco / qmResiduo, glBloco, glResiduo) });
+    tabela.push({
+      fonte: "Bloco",
+      gl: glBloco,
+      sq: sqBloco,
+      qm: qmBloco,
+      f: qmBloco / qmResiduo,
+      p: fSf(qmBloco / qmResiduo, glBloco, glResiduo),
+    });
   }
   tabela.push({ fonte: "Tratamento", gl: glTrat, sq: sqTrat, qm: qmTrat, f: fTrat, p: pTrat });
   tabela.push({ fonte: "Resíduo", gl: glResiduo, sq: sqResiduo, qm: qmResiduo });
@@ -106,7 +123,11 @@ export function anovaUmFator(
     pTratamento: pTrat,
     significativo: pTrat < alpha,
     medias,
-    pressupostos: { bartlettEstatistica: bart.estatistica, bartlettP: bart.p, homogeneo: bart.p >= alpha },
+    pressupostos: {
+      bartlettEstatistica: bart.estatistica,
+      bartlettP: bart.p,
+      homogeneo: bart.p >= alpha,
+    },
     comparacao: { metodo: ROTULO_METODO[metodo], alpha },
   };
 }

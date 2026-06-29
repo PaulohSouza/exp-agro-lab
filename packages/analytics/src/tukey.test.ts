@@ -12,7 +12,7 @@ describe("qtukey — amplitude estudentizada (vs tabela de Tukey)", () => {
     [0.95, 5, 20, 4.232],
     [0.95, 3, 30, 3.486],
     [0.95, 2, 100000, 2.772], // df→∞: 1,95996·√2
-    [0.99, 3, 10, 5.270],
+    [0.99, 3, 10, 5.27],
     [0.99, 4, 15, 5.246],
   ];
   for (const [p, k, df, esperado] of casos) {

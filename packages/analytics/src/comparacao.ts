@@ -8,7 +8,10 @@ import type { MediaTratamento } from "./types.js";
  * ordenadas, a não-significância é intervalar (cobertura monotônica) — mesma
  * lógica usada pelo agricolae.
  */
-function atribuirLetras(ord: MediaTratamento[], sig: (i: number, j: number) => boolean): MediaTratamento[] {
+function atribuirLetras(
+  ord: MediaTratamento[],
+  sig: (i: number, j: number) => boolean,
+): MediaTratamento[] {
   const k = ord.length;
   const reach: number[] = [];
   for (let i = 0; i < k; i++) {
@@ -41,7 +44,8 @@ export function compararMediasLSD(
   if (ord.length === 0) return [];
   const t = tInv(1 - alpha / 2, glResiduo);
   const sig = (i: number, j: number) =>
-    Math.abs(ord[i].media - ord[j].media) > t * Math.sqrt(qmResiduo * (1 / ord[i].n + 1 / ord[j].n));
+    Math.abs(ord[i].media - ord[j].media) >
+    t * Math.sqrt(qmResiduo * (1 / ord[i].n + 1 / ord[j].n));
   return atribuirLetras(ord, sig);
 }
 
@@ -60,7 +64,8 @@ export function compararMediasTukey(
   if (k === 0) return [];
   const qcrit = qtukey(1 - alpha, k, glResiduo);
   const sig = (i: number, j: number) =>
-    Math.abs(ord[i].media - ord[j].media) > qcrit * Math.sqrt((qmResiduo / 2) * (1 / ord[i].n + 1 / ord[j].n));
+    Math.abs(ord[i].media - ord[j].media) >
+    qcrit * Math.sqrt((qmResiduo / 2) * (1 / ord[i].n + 1 / ord[j].n));
   return atribuirLetras(ord, sig);
 }
 
@@ -106,12 +111,19 @@ export function compararMediasScottKnott(
     if (sigma0sq <= 0) return juntar(ini, fim);
 
     // melhor corte: maximiza B0 = T1²/k1 + T2²/k2 − T²/g
-    let B0 = -Infinity, corte = ini, T1 = 0;
+    let B0 = -Infinity,
+      corte = ini,
+      T1 = 0;
     for (let p = ini; p < fim; p++) {
       T1 += ord[p].media;
-      const k1 = p - ini + 1, k2 = g - k1, T2 = T - T1;
+      const k1 = p - ini + 1,
+        k2 = g - k1,
+        T2 = T - T1;
       const B = (T1 * T1) / k1 + (T2 * T2) / k2 - (T * T) / g;
-      if (B > B0) { B0 = B; corte = p; }
+      if (B > B0) {
+        B0 = B;
+        corte = p;
+      }
     }
 
     const lambda = (Math.PI / (2 * (Math.PI - 2))) * (B0 / sigma0sq);

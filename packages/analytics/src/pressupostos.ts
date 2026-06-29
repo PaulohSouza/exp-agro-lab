@@ -16,7 +16,8 @@ export function bartlett(grupos: number[][]): { estatistica: number; gl: number;
   const vi = grupos.map((g) => variancia(g));
   const N = ni.reduce((a, b) => a + b, 0);
   const sp2 = grupos.reduce((acc, _, i) => acc + (ni[i] - 1) * vi[i], 0) / (N - k);
-  const B = (N - k) * Math.log(sp2) - grupos.reduce((acc, _, i) => acc + (ni[i] - 1) * Math.log(vi[i]), 0);
+  const B =
+    (N - k) * Math.log(sp2) - grupos.reduce((acc, _, i) => acc + (ni[i] - 1) * Math.log(vi[i]), 0);
   const C = 1 + (1 / (3 * (k - 1))) * (ni.reduce((acc, n) => acc + 1 / (n - 1), 0) - 1 / (N - k));
   const estatistica = B / C;
   const gl = k - 1;

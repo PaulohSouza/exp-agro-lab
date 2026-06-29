@@ -42,7 +42,13 @@ describe("RN-PROD (produtividade kg/parcela → kg/ha)", () => {
   });
 
   it("rejeita parâmetros não positivos", () => {
-    expect(() => calcularAreaUtilColhida({ numLinhasColhidas: 0, espacamentoLinhasM: 0.45, comprimentoColhidoM: 5 })).toThrow();
+    expect(() =>
+      calcularAreaUtilColhida({
+        numLinhasColhidas: 0,
+        espacamentoLinhasM: 0.45,
+        comprimentoColhidoM: 5,
+      }),
+    ).toThrow();
     expect(() => calcularProdutividadeKgHa({ valorKgParcela: 8.5, areaUtilM2: 0 })).toThrow();
   });
 });

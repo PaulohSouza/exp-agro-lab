@@ -73,16 +73,31 @@ export function dedupLancamentos(items: LancamentoLote[]): LancamentoLote[] {
 /* Suporta: números, variáveis, + - * / , parênteses, unário -.        */
 /* ------------------------------------------------------------------ */
 
-type Token = { t: "num"; v: number } | { t: "var"; v: string } | { t: "op"; v: string } | { t: "paren"; v: "(" | ")" };
+type Token =
+  | { t: "num"; v: number }
+  | { t: "var"; v: string }
+  | { t: "op"; v: string }
+  | { t: "paren"; v: "(" | ")" };
 
 function tokenize(expr: string): Token[] {
   const tokens: Token[] = [];
   let i = 0;
   while (i < expr.length) {
     const ch = expr[i];
-    if (ch === " " || ch === "\t") { i++; continue; }
-    if (ch === "(" || ch === ")") { tokens.push({ t: "paren", v: ch }); i++; continue; }
-    if ("+-*/".includes(ch)) { tokens.push({ t: "op", v: ch }); i++; continue; }
+    if (ch === " " || ch === "\t") {
+      i++;
+      continue;
+    }
+    if (ch === "(" || ch === ")") {
+      tokens.push({ t: "paren", v: ch });
+      i++;
+      continue;
+    }
+    if ("+-*/".includes(ch)) {
+      tokens.push({ t: "op", v: ch });
+      i++;
+      continue;
+    }
     if (/[0-9.]/.test(ch)) {
       let num = "";
       while (i < expr.length && /[0-9.]/.test(expr[i])) num += expr[i++];
@@ -113,7 +128,10 @@ function avaliarExpressao(expr: string, escopo: Record<string, number>): number 
       output.push(tk);
     } else if (tk.t === "op") {
       // operador unário '-' (início ou após operador/parêntese aberto)
-      if (tk.v === "-" && (prev === null || (prev.t === "op") || (prev.t === "paren" && prev.v === "("))) {
+      if (
+        tk.v === "-" &&
+        (prev === null || prev.t === "op" || (prev.t === "paren" && prev.v === "("))
+      ) {
         output.push({ t: "num", v: 0 });
       }
       while (
@@ -158,12 +176,16 @@ function avaliarExpressao(expr: string, escopo: Record<string, number>): number 
 
 function aplicar(op: string, a: number, b: number): number {
   switch (op) {
-    case "+": return a + b;
-    case "-": return a - b;
-    case "*": return a * b;
+    case "+":
+      return a + b;
+    case "-":
+      return a - b;
+    case "*":
+      return a * b;
     case "/":
       if (b === 0) throw new Error("Divisão por zero na fórmula.");
       return a / b;
-    default: throw new Error(`Operador desconhecido: ${op}`);
+    default:
+      throw new Error(`Operador desconhecido: ${op}`);
   }
 }

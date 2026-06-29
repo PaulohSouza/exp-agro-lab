@@ -1,7 +1,13 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3001";
 
-export interface Ref { id: string; nome: string }
-export interface Categoria extends Ref { eCultura?: boolean; ativo?: boolean }
+export interface Ref {
+  id: string;
+  nome: string;
+}
+export interface Categoria extends Ref {
+  eCultura?: boolean;
+  ativo?: boolean;
+}
 export interface Compartilhamento {
   id: string;
   nivel: "input" | "edit";
@@ -9,10 +15,25 @@ export interface Compartilhamento {
   convidadoEmail: string | null;
   user?: { id: string; nome: string; email: string } | null;
 }
-export interface ObjetoEstudo { id: string; nome: string; subcategoriaId: string }
-export interface Produto { id: string; nome: string; marca?: string | null }
-export interface Atividade { id: string; nome: string }
-export interface Timing { id: string; nome: string; ordem: number }
+export interface ObjetoEstudo {
+  id: string;
+  nome: string;
+  subcategoriaId: string;
+}
+export interface Produto {
+  id: string;
+  nome: string;
+  marca?: string | null;
+}
+export interface Atividade {
+  id: string;
+  nome: string;
+}
+export interface Timing {
+  id: string;
+  nome: string;
+  ordem: number;
+}
 export interface TratamentoProduto {
   id: string;
   seq: number;
@@ -76,7 +97,10 @@ export interface ModeloAvaliacao {
   baseadoEmId: string | null;
   ativo: boolean;
   prerequisitos?: { prerequisitoId: string; prerequisito: { id: string; nome: string } }[];
-  prerequisitosAtividade?: { modeloAtividadeId: string; modeloAtividade: { id: string; nome: string; tipo: string } }[];
+  prerequisitosAtividade?: {
+    modeloAtividadeId: string;
+    modeloAtividade: { id: string; nome: string; tipo: string };
+  }[];
   _count?: { avaliacoes: number };
 }
 export interface ModeloAvaliacaoInput {
@@ -125,7 +149,13 @@ export interface ModeloAtividadeInput {
   metodologiaRelatorio?: string;
   escopo: EscopoModelo;
   departamentoId?: string;
-  campos?: { rotulo: string; tipo?: TipoCampo; unidade?: string; obrigatorio?: boolean; ordem?: number }[];
+  campos?: {
+    rotulo: string;
+    tipo?: TipoCampo;
+    unidade?: string;
+    obrigatorio?: boolean;
+    ordem?: number;
+  }[];
 }
 export interface AtividadeApontamentoValor {
   id: string;
@@ -176,7 +206,12 @@ export interface GrupoColetaInput {
   departamentoId?: string;
   modeloIds?: string[];
 }
-export interface LancamentoLote { avaliacaoId: string; parcelaId: string; numAmostra?: number; valorColetado?: number | null }
+export interface LancamentoLote {
+  avaliacaoId: string;
+  parcelaId: string;
+  numAmostra?: number;
+  valorColetado?: number | null;
+}
 
 export interface AvaliacaoDado {
   id: string;
@@ -190,20 +225,55 @@ export interface AvaliacaoDado {
   parcela?: Parcela & { tratamento?: Tratamento };
 }
 export interface RelatorioAvaliacao {
-  avaliacao: { nome: string; unidadeColeta: string | null; unidadeSaida: string | null; formula: string | null };
-  linhas: Array<{ parcela: number; bloco: number; tratamento: string; tratamentoNome: string; valorColetado: number | null; areaUtilM2: number | null; valorSaida: number | null }>;
+  avaliacao: {
+    nome: string;
+    unidadeColeta: string | null;
+    unidadeSaida: string | null;
+    formula: string | null;
+  };
+  linhas: Array<{
+    parcela: number;
+    bloco: number;
+    tratamento: string;
+    tratamentoNome: string;
+    valorColetado: number | null;
+    areaUtilM2: number | null;
+    valorSaida: number | null;
+  }>;
   medias: Array<{ tratamento: string; nome: string; media: number }>;
 }
-export interface AprovacaoInterna { id: string; aprovadorUserId: string; decisao: string; motivo: string | null; at: string }
-export interface AprovacaoCliente { id: string; clienteEmail: string; token: string; decisao: string; motivo: string | null }
+export interface AprovacaoInterna {
+  id: string;
+  aprovadorUserId: string;
+  decisao: string;
+  motivo: string | null;
+  at: string;
+}
+export interface AprovacaoCliente {
+  id: string;
+  clienteEmail: string;
+  token: string;
+  decisao: string;
+  motivo: string | null;
+}
 export interface OrdemServico {
   id: string;
   status: string;
   aprovacoesInternas: AprovacaoInterna[];
   aprovacaoCliente: AprovacaoCliente | null;
 }
-export interface Instituicao { id: string; nome: string; politicaAprovacao: string; nAprovadores: number }
-export interface Aprovador { id: string; userId: string; ativo: boolean; user: { id: string; nome: string; email: string } }
+export interface Instituicao {
+  id: string;
+  nome: string;
+  politicaAprovacao: string;
+  nAprovadores: number;
+}
+export interface Aprovador {
+  id: string;
+  userId: string;
+  ativo: boolean;
+  user: { id: string; nome: string; email: string };
+}
 export interface AnaliseResultado {
   avaliacao: { nome: string; unidadeSaida: string | null };
   delineamento: string;
@@ -254,7 +324,12 @@ export interface Experimento {
   delineamento?: { id?: string; nome: string } | null;
   tratamentos?: Tratamento[];
   parcelas?: Parcela[];
-  fatores?: Array<{ id: string; nome: string; ordem: number; niveis: { id: string; valor: string }[] }>;
+  fatores?: Array<{
+    id: string;
+    nome: string;
+    ordem: number;
+    niveis: { id: string; valor: string }[];
+  }>;
   avaliacoes?: Avaliacao[];
   timings?: Timing[];
   owner?: { id: string; nome: string } | null;
@@ -282,10 +357,32 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-export interface Usuario { id: string; nome: string; email: string; papel?: Papel; departamentoId?: string | null; unidadeId?: string | null; isAdminInstituicao: boolean; ativo: boolean }
-export interface Departamento { id: string; nome: string; ativo: boolean; _count?: { unidades: number; usuarios: number } }
-export interface Responsavel { id: string; user: { id: string; nome: string; email: string; papel?: Papel } }
-export interface Unidade { id: string; nome: string; tipo: string; departamentoId: string | null }
+export interface Usuario {
+  id: string;
+  nome: string;
+  email: string;
+  papel?: Papel;
+  departamentoId?: string | null;
+  unidadeId?: string | null;
+  isAdminInstituicao: boolean;
+  ativo: boolean;
+}
+export interface Departamento {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  _count?: { unidades: number; usuarios: number };
+}
+export interface Responsavel {
+  id: string;
+  user: { id: string; nome: string; email: string; papel?: Papel };
+}
+export interface Unidade {
+  id: string;
+  nome: string;
+  tipo: string;
+  departamentoId: string | null;
+}
 
 export type Papel =
   | "admin_sistema"
@@ -306,7 +403,10 @@ export const PAPEIS: { value: Papel; label: string }[] = [
   { value: "assistente", label: "Assistente" },
 ];
 
-export interface Contagem { rotulo: string; n: number }
+export interface Contagem {
+  rotulo: string;
+  n: number;
+}
 export interface ChecklistItem {
   avaliacao: string;
   experimento: string;
@@ -322,7 +422,13 @@ export interface Dashboard {
   porLocal: Contagem[];
   porArea: Contagem[];
   porSafra: Contagem[];
-  checklist: { previstas: number; realizadas: number; pendentes: number; atrasadas: number; itens: ChecklistItem[] };
+  checklist: {
+    previstas: number;
+    realizadas: number;
+    pendentes: number;
+    atrasadas: number;
+    itens: ChecklistItem[];
+  };
 }
 
 export const api = {
@@ -334,37 +440,66 @@ export const api = {
   atualizar: (id: string, body: Record<string, unknown>) =>
     req<Experimento>(`/experimentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   definirFatores: (id: string, fatores: Array<{ ordem: number; nome: string; niveis: string[] }>) =>
-    req<Experimento>(`/experimentos/${id}/fatores`, { method: "POST", body: JSON.stringify({ fatores }) }),
-  gerarCroqui: (id: string, body: { delineamento?: string; blocos?: number; seed?: number; numeroInicial?: number }) =>
-    req<Experimento>(`/experimentos/${id}/croqui/gerar`, { method: "POST", body: JSON.stringify(body) }),
+    req<Experimento>(`/experimentos/${id}/fatores`, {
+      method: "POST",
+      body: JSON.stringify({ fatores }),
+    }),
+  gerarCroqui: (
+    id: string,
+    body: { delineamento?: string; blocos?: number; seed?: number; numeroInicial?: number },
+  ) =>
+    req<Experimento>(`/experimentos/${id}/croqui/gerar`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   salvarCroqui: (id: string, parcelas: Parcela[]) =>
-    req<Experimento>(`/experimentos/${id}/croqui`, { method: "PUT", body: JSON.stringify({ parcelas }) }),
+    req<Experimento>(`/experimentos/${id}/croqui`, {
+      method: "PUT",
+      body: JSON.stringify({ parcelas }),
+    }),
 
   // cadastros e tratamentos
   listarProdutos: () => req<Produto[]>("/cadastros/produtos"),
-  criarProduto: (nome: string) => req<Produto>("/cadastros/produtos", { method: "POST", body: JSON.stringify({ nome }) }),
+  criarProduto: (nome: string) =>
+    req<Produto>("/cadastros/produtos", { method: "POST", body: JSON.stringify({ nome }) }),
   listarAtividades: () => req<Atividade[]>("/cadastros/atividades"),
   listarTimings: (id: string) => req<Timing[]>(`/experimentos/${id}/timings`),
-  criarTiming: (id: string, nome: string) => req<Timing>(`/experimentos/${id}/timings`, { method: "POST", body: JSON.stringify({ nome }) }),
+  criarTiming: (id: string, nome: string) =>
+    req<Timing>(`/experimentos/${id}/timings`, { method: "POST", body: JSON.stringify({ nome }) }),
   atualizarTratamento: (id: string, body: { nome?: string; descricao?: string }) =>
     req<Tratamento>(`/tratamentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   adicionarProduto: (tratamentoId: string, body: Partial<TratamentoProduto>) =>
-    req<TratamentoProduto>(`/tratamentos/${tratamentoId}/produtos`, { method: "POST", body: JSON.stringify(body) }),
-  removerProduto: (id: string) => req<{ ok: boolean }>(`/tratamento-produtos/${id}`, { method: "DELETE" }),
+    req<TratamentoProduto>(`/tratamentos/${tratamentoId}/produtos`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  removerProduto: (id: string) =>
+    req<{ ok: boolean }>(`/tratamento-produtos/${id}`, { method: "DELETE" }),
 
   // avaliações
   criarAvaliacao: (id: string, body: Partial<Avaliacao>) =>
-    req<Avaliacao>(`/experimentos/${id}/avaliacoes`, { method: "POST", body: JSON.stringify(body) }),
+    req<Avaliacao>(`/experimentos/${id}/avaliacoes`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   removerAvaliacao: (id: string) => req<{ ok: boolean }>(`/avaliacoes/${id}`, { method: "DELETE" }),
   listarDados: (avaliacaoId: string) => req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`),
   lancarDados: (avaliacaoId: string, dados: Array<Partial<AvaliacaoDado>>) =>
-    req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
-  relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
+    req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, {
+      method: "POST",
+      body: JSON.stringify({ dados }),
+    }),
+  relatorioAvaliacao: (avaliacaoId: string) =>
+    req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
   adicionarAvaliacoesDoModelo: (expId: string, modeloIds: string[]) =>
-    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[]; atividadesAdicionadas: string[] }>(
-      `/experimentos/${expId}/avaliacoes/do-modelo`,
-      { method: "POST", body: JSON.stringify({ modeloIds }) },
-    ),
+    req<{
+      criadas: Avaliacao[];
+      prerequisitosAdicionados: string[];
+      atividadesAdicionadas: string[];
+    }>(`/experimentos/${expId}/avaliacoes/do-modelo`, {
+      method: "POST",
+      body: JSON.stringify({ modeloIds }),
+    }),
 
   // catálogo de modelos de avaliação (multi-escopo)
   listarModelos: () => req<ModeloAvaliacao[]>("/modelos-avaliacao"),
@@ -372,7 +507,8 @@ export const api = {
     req<ModeloAvaliacao>("/modelos-avaliacao", { method: "POST", body: JSON.stringify(body) }),
   atualizarModelo: (id: string, body: Partial<ModeloAvaliacaoInput>) =>
     req<ModeloAvaliacao>(`/modelos-avaliacao/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  removerModelo: (id: string) => req<{ ok: boolean }>(`/modelos-avaliacao/${id}`, { method: "DELETE" }),
+  removerModelo: (id: string) =>
+    req<{ ok: boolean }>(`/modelos-avaliacao/${id}`, { method: "DELETE" }),
 
   // catálogo de modelos de atividade (multi-escopo)
   listarModelosAtividade: () => req<ModeloAtividade[]>("/modelos-atividade"),
@@ -380,28 +516,71 @@ export const api = {
     req<ModeloAtividade>("/modelos-atividade", { method: "POST", body: JSON.stringify(body) }),
   atualizarModeloAtividade: (id: string, body: Partial<ModeloAtividadeInput>) =>
     req<ModeloAtividade>(`/modelos-atividade/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  removerModeloAtividade: (id: string) => req<{ ok: boolean }>(`/modelos-atividade/${id}`, { method: "DELETE" }),
+  removerModeloAtividade: (id: string) =>
+    req<{ ok: boolean }>(`/modelos-atividade/${id}`, { method: "DELETE" }),
 
   // atividades do experimento
-  listarAtividadesExp: (expId: string) => req<AtividadeExperimento[]>(`/experimentos/${expId}/atividades`),
-  criarAtividadeExp: (expId: string, body: { modeloId?: string; nome?: string; tipo?: TipoAtividade; data?: string; responsavel?: string; obs?: string }) =>
-    req<AtividadeExperimento>(`/experimentos/${expId}/atividades`, { method: "POST", body: JSON.stringify(body) }),
+  listarAtividadesExp: (expId: string) =>
+    req<AtividadeExperimento[]>(`/experimentos/${expId}/atividades`),
+  criarAtividadeExp: (
+    expId: string,
+    body: {
+      modeloId?: string;
+      nome?: string;
+      tipo?: TipoAtividade;
+      data?: string;
+      responsavel?: string;
+      obs?: string;
+    },
+  ) =>
+    req<AtividadeExperimento>(`/experimentos/${expId}/atividades`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   registrarApontamento: (atividadeId: string, valores: ValorApontamentoInput[]) =>
-    req<AtividadeExperimento>(`/atividades/${atividadeId}/apontamento`, { method: "POST", body: JSON.stringify({ valores }) }),
-  atualizarAtividadeExp: (atividadeId: string, body: { dataPrevista?: string | null; confirmada?: boolean; data?: string | null; responsavel?: string; obs?: string }) =>
-    req<AtividadeExperimento>(`/atividades/${atividadeId}`, { method: "PUT", body: JSON.stringify(body) }),
-  removerAtividadeExp: (atividadeId: string) => req<{ ok: boolean }>(`/atividades/${atividadeId}`, { method: "DELETE" }),
-  gerarMarcos: (expId: string) => req<{ criados: string[]; eCultura: boolean }>(`/experimentos/${expId}/marcos/gerar`, { method: "POST" }),
+    req<AtividadeExperimento>(`/atividades/${atividadeId}/apontamento`, {
+      method: "POST",
+      body: JSON.stringify({ valores }),
+    }),
+  atualizarAtividadeExp: (
+    atividadeId: string,
+    body: {
+      dataPrevista?: string | null;
+      confirmada?: boolean;
+      data?: string | null;
+      responsavel?: string;
+      obs?: string;
+    },
+  ) =>
+    req<AtividadeExperimento>(`/atividades/${atividadeId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  removerAtividadeExp: (atividadeId: string) =>
+    req<{ ok: boolean }>(`/atividades/${atividadeId}`, { method: "DELETE" }),
+  gerarMarcos: (expId: string) =>
+    req<{ criados: string[]; eCultura: boolean }>(`/experimentos/${expId}/marcos/gerar`, {
+      method: "POST",
+    }),
 
   // grupos de coleta + coleta em lote
   listarGrupos: () => req<GrupoColeta[]>("/grupos-coleta"),
-  criarGrupo: (body: GrupoColetaInput) => req<GrupoColeta>("/grupos-coleta", { method: "POST", body: JSON.stringify(body) }),
-  atualizarGrupo: (id: string, body: Partial<GrupoColetaInput>) => req<GrupoColeta>(`/grupos-coleta/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  criarGrupo: (body: GrupoColetaInput) =>
+    req<GrupoColeta>("/grupos-coleta", { method: "POST", body: JSON.stringify(body) }),
+  atualizarGrupo: (id: string, body: Partial<GrupoColetaInput>) =>
+    req<GrupoColeta>(`/grupos-coleta/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   removerGrupo: (id: string) => req<{ ok: boolean }>(`/grupos-coleta/${id}`, { method: "DELETE" }),
   aplicarGrupo: (expId: string, grupoId: string) =>
-    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[]; atividadesAdicionadas: string[] }>(`/experimentos/${expId}/grupos/${grupoId}/aplicar`, { method: "POST" }),
+    req<{
+      criadas: Avaliacao[];
+      prerequisitosAdicionados: string[];
+      atividadesAdicionadas: string[];
+    }>(`/experimentos/${expId}/grupos/${grupoId}/aplicar`, { method: "POST" }),
   lancarLote: (expId: string, lancamentos: LancamentoLote[]) =>
-    req<{ salvos: number }>(`/experimentos/${expId}/coleta-lote`, { method: "POST", body: JSON.stringify({ lancamentos }) }),
+    req<{ salvos: number }>(`/experimentos/${expId}/coleta-lote`, {
+      method: "POST",
+      body: JSON.stringify({ lancamentos }),
+    }),
   analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
     req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
 
@@ -413,41 +592,72 @@ export const api = {
   categorias: () => req<Categoria[]>("/cadastros/categorias"),
   atualizarCategoria: (id: string, body: { nome?: string; eCultura?: boolean }) =>
     req<Categoria>(`/cadastros/categorias/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  subcategorias: (categoriaId: string) => req<Ref[]>(`/cadastros/subcategorias?categoriaId=${categoriaId}`),
-  objetos: (subcategoriaId: string) => req<ObjetoEstudo[]>(`/cadastros/objetos?subcategoriaId=${subcategoriaId}`),
-  criarCadastro: (tipo: "locais" | "safras" | "areas" | "delineamentos" | "categorias", nome: string) =>
-    req<Ref>(`/cadastros/${tipo}`, { method: "POST", body: JSON.stringify({ nome }) }),
+  subcategorias: (categoriaId: string) =>
+    req<Ref[]>(`/cadastros/subcategorias?categoriaId=${categoriaId}`),
+  objetos: (subcategoriaId: string) =>
+    req<ObjetoEstudo[]>(`/cadastros/objetos?subcategoriaId=${subcategoriaId}`),
+  criarCadastro: (
+    tipo: "locais" | "safras" | "areas" | "delineamentos" | "categorias",
+    nome: string,
+  ) => req<Ref>(`/cadastros/${tipo}`, { method: "POST", body: JSON.stringify({ nome }) }),
   criarSubcategoria: (categoriaId: string, nome: string) =>
-    req<Ref>("/cadastros/subcategorias", { method: "POST", body: JSON.stringify({ categoriaId, nome }) }),
+    req<Ref>("/cadastros/subcategorias", {
+      method: "POST",
+      body: JSON.stringify({ categoriaId, nome }),
+    }),
   criarObjeto: (subcategoriaId: string, nome: string) =>
-    req<ObjetoEstudo>("/cadastros/objetos", { method: "POST", body: JSON.stringify({ subcategoriaId, nome }) }),
+    req<ObjetoEstudo>("/cadastros/objetos", {
+      method: "POST",
+      body: JSON.stringify({ subcategoriaId, nome }),
+    }),
 
   // usuários (admin da instituição)
   listarUsuarios: () => req<Usuario[]>("/usuarios"),
-  criarUsuario: (body: { nome: string; email: string; senha: string; papel?: Papel; isAdminInstituicao?: boolean }) =>
-    req<Usuario>("/usuarios", { method: "POST", body: JSON.stringify(body) }),
-  atualizarUsuario: (id: string, body: { papel?: Papel; departamentoId?: string | null; unidadeId?: string | null; ativo?: boolean }) =>
-    req<Usuario>(`/usuarios/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  criarUsuario: (body: {
+    nome: string;
+    email: string;
+    senha: string;
+    papel?: Papel;
+    isAdminInstituicao?: boolean;
+  }) => req<Usuario>("/usuarios", { method: "POST", body: JSON.stringify(body) }),
+  atualizarUsuario: (
+    id: string,
+    body: {
+      papel?: Papel;
+      departamentoId?: string | null;
+      unidadeId?: string | null;
+      ativo?: boolean;
+    },
+  ) => req<Usuario>(`/usuarios/${id}`, { method: "PUT", body: JSON.stringify(body) }),
 
   // departamentos + unidades (hierarquia organizacional)
   departamentos: () => req<Departamento[]>("/departamentos"),
   unidades: () => req<Unidade[]>("/departamentos/unidades"),
-  criarDepartamento: (nome: string) => req<Departamento>("/departamentos", { method: "POST", body: JSON.stringify({ nome }) }),
+  criarDepartamento: (nome: string) =>
+    req<Departamento>("/departamentos", { method: "POST", body: JSON.stringify({ nome }) }),
   atualizarDepartamento: (id: string, body: { nome?: string; ativo?: boolean }) =>
     req<Departamento>(`/departamentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  desativarDepartamento: (id: string) => req<{ ok: boolean }>(`/departamentos/${id}`, { method: "DELETE" }),
+  desativarDepartamento: (id: string) =>
+    req<{ ok: boolean }>(`/departamentos/${id}`, { method: "DELETE" }),
 
   // responsáveis pela coleta
   listarResponsaveis: (expId: string) => req<Responsavel[]>(`/experimentos/${expId}/responsaveis`),
   adicionarResponsavel: (expId: string, userId: string) =>
-    req<Responsavel>(`/experimentos/${expId}/responsaveis`, { method: "POST", body: JSON.stringify({ userId }) }),
+    req<Responsavel>(`/experimentos/${expId}/responsaveis`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
   removerResponsavel: (expId: string, userId: string) =>
     req<{ ok: boolean }>(`/experimentos/${expId}/responsaveis/${userId}`, { method: "DELETE" }),
 
   // compartilhamento
-  listarCompartilhamentos: (expId: string) => req<Compartilhamento[]>(`/experimentos/${expId}/compartilhamentos`),
+  listarCompartilhamentos: (expId: string) =>
+    req<Compartilhamento[]>(`/experimentos/${expId}/compartilhamentos`),
   compartilhar: (expId: string, body: { email: string; nivel: "input" | "edit" }) =>
-    req<Compartilhamento>(`/experimentos/${expId}/compartilhar`, { method: "POST", body: JSON.stringify(body) }),
+    req<Compartilhamento>(`/experimentos/${expId}/compartilhar`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   revogarCompartilhamento: (shareId: string) =>
     req<{ ok: boolean }>(`/compartilhamentos/${shareId}`, { method: "DELETE" }),
 
@@ -457,16 +667,27 @@ export const api = {
     req<Instituicao>("/instituicao", { method: "PUT", body: JSON.stringify(body) }),
   listarAprovadores: () => req<Aprovador[]>("/instituicao/aprovadores"),
   adicionarAprovador: (userId: string) =>
-    req<Aprovador>("/instituicao/aprovadores", { method: "POST", body: JSON.stringify({ userId }) }),
-  removerAprovador: (id: string) => req<{ ok: boolean }>(`/instituicao/aprovadores/${id}`, { method: "DELETE" }),
+    req<Aprovador>("/instituicao/aprovadores", {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
+  removerAprovador: (id: string) =>
+    req<{ ok: boolean }>(`/instituicao/aprovadores/${id}`, { method: "DELETE" }),
 
   // ordem de serviço
   listarOS: (expId: string) => req<OrdemServico[]>(`/experimentos/${expId}/ordens-servico`),
-  criarOS: (expId: string) => req<OrdemServico>(`/experimentos/${expId}/ordens-servico`, { method: "POST" }),
+  criarOS: (expId: string) =>
+    req<OrdemServico>(`/experimentos/${expId}/ordens-servico`, { method: "POST" }),
   submeterOS: (osId: string, clienteEmail: string) =>
-    req<OrdemServico>(`/ordens-servico/${osId}/submeter`, { method: "POST", body: JSON.stringify({ clienteEmail }) }),
+    req<OrdemServico>(`/ordens-servico/${osId}/submeter`, {
+      method: "POST",
+      body: JSON.stringify({ clienteEmail }),
+    }),
   aprovarInternoOS: (osId: string, decisao: "aprovado" | "recusado", motivo?: string) =>
-    req<OrdemServico>(`/ordens-servico/${osId}/aprovar-interno`, { method: "POST", body: JSON.stringify({ decisao, motivo }) }),
+    req<OrdemServico>(`/ordens-servico/${osId}/aprovar-interno`, {
+      method: "POST",
+      body: JSON.stringify({ decisao, motivo }),
+    }),
 };
 
 /** Baixa o experimento em Excel (com token), via blob. */
@@ -502,7 +723,11 @@ export async function baixarRelatorioPptx(expId: string, nomeArquivo: string) {
 }
 
 /** Decisão pública do cliente (sem auth) — usada na página /aprovacao/[token]. */
-export async function decisaoCliente(token: string, decisao: "aprovado" | "recusado", motivo?: string) {
+export async function decisaoCliente(
+  token: string,
+  decisao: "aprovado" | "recusado",
+  motivo?: string,
+) {
   const r = await fetch(`${API_BASE}/aprovacao-cliente/${token}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -514,6 +739,15 @@ export async function decisaoCliente(token: string, decisao: "aprovado" | "recus
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */
 export function corTratamento(numeroRef: number): string {
-  const cores = ["#F6A6A6", "#F8C99B", "#F5E69B", "#CBD2DE", "#9BD2F5", "#C9B3F0", "#F0B3D6", "#E2D7A6"];
+  const cores = [
+    "#F6A6A6",
+    "#F8C99B",
+    "#F5E69B",
+    "#CBD2DE",
+    "#9BD2F5",
+    "#C9B3F0",
+    "#F0B3D6",
+    "#E2D7A6",
+  ];
   return cores[(numeroRef - 1) % cores.length];
 }

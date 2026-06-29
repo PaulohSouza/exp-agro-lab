@@ -16,7 +16,8 @@ function tratsSplit(): TratamentoFatorial[] {
   const out: TratamentoFatorial[] = [];
   let n = 1;
   for (let i = 0; i < 2; i++) {
-    for (let j = 0; j < 3; j++) out.push({ id: `T${n}`, numeroRef: n++, nivelPrincipal: i, nivelSub: j });
+    for (let j = 0; j < 3; j++)
+      out.push({ id: `T${n}`, numeroRef: n++, nivelPrincipal: i, nivelSub: j });
   }
   return out;
 }
@@ -89,7 +90,8 @@ describe("gerarParcelaSubdividida (split-plot 2×3 em 4 blocos)", () => {
   it("cada parcela principal tem 1 nível do fator principal e todos os do subfator", () => {
     const c = gerarParcelaSubdividida(tratsSplit(), 4, { seed: 9 });
     const grupos = new Map<number, typeof c.parcelas>();
-    for (const p of c.parcelas) grupos.set(p.grupoPrincipal!, [...(grupos.get(p.grupoPrincipal!) ?? []), p]);
+    for (const p of c.parcelas)
+      grupos.set(p.grupoPrincipal!, [...(grupos.get(p.grupoPrincipal!) ?? []), p]);
     expect(grupos.size).toBe(8); // 4 blocos × 2 níveis de A
     for (const sub of grupos.values()) {
       expect(new Set(sub.map((p) => p.nivelPrincipal)).size).toBe(1);
@@ -100,7 +102,9 @@ describe("gerarParcelaSubdividida (split-plot 2×3 em 4 blocos)", () => {
   it("cada bloco contém cada nível do fator principal exatamente uma vez", () => {
     const c = gerarParcelaSubdividida(tratsSplit(), 4, { seed: 3 });
     for (let bloco = 1; bloco <= 4; bloco++) {
-      const gruposNoBloco = new Set(c.parcelas.filter((p) => p.bloco === bloco).map((p) => p.grupoPrincipal));
+      const gruposNoBloco = new Set(
+        c.parcelas.filter((p) => p.bloco === bloco).map((p) => p.grupoPrincipal),
+      );
       expect(gruposNoBloco.size).toBe(2);
     }
   });

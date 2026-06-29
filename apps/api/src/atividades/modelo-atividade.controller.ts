@@ -4,7 +4,13 @@ import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 import type { EscopoModelo, TipoAtividade, TipoCampo } from "@exp/domain";
 
-interface CampoBody { rotulo: string; tipo?: TipoCampo; unidade?: string; obrigatorio?: boolean; ordem?: number }
+interface CampoBody {
+  rotulo: string;
+  tipo?: TipoCampo;
+  unidade?: string;
+  obrigatorio?: boolean;
+  ordem?: number;
+}
 interface ModeloAtividadeBody {
   nome: string;
   descricao?: string;
@@ -30,7 +36,11 @@ export class ModeloAtividadeController {
   }
 
   @Put(":id")
-  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: Partial<ModeloAtividadeBody>) {
+  atualizar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: Partial<ModeloAtividadeBody>,
+  ) {
     return this.service.atualizar(user, id, dto);
   }
 

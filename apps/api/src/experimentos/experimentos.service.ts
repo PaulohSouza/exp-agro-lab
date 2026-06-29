@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from "@nestjs/common";
 import { gerarCroqui, type Delineamento, type TratamentoRef } from "@exp/domain";
 import { PrismaService } from "../prisma/prisma.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -53,7 +58,11 @@ export class ExperimentosService {
         where: { deletedAt: null },
         orderBy: { createdAt: "desc" },
         include: {
-          objetoEstudo: true, local: true, safra: true, areaPesquisa: true, delineamento: true,
+          objetoEstudo: true,
+          local: true,
+          safra: true,
+          areaPesquisa: true,
+          delineamento: true,
           instituicao: { select: { nome: true } },
           owner: { select: { id: true, nome: true } },
           _count: { select: { tratamentos: true, parcelas: true } },
@@ -82,7 +91,11 @@ export class ExperimentosService {
       },
       orderBy: { createdAt: "desc" },
       include: {
-        objetoEstudo: true, local: true, safra: true, areaPesquisa: true, delineamento: true,
+        objetoEstudo: true,
+        local: true,
+        safra: true,
+        areaPesquisa: true,
+        delineamento: true,
         owner: { select: { id: true, nome: true } },
         _count: { select: { tratamentos: true, parcelas: true } },
       },
@@ -94,7 +107,11 @@ export class ExperimentosService {
   }
 
   /** Verifica acesso do usuário ao experimento. Retorna o nível: own | edit | input. */
-  async garantirAcesso(id: string, user: UsuarioAtual, exigir?: "edit"): Promise<"own" | "edit" | "input"> {
+  async garantirAcesso(
+    id: string,
+    user: UsuarioAtual,
+    exigir?: "edit",
+  ): Promise<"own" | "edit" | "input"> {
     const exp = await this.prisma.experimento.findFirst({
       where: { id, deletedAt: null },
       select: {
@@ -106,9 +123,11 @@ export class ExperimentosService {
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
 
     let nivel: "own" | "edit" | "input" | null = null;
-    if (user.papel === "admin_sistema") nivel = "own"; // super-admin global (RN-RBAC)
+    if (user.papel === "admin_sistema")
+      nivel = "own"; // super-admin global (RN-RBAC)
     else if (exp.instituicaoId === user.instituicaoId) nivel = "own";
-    else if (exp.compartilhamentos.length) nivel = exp.compartilhamentos[0].nivel === "edit" ? "edit" : "input";
+    else if (exp.compartilhamentos.length)
+      nivel = exp.compartilhamentos[0].nivel === "edit" ? "edit" : "input";
 
     if (!nivel) throw new ForbiddenException("Sem acesso a este experimento.");
     if (exigir === "edit" && nivel === "input") {
@@ -130,8 +149,14 @@ export class ExperimentosService {
 
   async adicionarResponsavel(id: string, user: UsuarioAtual, userId: string) {
     await this.garantirAcesso(id, user, "edit");
-    const exp = await this.prisma.experimento.findUnique({ where: { id }, select: { instituicaoId: true } });
-    const alvo = await this.prisma.user.findUnique({ where: { id: userId }, select: { instituicaoId: true } });
+    const exp = await this.prisma.experimento.findUnique({
+      where: { id },
+      select: { instituicaoId: true },
+    });
+    const alvo = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { instituicaoId: true },
+    });
     if (!exp || !alvo) throw new NotFoundException("Experimento ou usuário não encontrado.");
     if (alvo.instituicaoId !== exp.instituicaoId) {
       throw new BadRequestException("O responsável deve pertencer à instituição do experimento.");
@@ -280,7 +305,10 @@ export class ExperimentosService {
       n++;
     }
 
-    await this.prisma.experimento.update({ where: { id }, data: { numTratamentos: combos.length } });
+    await this.prisma.experimento.update({
+      where: { id },
+      data: { numTratamentos: combos.length },
+    });
     return this.carregar(id);
   }
 
@@ -296,11 +324,15 @@ export class ExperimentosService {
       include: { tratamentos: { orderBy: { numeroRef: "asc" } }, delineamento: true },
     });
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
-    if (!exp.tratamentos.length) throw new BadRequestException("Defina os fatores/tratamentos antes do croqui.");
+    if (!exp.tratamentos.length)
+      throw new BadRequestException("Defina os fatores/tratamentos antes do croqui.");
 
     const delineamento = opts.delineamento ?? mapDelineamento(exp.delineamento?.nome);
     const blocos = opts.blocos ?? exp.numRepeticoes ?? 4;
-    const trats: TratamentoRef[] = exp.tratamentos.map((t) => ({ id: t.id, numeroRef: t.numeroRef }));
+    const trats: TratamentoRef[] = exp.tratamentos.map((t) => ({
+      id: t.id,
+      numeroRef: t.numeroRef,
+    }));
 
     const croqui = gerarCroqui(delineamento, trats, blocos, {
       seed: opts.seed ?? 1,
@@ -332,7 +364,15 @@ export class ExperimentosService {
   async salvarCroqui(
     id: string,
     user: UsuarioAtual,
-    parcelas: Array<{ id: string; tratamentoId: string; bloco: number; posLinha: number; posColuna: number; numero: number; isInicio?: boolean }>,
+    parcelas: Array<{
+      id: string;
+      tratamentoId: string;
+      bloco: number;
+      posLinha: number;
+      posColuna: number;
+      numero: number;
+      isInicio?: boolean;
+    }>,
   ) {
     await this.garantirAcesso(id, user, "edit");
     await this.prisma.$transaction(

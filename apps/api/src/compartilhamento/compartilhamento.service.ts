@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../email/email.service";
@@ -22,7 +27,10 @@ export class CompartilhamentoService {
 
   /** Só o dono ou um admin da instituição do experimento gerencia compartilhamentos. */
   private podeGerenciar(exp: { ownerId: string; instituicaoId: string }, user: UsuarioAtual) {
-    return user.userId === exp.ownerId || (user.isAdminInstituicao && user.instituicaoId === exp.instituicaoId);
+    return (
+      user.userId === exp.ownerId ||
+      (user.isAdminInstituicao && user.instituicaoId === exp.instituicaoId)
+    );
   }
 
   async listar(experimentoId: string, user: UsuarioAtual) {
@@ -37,9 +45,14 @@ export class CompartilhamentoService {
     });
   }
 
-  async compartilhar(experimentoId: string, user: UsuarioAtual, dto: { email: string; nivel: "input" | "edit" }) {
+  async compartilhar(
+    experimentoId: string,
+    user: UsuarioAtual,
+    dto: { email: string; nivel: "input" | "edit" },
+  ) {
     const exp = await this.carregarExp(experimentoId);
-    if (!this.podeGerenciar(exp, user)) throw new ForbiddenException("Apenas o dono ou admin compartilha.");
+    if (!this.podeGerenciar(exp, user))
+      throw new ForbiddenException("Apenas o dono ou admin compartilha.");
     const nivel = dto.nivel === "edit" ? "edit" : "input";
 
     const alvo = await this.prisma.user.findUnique({ where: { email: dto.email } });
@@ -81,10 +94,13 @@ export class CompartilhamentoService {
   }
 
   async revogar(shareId: string, user: UsuarioAtual) {
-    const share = await this.prisma.experimentoCompartilhamento.findUnique({ where: { id: shareId } });
+    const share = await this.prisma.experimentoCompartilhamento.findUnique({
+      where: { id: shareId },
+    });
     if (!share) throw new NotFoundException("Compartilhamento não encontrado.");
     const exp = await this.carregarExp(share.experimentoId);
-    if (!this.podeGerenciar(exp, user)) throw new ForbiddenException("Apenas o dono ou admin revoga.");
+    if (!this.podeGerenciar(exp, user))
+      throw new ForbiddenException("Apenas o dono ou admin revoga.");
     await this.prisma.experimentoCompartilhamento.delete({ where: { id: shareId } });
     return { ok: true };
   }

@@ -21,7 +21,10 @@ const TRANSICOES: Record<Ensaio, Record<StatusExperimento, StatusExperimento[]>>
   },
 };
 
-export function transicoesPermitidas(ensaio: Ensaio, atual: StatusExperimento): StatusExperimento[] {
+export function transicoesPermitidas(
+  ensaio: Ensaio,
+  atual: StatusExperimento,
+): StatusExperimento[] {
   return TRANSICOES[ensaio][atual] ?? [];
 }
 

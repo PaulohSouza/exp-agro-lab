@@ -23,7 +23,11 @@ export class AtividadeExperimentoController {
   }
 
   @Post("experimentos/:id/atividades")
-  criar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: CriarAtividadeBody) {
+  criar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: CriarAtividadeBody,
+  ) {
     return this.service.criar(id, user, dto);
   }
 
@@ -33,12 +37,27 @@ export class AtividadeExperimentoController {
   }
 
   @Put("atividades/:id")
-  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: { dataPrevista?: string | null; confirmada?: boolean; data?: string | null; responsavel?: string; obs?: string }) {
+  atualizar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body()
+    dto: {
+      dataPrevista?: string | null;
+      confirmada?: boolean;
+      data?: string | null;
+      responsavel?: string;
+      obs?: string;
+    },
+  ) {
     return this.service.atualizar(id, user, dto);
   }
 
   @Post("atividades/:id/apontamento")
-  apontamento(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() body: { valores: ValorApontamento[] }) {
+  apontamento(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() body: { valores: ValorApontamento[] },
+  ) {
     return this.service.registrarApontamento(id, user, body.valores ?? []);
   }
 

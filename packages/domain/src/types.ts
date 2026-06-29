@@ -13,11 +13,7 @@ export type Delineamento = "DIC" | "DBC" | "FATORIAL";
 export type Esquema = "fatorial" | "parcela_subdividida";
 
 export type StatusExperimento =
-  | "Inserindo"
-  | "AprovadoCAD"
-  | "RecusadoCAD"
-  | "EmConducao"
-  | "Concluido";
+  "Inserindo" | "AprovadoCAD" | "RecusadoCAD" | "EmConducao" | "Concluido";
 
 export type NivelCompartilhamento = "input" | "edit";
 

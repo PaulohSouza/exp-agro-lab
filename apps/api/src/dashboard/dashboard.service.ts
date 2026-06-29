@@ -44,7 +44,11 @@ export class DashboardService {
       case "gestao_departamento":
         // sem departamento configurado → cai para a instituição (não quebra)
         return me.departamentoId
-          ? { ...base, instituicaoId: user.instituicaoId, unidade: { departamentoId: me.departamentoId } }
+          ? {
+              ...base,
+              instituicaoId: user.instituicaoId,
+              unidade: { departamentoId: me.departamentoId },
+            }
           : { ...base, instituicaoId: user.instituicaoId };
       case "coordenador_area":
         return me.unidadeId
@@ -121,7 +125,7 @@ export class DashboardService {
     // destaque: pendências/atrasos mais próximos primeiro
     const destaque = itens
       .filter((i) => i.estado !== "realizada")
-      .sort((x, y) => (x.dataPrevista!.getTime() - y.dataPrevista!.getTime()))
+      .sort((x, y) => x.dataPrevista!.getTime() - y.dataPrevista!.getTime())
       .slice(0, 12);
 
     return {

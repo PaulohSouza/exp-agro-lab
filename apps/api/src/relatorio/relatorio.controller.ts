@@ -8,7 +8,10 @@ export class RelatorioController {
   constructor(private readonly service: RelatorioService) {}
 
   @Get(":id/relatorio.pptx")
-  @Header("Content-Type", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+  @Header(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  )
   @Header("Content-Disposition", 'attachment; filename="relatorio.pptx"')
   async pptx(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
     const buffer = await this.service.gerarPptx(id, user);
