@@ -1,7 +1,9 @@
 # STATUS do projeto — EXP-AGROLAB
 
-> **Handoff para retomar em nova conversa.** Última atualização: 28/06/2026. Branch `main`.
-> Ao retomar com o Claude: leia [CLAUDE.md](CLAUDE.md) + este arquivo + [SDD/README.md](SDD/README.md). O roadmap detalhado está em [SDD/01-visao-geral/03-roadmap.md](SDD/01-visao-geral/03-roadmap.md).
+> **Handoff para retomar em nova conversa.** Última atualização: 29/06/2026.
+> **Onde estamos:** feature **catálogo de avaliações/atividades + período/marcos + coleta agrupada** concluída na branch `feature/catalogo-avaliacoes-coleta` e aberta no **PR [#1](https://github.com/PaulohSouza/exp-agro-lab/pull/1)** para a `main` (aguardando merge — ver §8.0). Macros A ✅ · C ✅ (incl. C5) · D ✅ · B ✅ (B5 mobile compila, falta device).
+> **Comece por aqui:** §8 (próximos passos) lista tudo o que falta, priorizado. Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md). Design da feature: [SDD/04-design-detalhado/08-catalogo-avaliacoes.md](SDD/04-design-detalhado/08-catalogo-avaliacoes.md).
+> Testes: **domain 59** + **5 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`).
 
 ## 1. O que é
 Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de 1–3 fatores, tratamentos, croqui clique-e-arraste, avaliações (valor bruto), dois fluxos (interno/comercial), multi-instituição com compartilhamento, análise estatística e relatório PPTX. Objeto de estudo genérico (cultura, máquina, pessoa/atleta…).
@@ -54,6 +56,7 @@ Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para mu
   - **C5 refatorar a colheita** ✅ — removidos `numLinhasColhidas`/`comprimentoColhidoM`/`areaUtilM2` de `AvaliacaoDado` (migration `20260629151806`). A **área útil** agora vem da **atividade Colheita** (`ModeloAtividade.fornecAreaColheita`, campos `linhas`/`comprimento`) via helper `areaUtilDoExperimento` (única p/ todas as parcelas). `gerarMarcos` cria a Colheita a partir do modelo de sistema (apontamento, é marco), com sub-linha de medições na aba Atividades. Repontados avaliacoes/export/sync; lançamento de massa coleta só o valor. Seed recriado (Colheita + catálogo demo Umidade/Produtividade c/ pré-req avaliação+atividade) + sandbox "SIM 2-Fatores". **RN-PROD validado: CV 1,22%, área 9 m², T4 ≈ 10.717 kg/ha.** **Macro C concluída.** Plano: [SDD/04-design-detalhado/08-c5-plano-colheita.md](SDD/04-design-detalhado/08-c5-plano-colheita.md).
 - **Macro D — Período + Cronograma de marcos** ✅ (fora da ordem original, a pedido). `Experimento.tipoPeriodo` (safra | ano_semestre) + `anoSemestre`; toggle na aba Geral. Marcos do cronograma como **atividades** (`AtividadeExperimento.marco`/`dataPrevista`/`confirmada`/`data`): botão "Gerar marcos" (implantação/início/fim + semeadura/colheita se cultura), checklist com previsão + checkbox confirmar + data realizada na aba Atividades. `Categoria.eCultura` (flag; seed marca "Cultura"). Domínio: `marcosPadrao`, `statusMarco`. Migration `20260629150151`. e2e `test_periodo_marcos.py`.
 - **Macro B — Coleta agrupada** ✅ (B1–B4; B5 mobile offline = follow-up). Grupos de coleta (CRUD multi-escopo, subaba em `/catalogo`); "Aplicar grupo" no experimento (adiciona avaliações do grupo + pré-req, marca `grupoColetaId`); **coleta em lote**: `POST /experimentos/:id/coleta-lote` (idempotente, `dedupLancamentos`) + grade web (parcela × avaliações) com **filtro por timing/grupo** na aba Avaliações. Domínio `dedupLancamentos`. Smoke: aplicar grupo OK; lote 4→3 (dedupe).
+  - **B5 mobile** ✅ (compila; falta device) — sync pull expõe `timingId`/`grupoColetaId` + timings; app ganhou **filtro por timing** nos chips de coleta. O lote offline já funcionava (fila por célula sobre várias avaliações + push unificado).
 - **Status geral:** A ✅ · C ✅ (incl. C5) · B ✅ (B5 mobile pendente). Pré-requisitos cruzam avaliações **e** atividades. Testes: **domain 59** + **5 suites e2e** (Playwright Python em `e2e/`, todas passando).
 
 ## 3.1 Em andamento — croqui de 2+ fatores (esquema)
@@ -86,15 +89,33 @@ Mobile: ver `apps/mobile/README.md` (`EXPO_PUBLIC_API_BASE` = IP da máquina).
 ## 7. Testes a fazer
 Ver o checklist completo em **[TESTES.md](TESTES.md)**.
 
-## 8. Próximos passos sugeridos (escolher na retomada)
-1. **Feedback dos testes** → corrigir o que aparecer.
-2. **Analytics fase B** — Tukey/Scott-Knott + **golden tests vs SAGRE** (trazer outputs do R de 1–2 experimentos).
-3. **Relatório fase B** — layout fiel ao modelo PPTX.
-4. **App mobile** — testar em device e iterar.
-5. **Endurecimento** — segurança (refresh token, RBAC fino), observabilidade, CI no GitHub.
+## 8. Próximos passos (handoff — registrado para a próxima conversa)
+
+### 8.0 Imediatas desta entrega (catálogo/coleta)
+- [ ] **Merge do PR [#1](https://github.com/PaulohSouza/exp-agro-lab/pull/1)** na `main` (bloqueado p/ o agente pelo classificador "merge sem revisão" — **o usuário executa**: `gh pr merge 1 --merge`).
+- [ ] Após o merge: `git checkout main && git pull && git tag v0.7.0 && git push origin v0.7.0` (tag definitiva; `v0.7.0-catalogo.2` é pre-release de branch).
+- [x] **B5** — coleta offline no mobile: caminho de dados já funcionava; adicionado **filtro por timing** nos chips (compila por tsc; validar em device).
+- [x] Docs: `docs/` restaurado; `estrutura claude/` + `bloqueio-requisitos.png` no `.gitignore` (pasta de trabalho local, fora do repo).
+
+### 8.1 Croqui de 2+ fatores (split-plot) — domínio pronto, falta o resto
+Campos `esquema`/`grupoPrincipal` no schema+API · UX de arraste em 2 níveis na web · ramificação da ANOVA (2 erros → liga com analytics). Design: [SDD 06](SDD/04-design-detalhado/06-croqui-esquemas.md).
+
+### 8.2 Analytics fase B (completar) — `packages/analytics`
+Fatorial 2–3 + desdobramento · split-plot (2 erros) · transformações (Box-Cox/log/√) · não-paramétrico (Kruskal/Friedman + post-hoc) · análise conjunta · **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
+
+### 8.3 Relatório PPTX fase B
+Aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (layout fiel).
+
+### 8.4 Mobile
+Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de coleta do B5.
+
+### 8.5 Endurecimento / infra
+**CI no GitHub** (rodar domain 59 testes + 5 suites e2e no PR) · refresh-token + senha forte · RBAC fino + auditoria · e-mail real (hoje SIMULATE em `email-previews/`) · observabilidade.
+
+> **Prioridade sugerida:** (1) merge+tag → (2) CI → (3) croqui split-plot + analytics fase B (andam juntos) → (4) golden vs SAGRE → (5) PPTX fiel → (6) mobile em device.
 
 ## 9. Releases
-`v0.1.0` (MVP-1+Auth+Compartilhamento+OS) · `v0.2.0` (Marco 1 completo) · `v0.3.0` (sync) · `v0.4.0` (mobile) · `v0.5.0` (analytics) · `v0.6.0` (relatório PPTX). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
+`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · **`v0.7.0-catalogo.2`** (pre-release de branch: catálogo de avaliações/atividades + período/marcos + coleta agrupada — **PR #1 aberto p/ main**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
 
 ## 10. Infra / notas de ambiente
 - `pnpm` symlinkado em `~/.local/bin`. MySQL local: root via socket (`mysql -u root`); app usa user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar schema `sagre`).
