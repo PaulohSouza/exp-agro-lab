@@ -36,7 +36,7 @@ export default function LoginPage() {
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#141B2D" }}>
       <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 360, margin: "0 16px" }}>
-        <h1 style={{ margin: "0 0 4px", color: "#1F2940" }}>EXP-AGROLAB</h1>
+        <h1 style={{ margin: "0 0 4px", color: "#1F2940" }}>EXP-AgroLab</h1>
         <p style={{ marginTop: 0, color: "#7987A1", fontSize: 13 }}>
           {modo === "login" ? "Entrar na sua conta" : "Registrar nova instituição"}
         </p>

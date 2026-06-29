@@ -23,8 +23,11 @@ export class CadastrosService {
   listarCategorias() {
     return this.prisma.categoria.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } });
   }
-  criarCategoria(dto: { nome: string }) {
-    return this.prisma.categoria.create({ data: { nome: dto.nome } });
+  criarCategoria(dto: { nome: string; eCultura?: boolean }) {
+    return this.prisma.categoria.create({ data: { nome: dto.nome, eCultura: dto.eCultura ?? false } });
+  }
+  atualizarCategoria(id: string, dto: { nome?: string; eCultura?: boolean }) {
+    return this.prisma.categoria.update({ where: { id }, data: { nome: dto.nome, eCultura: dto.eCultura } });
   }
   listarSubcategorias(categoriaId?: string) {
     return this.prisma.subcategoria.findMany({

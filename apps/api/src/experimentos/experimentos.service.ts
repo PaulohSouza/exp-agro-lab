@@ -28,6 +28,8 @@ export interface AtualizarExperimentoDto extends Partial<CriarExperimentoDto> {
   tipoExecucao?: string;
   previsaoSemeadura?: string;
   dataSemeadura?: string;
+  tipoPeriodo?: "safra" | "ano_semestre";
+  anoSemestre?: string;
 }
 
 export interface DefinirFatoresDto {
@@ -235,6 +237,8 @@ export class ExperimentosService {
         numRepeticoes: dto.numRepeticoes,
         previsaoSemeadura: dto.previsaoSemeadura ? new Date(dto.previsaoSemeadura) : undefined,
         dataSemeadura: dto.dataSemeadura ? new Date(dto.dataSemeadura) : undefined,
+        tipoPeriodo: dto.tipoPeriodo,
+        anoSemestre: dto.anoSemestre === undefined ? undefined : dto.anoSemestre || null,
       },
     });
     return this.carregar(id);

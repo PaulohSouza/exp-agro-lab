@@ -9,6 +9,7 @@ export default function Protocolo() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [bundle, setBundle] = useState<BundleOffline | null>(null);
   const [avalId, setAvalId] = useState<string | null>(null);
+  const [timingFiltro, setTimingFiltro] = useState<string | null>(null); // null = todos
   const [valores, setValores] = useState<Record<string, string>>({});
   const [filaN, setFilaN] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
@@ -82,12 +83,28 @@ export default function Protocolo() {
         {!online && <Text style={s.offline}>● offline</Text>}
       </View>
 
-      <View style={s.avalRow}>
-        {(bundle?.experimento.avaliacoes ?? []).map((a) => (
-          <Pressable key={a.id} onPress={() => setAvalId(a.id)} style={[s.chip, a.id === avalId && s.chipAtivo]}>
-            <Text style={[s.chipText, a.id === avalId && s.chipTextAtivo]}>{a.nome}</Text>
+      {/* filtro de coleta por timing (mostra só as avaliações daquele momento) */}
+      {(bundle?.experimento.timings?.length ?? 0) > 0 && (
+        <View style={s.avalRow}>
+          <Pressable onPress={() => setTimingFiltro(null)} style={[s.chipF, timingFiltro === null && s.chipFAtivo]}>
+            <Text style={[s.chipText, timingFiltro === null && s.chipTextAtivo]}>Todos</Text>
           </Pressable>
-        ))}
+          {(bundle?.experimento.timings ?? []).map((t) => (
+            <Pressable key={t.id} onPress={() => setTimingFiltro(t.id)} style={[s.chipF, timingFiltro === t.id && s.chipFAtivo]}>
+              <Text style={[s.chipText, timingFiltro === t.id && s.chipTextAtivo]}>{t.nome}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      <View style={s.avalRow}>
+        {(bundle?.experimento.avaliacoes ?? [])
+          .filter((a) => timingFiltro === null || a.timingId === timingFiltro)
+          .map((a) => (
+            <Pressable key={a.id} onPress={() => setAvalId(a.id)} style={[s.chip, a.id === avalId && s.chipAtivo]}>
+              <Text style={[s.chipText, a.id === avalId && s.chipTextAtivo]}>{a.nome}</Text>
+            </Pressable>
+          ))}
       </View>
 
       <FlatList
@@ -127,6 +144,8 @@ const s = StyleSheet.create({
   avalRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 },
   chip: { backgroundColor: "#e1e6f1", borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
   chipAtivo: { backgroundColor: "#1F2940" },
+  chipF: { backgroundColor: "#eef6fc", borderColor: "#4EC2F0", borderWidth: 1, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4 },
+  chipFAtivo: { backgroundColor: "#4EC2F0" },
   chipText: { color: "#1F2940", fontSize: 13 },
   chipTextAtivo: { color: "#fff" },
   linha: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 8, padding: 10, marginBottom: 8 },

@@ -27,6 +27,9 @@ model Instituicao {
   usuarios     User[]
   experimentos Experimento[]
   aprovadores  AprovadorInstituicao[]
+  modelosAvaliacao ModeloAvaliacao[]
+  gruposColeta GrupoColeta[]
+  modelosAtividade ModeloAtividade[]
 }
 
 enum PoliticaAprovacao {
@@ -44,6 +47,9 @@ model Departamento {
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   unidades      Unidade[]
   usuarios      User[]
+  modelosAvaliacao ModeloAvaliacao[]
+  gruposColeta  GrupoColeta[]
+  modelosAtividade ModeloAtividade[]
 
   @@index([instituicaoId])
 }
@@ -107,6 +113,8 @@ model Categoria {
   id    String @id @default(cuid())
   nome  String
   ativo Boolean @default(true)
+  // Quando true, ensaios com objeto desta categoria ganham marcos de Semeadura/Colheita.
+  eCultura Boolean @default(false)
   subcategorias Subcategoria[]
 }
 
@@ -172,6 +180,10 @@ model Experimento {
   areaPesquisaId   String?
   delineamentoId   String?
 
+  // Período do ensaio: safra (campo) OU ano.semestre (laboratório).
+  tipoPeriodo      TipoPeriodo @default(safra)
+  anoSemestre      String?  // ex.: "2026.1" quando tipoPeriodo = ano_semestre
+
   cultivar         String?
   tipoExecucao     String?
   metodologia      String?  @db.Text
@@ -206,6 +218,7 @@ model Experimento {
   tratamentos     Tratamento[]
   parcelas        Parcela[]
   avaliacoes      Avaliacao[]
+  atividades      AtividadeExperimento[]
   timings         Timing[]
   compartilhamentos ExperimentoCompartilhamento[]
   responsaveis    ExperimentoResponsavel[]
@@ -348,8 +361,12 @@ model Parcela {
 model Avaliacao {
   id            String @id @default(cuid())
   experimentoId String
+  modeloId      String?            // origem no catálogo (null = ad-hoc)
+  grupoColetaId String?            // grupo de coleta de origem (filtro de coleta)
   nome          String
   metodologia   String? @db.Text
+  descricaoColeta String? @db.Text // como a coleta é feita (herdado do modelo, sobreponível)
+  numeroPontos  Int     @default(1) // pontos amostrais (sobrepõe o do modelo)
   unidadeColeta String?
   unidadeSaida  String?
   formula       String?
@@ -360,13 +377,230 @@ model Avaliacao {
   dataPrevista  DateTime?
   ordem         Int     @default(0)
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  modelo        ModeloAvaliacao? @relation(fields: [modeloId], references: [id])
+  grupoColeta   GrupoColeta?     @relation(fields: [grupoColetaId], references: [id])
   timing        Timing?  @relation(fields: [timingId], references: [id])
   dados         AvaliacaoDado[]
+
+  @@index([modeloId])
+  @@index([grupoColetaId])
 }
 
 enum TipoAvaliacao {
   calendarizada
   condicional
+}
+
+// ----------------------- Catálogo de avaliações (multi-escopo) -----------------------
+// Modelo reutilizável de avaliação. Existe em três escopos: padrão do sistema,
+// padrão da instituição (só admin da instituição cadastra) e metodologia própria
+// do departamento/laboratório. A mesma medida (ex.: "Altura de plantas") pode ter
+// versões distintas em cada escopo. Ver SDD/04-design-detalhado/08-catalogo-avaliacoes.md
+model ModeloAvaliacao {
+  id                   String  @id @default(cuid())
+  nome                 String
+  descricaoColeta      String? @db.Text  // como a coleta é feita
+  numeroPontos         Int     @default(1) // pontos amostrais coletados
+  metodologiaRelatorio String? @db.Text  // base para a IA redigir o relatório
+  unidadeColeta        String?            // ex.: kg
+  unidadeSaida         String?            // ex.: sacas/ha
+  calculoRelatorio     String?            // fórmula de conversão
+  escopo               EscopoModelo @default(sistema)
+  instituicaoId        String?            // dono quando escopo = instituicao/departamento
+  departamentoId       String?            // dono quando escopo = departamento
+  baseadoEmId          String?            // derivado de outro modelo (ex.: depto herda do sistema)
+  ativo                Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  instituicao   Instituicao?  @relation(fields: [instituicaoId], references: [id])
+  departamento  Departamento? @relation(fields: [departamentoId], references: [id])
+  baseadoEm     ModeloAvaliacao?  @relation("ModeloDerivacao", fields: [baseadoEmId], references: [id])
+  derivados     ModeloAvaliacao[] @relation("ModeloDerivacao")
+
+  prerequisitos ModeloAvaliacaoPrereq[] @relation("ModeloPrereqs")     // avaliações que este exige
+  requeridoPor  ModeloAvaliacaoPrereq[] @relation("ModeloRequeridoPor") // avaliações que exigem este
+  prerequisitosAtividade ModeloAvaliacaoPrereqAtividade[] @relation("AvalReqAtiv") // atividades que este exige
+
+  avaliacoes    Avaliacao[]
+  gruposItens   GrupoColetaItem[]
+
+  @@index([escopo])
+  @@index([instituicaoId])
+  @@index([departamentoId])
+}
+
+enum EscopoModelo {
+  sistema
+  instituicao
+  departamento
+}
+
+// Pré-requisito entre avaliações: ex.: Produtividade exige Umidade (conversão a 13%).
+model ModeloAvaliacaoPrereq {
+  modeloId       String
+  prerequisitoId String
+  modelo         ModeloAvaliacao @relation("ModeloPrereqs", fields: [modeloId], references: [id], onDelete: Cascade)
+  prerequisito   ModeloAvaliacao @relation("ModeloRequeridoPor", fields: [prerequisitoId], references: [id], onDelete: Cascade)
+
+  @@id([modeloId, prerequisitoId])
+  @@index([prerequisitoId])
+}
+
+// Pré-requisito de uma avaliação sobre uma ATIVIDADE: ex.: Produtividade exige a
+// atividade Colheita (linhas/comprimento). Cruza os dois catálogos.
+model ModeloAvaliacaoPrereqAtividade {
+  modeloAvaliacaoId String
+  modeloAtividadeId String
+  modeloAvaliacao   ModeloAvaliacao @relation("AvalReqAtiv", fields: [modeloAvaliacaoId], references: [id], onDelete: Cascade)
+  modeloAtividade   ModeloAtividade @relation("AtivReqPorAval", fields: [modeloAtividadeId], references: [id], onDelete: Cascade)
+
+  @@id([modeloAvaliacaoId, modeloAtividadeId])
+  @@index([modeloAtividadeId])
+}
+
+// Conjunto nomeado de avaliações coletadas juntas (ex.: "Colheita" = Umidade+PMG+Produtividade).
+// Reutilizável e escopado como o catálogo. Ver demanda de coleta agrupada (B).
+model GrupoColeta {
+  id             String  @id @default(cuid())
+  nome           String
+  descricao      String?
+  escopo         EscopoModelo @default(instituicao)
+  instituicaoId  String?
+  departamentoId String?
+  ativo          Boolean @default(true)
+  createdAt      DateTime @default(now())
+
+  instituicao   Instituicao?  @relation(fields: [instituicaoId], references: [id])
+  departamento  Departamento? @relation(fields: [departamentoId], references: [id])
+  itens         GrupoColetaItem[]
+  avaliacoes    Avaliacao[]
+
+  @@index([instituicaoId])
+  @@index([departamentoId])
+}
+
+model GrupoColetaItem {
+  id       String @id @default(cuid())
+  grupoId  String
+  modeloId String
+  ordem    Int    @default(0)
+  grupo    GrupoColeta     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  modelo   ModeloAvaliacao @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+
+  @@unique([grupoId, modeloId])
+}
+
+// ----------------------- Catálogo de atividades (Macro C) -----------------------
+// Atividade = registro GERAL do experimento (não por parcela). Pode ser de ação
+// (sem coleta) ou com apontamento (campos parametrizados). Multi-escopo como o
+// catálogo de avaliações. NÃO confundir com o cadastro simples `Atividade`
+// (nome+valorVenda) usado em TratamentoProduto.
+// Ver SDD/04-design-detalhado/08-catalogo-avaliacoes.md (Demanda C).
+model ModeloAtividade {
+  id                   String  @id @default(cuid())
+  nome                 String
+  descricao            String? @db.Text
+  tipo                 TipoAtividade @default(acao)
+  metodologiaRelatorio String? @db.Text
+  // Quando true, a atividade (com campos linhas/comprimento) fornece a área útil
+  // do ensaio para o cálculo de produtividade (RN-PROD / C5).
+  fornecAreaColheita   Boolean @default(false)
+  escopo               EscopoModelo @default(sistema)
+  instituicaoId        String?
+  departamentoId       String?
+  ativo                Boolean @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  instituicao   Instituicao?  @relation(fields: [instituicaoId], references: [id])
+  departamento  Departamento? @relation(fields: [departamentoId], references: [id])
+  campos        ModeloAtividadeCampo[]
+  atividades    AtividadeExperimento[]
+  requeridaPorAvaliacao ModeloAvaliacaoPrereqAtividade[] @relation("AtivReqPorAval")
+
+  @@index([escopo])
+  @@index([instituicaoId])
+  @@index([departamentoId])
+}
+
+enum TipoAtividade {
+  acao
+  apontamento
+}
+
+enum TipoPeriodo {
+  safra
+  ano_semestre
+}
+
+// Marcos do cronograma do ensaio.
+enum MarcoTipo {
+  implantacao
+  inicio
+  fim
+  semeadura
+  colheita
+}
+
+// Campo parametrizado de uma atividade com apontamento (ex.: CO2 → vento, umidade, data).
+model ModeloAtividadeCampo {
+  id          String @id @default(cuid())
+  modeloId    String
+  rotulo      String
+  tipo        TipoCampo @default(numero)
+  unidade     String?
+  obrigatorio Boolean @default(false)
+  ordem       Int     @default(0)
+  modelo      ModeloAtividade @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+
+  @@index([modeloId])
+}
+
+enum TipoCampo {
+  numero
+  texto
+  data
+  booleano
+}
+
+// Registro de uma atividade no experimento (nível experimento, não por parcela).
+model AtividadeExperimento {
+  id            String @id @default(cuid())
+  experimentoId String
+  modeloId      String?
+  nome          String
+  tipo          TipoAtividade @default(acao)
+  marco         MarcoTipo?         // quando preenchido, é um marco do cronograma
+  dataPrevista  DateTime?          // previsão (marco)
+  confirmada    Boolean @default(false) // marco confirmado pelo usuário
+  data          DateTime?          // data realizada/confirmada
+  responsavel   String?
+  obs           String? @db.Text
+  status        String?
+  ordem         Int     @default(0)
+  createdAt     DateTime @default(now())
+  experimento   Experimento      @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  modelo        ModeloAtividade? @relation(fields: [modeloId], references: [id])
+  valores       AtividadeApontamentoValor[]
+
+  @@index([experimentoId])
+  @@index([modeloId])
+}
+
+// Valor de um campo de apontamento de uma atividade do experimento.
+model AtividadeApontamentoValor {
+  id          String @id @default(cuid())
+  atividadeId String
+  campoId     String?            // ref. ao ModeloAtividadeCampo (quando veio do modelo)
+  rotulo      String             // snapshot do rótulo
+  valorNum    Float?
+  valorTexto  String?
+  valorData   DateTime?
+  valorBool   Boolean?
+  atividade   AtividadeExperimento @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+
+  @@index([atividadeId])
 }
 
 model AvaliacaoDado {
@@ -375,11 +609,8 @@ model AvaliacaoDado {
   parcelaId          String
   numAmostra         Int     @default(1)
   // Valor BRUTO coletado no campo. A produtividade (kg/ha) é apresentada no relatório.
+  // RN-PROD: a área útil vem da ATIVIDADE de Colheita (linhas/comprimento), nível experimento — ver C5.
   valorColetado      Float?
-  // Apontamentos da ATIVIDADE de colheita (RN-PROD): registrados no momento da atividade.
-  numLinhasColhidas  Int?
-  comprimentoColhidoM Float?
-  areaUtilM2         Float?
   obs                String? @db.Text
   status             String?
   fotoUrl            String?

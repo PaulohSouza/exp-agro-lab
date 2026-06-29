@@ -1,9 +1,15 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type Experimento, type RelatorioAvaliacao } from "../../../lib/api";
+import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type EscopoModelo, type Experimento, type GrupoColeta, type LancamentoLote, type ModeloAvaliacao, type RelatorioAvaliacao } from "../../../lib/api";
+
+const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: string }> = {
+  sistema: { sigla: "GER", label: "Geral (sistema)", cor: "#1F2940" },
+  instituicao: { sigla: "INST", label: "Instituição", cor: "#4EC2F0" },
+  departamento: { sigla: "DEP", label: "Departamento", cor: "#C9B3F0" },
+};
 
 export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (e: Experimento) => void }) {
-  const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao } | { tipo: "analise"; aval: Avaliacao }>({ tipo: "lista" });
+  const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao } | { tipo: "analise"; aval: Avaliacao } | { tipo: "lote" }>({ tipo: "lista" });
   const avaliacoes = exp.avaliacoes ?? [];
 
   async function recarregar() {
@@ -13,9 +19,17 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
   if (modo.tipo === "lancar") return <Lancar exp={exp} aval={modo.aval} voltar={() => { setModo({ tipo: "lista" }); recarregar(); }} />;
   if (modo.tipo === "relatorio") return <Relatorio aval={modo.aval} voltar={() => setModo({ tipo: "lista" })} />;
   if (modo.tipo === "analise") return <Analise aval={modo.aval} voltar={() => setModo({ tipo: "lista" })} />;
+  if (modo.tipo === "lote") return <ColetaLote exp={exp} voltar={() => { setModo({ tipo: "lista" }); recarregar(); }} />;
 
   return (
     <div>
+      <AdicionarDoCatalogo exp={exp} onAdicionou={recarregar} />
+      <AplicarGrupo exp={exp} onAplicou={recarregar} />
+      {avaliacoes.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <button data-testid="abrir-coleta-lote" onClick={() => setModo({ tipo: "lote" })} style={mini("#1F2940")}>Coleta em lote (grade)</button>
+        </div>
+      )}
       <NovaAvaliacao exp={exp} onCriou={recarregar} />
       <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
         <thead>
@@ -45,6 +59,222 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
           {avaliacoes.length === 0 && <tr><td style={td} colSpan={7}><span style={{ color: "#a9abbd" }}>Nenhuma avaliação.</span></td></tr>}
         </tbody>
       </table></div>
+    </div>
+  );
+}
+
+function AdicionarDoCatalogo({ exp, onAdicionou }: { exp: Experimento; onAdicionou: () => void }) {
+  const [modelos, setModelos] = useState<ModeloAvaliacao[]>([]);
+  const [filtro, setFiltro] = useState<EscopoModelo | "todos">("todos");
+  const [sel, setSel] = useState("");
+  const [info, setInfo] = useState<ModeloAvaliacao | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => { api.listarModelos().then(setModelos).catch(() => {}); }, []);
+
+  const visiveis = useMemo(
+    () => (filtro === "todos" ? modelos : modelos.filter((m) => m.escopo === filtro)),
+    [modelos, filtro],
+  );
+  const selModelo = modelos.find((m) => m.id === sel) ?? null;
+
+  async function adicionar() {
+    if (!sel) return;
+    setMsg(null); setErro(null);
+    try {
+      const r = await api.adicionarAvaliacoesDoModelo(exp.id, [sel]);
+      const nomes = r.criadas.map((a) => a.nome);
+      let txt = nomes.length ? `Adicionada(s): ${nomes.join(", ")}.` : "Modelo já estava no experimento.";
+      if (r.prerequisitosAdicionados.length) txt += ` Avaliação(ões) pré-requisito incluída(s): ${r.prerequisitosAdicionados.join(", ")}.`;
+      if (r.atividadesAdicionadas.length) txt += ` Atividade(s) pré-requisito incluída(s) (ver aba Atividades): ${r.atividadesAdicionadas.join(", ")}.`;
+      setMsg(txt);
+      setSel("");
+      onAdicionou();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao adicionar do catálogo");
+    }
+  }
+
+  if (modelos.length === 0) return null;
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#eef6fc", padding: 12, borderRadius: 8, marginBottom: 10 }}>
+      <span style={{ fontSize: 13, color: "#1F2940", fontWeight: 600 }}>Adicionar do catálogo:</span>
+      <select aria-label="Filtrar por escopo" value={filtro} onChange={(e) => { setFiltro(e.target.value as EscopoModelo | "todos"); setSel(""); }} style={inp}>
+        <option value="todos">Todos os escopos</option>
+        <option value="sistema">Geral (sistema)</option>
+        <option value="instituicao">Instituição</option>
+        <option value="departamento">Departamento</option>
+      </select>
+      <select data-testid="add-catalogo-select" value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, minWidth: 240 }}>
+        <option value="">— escolher modelo —</option>
+        {visiveis.map((m) => (
+          <option key={m.id} value={m.id}>
+            [{ESCOPO_INFO[m.escopo].sigla}] {m.nome}{m.unidadeSaida ? ` (${m.unidadeSaida})` : ""}
+          </option>
+        ))}
+      </select>
+      <button title="Ver metodologia" aria-label="Ver metodologia" disabled={!selModelo} onClick={() => setInfo(selModelo)} style={mini(selModelo ? "#4EC2F0" : "#a9abbd")}>ⓘ info</button>
+      <button data-testid="add-catalogo-btn" onClick={adicionar} disabled={!sel} style={mini(sel ? "#1F2940" : "#a9abbd")}>adicionar</button>
+      {msg && <span data-testid="add-catalogo-msg" style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      {erro && <span style={{ fontSize: 12, color: "#F34343" }}>{erro}</span>}
+      {info && <ModeloInfoModal modelo={info} onClose={() => setInfo(null)} />}
+    </div>
+  );
+}
+
+function ModeloInfoModal({ modelo, onClose }: { modelo: ModeloAvaliacao; onClose: () => void }) {
+  const esc = ESCOPO_INFO[modelo.escopo];
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(20,27,45,.55)", display: "grid", placeItems: "center", zIndex: 1000, padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, maxWidth: 520, width: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,.3)" }}>
+        <div style={{ background: "#1F2940", color: "#fff", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
+          <strong style={{ flex: 1 }}>{modelo.nome}</strong>
+          <span style={{ background: esc.cor, color: modelo.escopo === "departamento" ? "#1F2940" : "#fff", borderRadius: 6, padding: "2px 8px", fontSize: 11 }}>{esc.label}</span>
+          <button onClick={onClose} aria-label="Fechar" style={{ background: "none", border: "none", color: "#fff", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: 18, fontSize: 13, color: "#1F2940", display: "grid", gap: 10 }}>
+          <Linha rotulo="Pontos amostrais" valor={String(modelo.numeroPontos)} />
+          <Linha rotulo="Unidade" valor={`${modelo.unidadeColeta ?? "—"}${modelo.unidadeSaida ? ` → ${modelo.unidadeSaida}` : ""}`} />
+          {modelo.calculoRelatorio && <Linha rotulo="Cálculo (relatório)" valor={modelo.calculoRelatorio} />}
+          {modelo.prerequisitos && modelo.prerequisitos.length > 0 && (
+            <Linha rotulo="Pré-requisitos (avaliações)" valor={modelo.prerequisitos.map((p) => p.prerequisito.nome).join(", ")} />
+          )}
+          {modelo.prerequisitosAtividade && modelo.prerequisitosAtividade.length > 0 && (
+            <Linha rotulo="Pré-requisitos (atividades)" valor={modelo.prerequisitosAtividade.map((p) => p.modeloAtividade.nome).join(", ")} />
+          )}
+          <Bloco rotulo="Como coletar" texto={modelo.descricaoColeta} />
+          <Bloco rotulo="Metodologia (relatório)" texto={modelo.metodologiaRelatorio} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return <div><span style={{ color: "#7987A1" }}>{rotulo}: </span><strong>{valor}</strong></div>;
+}
+function Bloco({ rotulo, texto }: { rotulo: string; texto?: string | null }) {
+  return (
+    <div>
+      <div style={{ color: "#7987A1", marginBottom: 2 }}>{rotulo}:</div>
+      <div style={{ whiteSpace: "pre-wrap" }}>{texto?.trim() ? texto : <span style={{ color: "#a9abbd" }}>— não informado —</span>}</div>
+    </div>
+  );
+}
+
+function AplicarGrupo({ exp, onAplicou }: { exp: Experimento; onAplicou: () => void }) {
+  const [grupos, setGrupos] = useState<GrupoColeta[]>([]);
+  const [sel, setSel] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  useEffect(() => { api.listarGrupos().then(setGrupos).catch(() => {}); }, []);
+
+  async function aplicar() {
+    if (!sel) return;
+    setMsg(null); setErro(null);
+    try {
+      const r = await api.aplicarGrupo(exp.id, sel);
+      const nomes = r.criadas.map((a) => a.nome);
+      let txt = nomes.length ? `Grupo aplicado — adicionada(s): ${nomes.join(", ")}.` : "Avaliações do grupo já estavam no experimento.";
+      if (r.atividadesAdicionadas.length) txt += ` Atividade(s): ${r.atividadesAdicionadas.join(", ")}.`;
+      setMsg(txt); setSel(""); onAplicou();
+    } catch (e) { setErro(e instanceof Error ? e.message : "Falha ao aplicar grupo"); }
+  }
+
+  if (grupos.length === 0) return null;
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#f3f0fb", padding: 12, borderRadius: 8, marginBottom: 10 }}>
+      <span style={{ fontSize: 13, color: "#1F2940", fontWeight: 600 }}>Aplicar grupo de coleta:</span>
+      <select data-testid="aplicar-grupo-select" value={sel} onChange={(e) => setSel(e.target.value)} style={inp}>
+        <option value="">— escolher grupo —</option>
+        {grupos.map((g) => <option key={g.id} value={g.id}>{g.nome} ({g.itens?.length ?? 0})</option>)}
+      </select>
+      <button data-testid="aplicar-grupo-btn" onClick={aplicar} disabled={!sel} style={mini(sel ? "#1F2940" : "#a9abbd")}>aplicar</button>
+      {msg && <span style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      {erro && <span style={{ fontSize: 12, color: "#F34343" }}>{erro}</span>}
+    </div>
+  );
+}
+
+function ColetaLote({ exp, voltar }: { exp: Experimento; voltar: () => void }) {
+  const avals = exp.avaliacoes ?? [];
+  const parcelas = useMemo(() => [...(exp.parcelas ?? [])].sort((a, b) => a.numero - b.numero), [exp.parcelas]);
+  const tratPorId = useMemo(() => new Map((exp.tratamentos ?? []).map((t) => [t.id, t])), [exp.tratamentos]);
+  const [grupos, setGrupos] = useState<GrupoColeta[]>([]);
+  const [timing, setTiming] = useState("todos");
+  const [grupo, setGrupo] = useState("todos");
+  const [vals, setVals] = useState<Record<string, Record<string, string>>>({});
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.listarGrupos().then(setGrupos).catch(() => {});
+    Promise.all(avals.map((a) => api.listarDados(a.id).then((ds) => [a.id, ds] as const))).then((pares) => {
+      const m: Record<string, Record<string, string>> = {};
+      for (const [avalId, ds] of pares) for (const d of ds) (m[d.parcelaId] ??= {})[avalId] = d.valorColetado?.toString() ?? "";
+      setVals(m);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filtradas = avals.filter((a) => (timing === "todos" || a.timingId === timing) && (grupo === "todos" || a.grupoColetaId === grupo));
+
+  function set(parcelaId: string, avalId: string, v: string) {
+    setVals((prev) => ({ ...prev, [parcelaId]: { ...(prev[parcelaId] ?? {}), [avalId]: v } }));
+  }
+
+  async function salvar() {
+    const lancamentos: LancamentoLote[] = [];
+    for (const p of parcelas) for (const a of filtradas) {
+      const v = vals[p.id]?.[a.id];
+      if (v !== undefined && v !== "") lancamentos.push({ avaliacaoId: a.id, parcelaId: p.id, valorColetado: Number(v) });
+    }
+    const r = await api.lancarLote(exp.id, lancamentos);
+    setMsg(`${r.salvos} valor(es) salvos.`);
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12 }}>
+        <button onClick={voltar} style={mini("#a9abbd")}>← voltar</button>
+        <strong>Coleta em lote</strong>
+        <label style={{ fontSize: 12, color: "#7987A1" }}>Timing:
+          <select value={timing} onChange={(e) => setTiming(e.target.value)} style={{ ...inp, marginLeft: 4 }}>
+            <option value="todos">todos</option>
+            {(exp.timings ?? []).map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+          </select>
+        </label>
+        {grupos.length > 0 && (
+          <label style={{ fontSize: 12, color: "#7987A1" }}>Grupo:
+            <select value={grupo} onChange={(e) => setGrupo(e.target.value)} style={{ ...inp, marginLeft: 4 }}>
+              <option value="todos">todos</option>
+              {grupos.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+            </select>
+          </label>
+        )}
+        <button data-testid="coleta-lote-salvar" onClick={salvar} style={mini("#1F2940")}>Salvar tudo</button>
+        {msg && <span style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      </div>
+      {filtradas.length === 0 ? <p style={{ color: "#a9abbd" }}>Nenhuma avaliação no filtro.</p> : (
+        <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead><tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
+            <th style={th}>Parcela</th><th style={th}>Bloco</th><th style={th}>Trat.</th>
+            {filtradas.map((a) => <th key={a.id} style={th}>{a.nome}{a.unidadeColeta ? ` (${a.unidadeColeta})` : ""}</th>)}
+          </tr></thead>
+          <tbody>
+            {parcelas.map((p) => (
+              <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f8" }}>
+                <td style={td}>{p.numero}{p.isInicio ? " ★" : ""}</td>
+                <td style={td}>{p.bloco}</td>
+                <td style={td}>{tratPorId.get(p.tratamentoId)?.tag ?? "?"}</td>
+                {filtradas.map((a) => (
+                  <td key={a.id} style={td}><input value={vals[p.id]?.[a.id] ?? ""} onChange={(e) => set(p.id, a.id, e.target.value)} style={{ ...inp, width: 80 }} /></td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table></div>
+      )}
     </div>
   );
 }
@@ -87,13 +317,13 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
 function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; voltar: () => void }) {
   const usaArea = !!aval.formula && /areaUtil/.test(aval.formula);
   const tratPorId = useMemo(() => new Map((exp.tratamentos ?? []).map((t) => [t.id, t])), [exp.tratamentos]);
-  const [valores, setValores] = useState<Record<string, { valor: string; linhas: string; comp: string }>>({});
+  const [valores, setValores] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     api.listarDados(aval.id).then((dados: AvaliacaoDado[]) => {
-      const m: Record<string, { valor: string; linhas: string; comp: string }> = {};
-      for (const d of dados) m[d.parcelaId] = { valor: d.valorColetado?.toString() ?? "", linhas: d.numLinhasColhidas?.toString() ?? "", comp: d.comprimentoColhidoM?.toString() ?? "" };
+      const m: Record<string, string> = {};
+      for (const d of dados) m[d.parcelaId] = d.valorColetado?.toString() ?? "";
       setValores(m);
     });
   }, [aval.id]);
@@ -102,13 +332,8 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
 
   async function salvar() {
     const dados = parcelas
-      .filter((p) => valores[p.id]?.valor)
-      .map((p) => ({
-        parcelaId: p.id,
-        valorColetado: Number(valores[p.id].valor),
-        numLinhasColhidas: usaArea && valores[p.id].linhas ? Number(valores[p.id].linhas) : undefined,
-        comprimentoColhidoM: usaArea && valores[p.id].comp ? Number(valores[p.id].comp) : undefined,
-      }));
+      .filter((p) => valores[p.id])
+      .map((p) => ({ parcelaId: p.id, valorColetado: Number(valores[p.id]) }));
     await api.lancarDados(aval.id, dados);
     setMsg(`${dados.length} lançamento(s) salvos (valor bruto).`);
   }
@@ -118,31 +343,29 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12 }}>
         <button onClick={voltar} style={mini("#a9abbd")}>← voltar</button>
         <strong>Lançar: {aval.nome}</strong>
-        <span style={{ color: "#7987A1", fontSize: 13 }}>valor bruto por parcela{usaArea ? " + apontamentos da colheita" : ""}</span>
-        <button onClick={salvar} style={mini("#6FA830")}>Salvar</button>
-        {msg && <span style={{ color: "#6FA830", fontSize: 13 }}>{msg}</span>}
+        <span style={{ color: "#7987A1", fontSize: 13 }}>valor bruto por parcela</span>
+        <button onClick={salvar} style={mini("#1F2940")}>Salvar</button>
+        {msg && <span style={{ color: "#1F2940", fontSize: 13 }}>{msg}</span>}
       </div>
+      {usaArea && (
+        <p style={{ color: "#7987A1", fontSize: 12, background: "#eef6fc", padding: 8, borderRadius: 6 }}>
+          ℹ️ A área útil para o cálculo (kg/ha) vem da atividade <strong>Colheita</strong> (nº de linhas e comprimento) na aba Atividades — não é coletada por parcela.
+        </p>
+      )}
       <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead><tr style={{ color: "#7987A1", textAlign: "left" }}>
           <th style={th}>Parcela</th><th style={th}>Bloco</th><th style={th}>Trat.</th>
           <th style={th}>Valor ({aval.unidadeColeta ?? "bruto"})</th>
-          {usaArea && <><th style={th}>Nº linhas</th><th style={th}>Compr. (m)</th></>}
         </tr></thead>
         <tbody>
-          {parcelas.map((p) => {
-            const v = valores[p.id] ?? { valor: "", linhas: "", comp: "" };
-            const set = (campo: "valor" | "linhas" | "comp", val: string) => setValores({ ...valores, [p.id]: { ...v, [campo]: val } });
-            return (
-              <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f8" }}>
-                <td style={td}>{p.numero}{p.isInicio ? " ★" : ""}</td>
-                <td style={td}>{p.bloco}</td>
-                <td style={td}>{tratPorId.get(p.tratamentoId)?.tag ?? "?"}</td>
-                <td style={td}><input value={v.valor} onChange={(e) => set("valor", e.target.value)} style={{ ...inp, width: 90 }} /></td>
-                {usaArea && <td style={td}><input value={v.linhas} onChange={(e) => set("linhas", e.target.value)} style={{ ...inp, width: 70 }} /></td>}
-                {usaArea && <td style={td}><input value={v.comp} onChange={(e) => set("comp", e.target.value)} style={{ ...inp, width: 70 }} /></td>}
-              </tr>
-            );
-          })}
+          {parcelas.map((p) => (
+            <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f8" }}>
+              <td style={td}>{p.numero}{p.isInicio ? " ★" : ""}</td>
+              <td style={td}>{p.bloco}</td>
+              <td style={td}>{tratPorId.get(p.tratamentoId)?.tag ?? "?"}</td>
+              <td style={td}><input value={valores[p.id] ?? ""} onChange={(e) => setValores({ ...valores, [p.id]: e.target.value })} style={{ ...inp, width: 90 }} /></td>
+            </tr>
+          ))}
         </tbody>
       </table></div>
     </div>

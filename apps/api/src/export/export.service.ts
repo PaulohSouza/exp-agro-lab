@@ -65,9 +65,16 @@ export class ExportService {
       { header: "Tratamento", width: 12 }, { header: "Valor coletado", width: 14 },
       { header: "Área útil (m²)", width: 14 }, { header: "Valor saída", width: 14 }, { header: "Unid. saída", width: 12 },
     ];
+    // Área útil única do ensaio: vem da atividade de Colheita (RN-PROD / C5).
+    const espac = exp.espacamentoLinhasM ?? undefined;
+    const colheita = await this.prisma.atividadeExperimento.findFirst({
+      where: { experimentoId: id, modelo: { fornecAreaColheita: true } },
+      include: { valores: true },
+    });
+    const linhasC = colheita?.valores.find((v) => v.rotulo === "linhas")?.valorNum ?? undefined;
+    const compC = colheita?.valores.find((v) => v.rotulo === "comprimento")?.valorNum ?? undefined;
+    const areaUtil = espac && linhasC && compC ? linhasC * espac * compC : undefined;
     for (const d of dados) {
-      const espac = exp.espacamentoLinhasM ?? undefined;
-      const areaUtil = d.areaUtilM2 ?? (d.numLinhasColhidas && d.comprimentoColhidoM && espac ? d.numLinhasColhidas * espac * d.comprimentoColhidoM : undefined);
       let saida: number | null = null;
       if (d.avaliacao.formula && d.valorColetado != null) {
         try { saida = calcularSaida({ valorColetado: d.valorColetado, formula: d.avaliacao.formula, params: areaUtil ? { areaUtil } : {} }); } catch { saida = null; }

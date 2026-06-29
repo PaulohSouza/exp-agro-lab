@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
-import { calcularSaida } from "@exp/domain";
+import { calcularSaida, resolverPrerequisitos, calcularAreaUtilColhida, dedupLancamentos, type LancamentoLote } from "@exp/domain";
 import { anovaUmFator, type Observacao, type Delineamento } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
@@ -23,9 +23,6 @@ export interface LancarDadoDto {
   parcelaId: string;
   numAmostra?: number;
   valorColetado?: number;
-  numLinhasColhidas?: number;
-  comprimentoColhidoM?: number;
-  areaUtilM2?: number;
   obs?: string;
   origem?: "web" | "mobile";
 }
@@ -44,6 +41,31 @@ export class AvaliacoesService {
     return a.experimentoId;
   }
 
+  /**
+   * Área útil (m²) do ensaio para o cálculo de produtividade (RN-PROD / C5):
+   * vem da ATIVIDADE de Colheita (modelo `fornecAreaColheita`), com os campos
+   * `linhas` e `comprimento` × o espaçamento do experimento. Única para todas as
+   * parcelas. Retorna undefined se a colheita ainda não foi registrada.
+   */
+  private async areaUtilDoExperimento(experimentoId: string): Promise<number | undefined> {
+    const exp = await this.prisma.experimento.findUnique({ where: { id: experimentoId }, select: { espacamentoLinhasM: true } });
+    const espac = exp?.espacamentoLinhasM ?? undefined;
+    if (!espac) return undefined;
+    const colheita = await this.prisma.atividadeExperimento.findFirst({
+      where: { experimentoId, modelo: { fornecAreaColheita: true } },
+      include: { valores: true },
+    });
+    if (!colheita) return undefined;
+    const linhas = colheita.valores.find((v) => v.rotulo === "linhas")?.valorNum ?? undefined;
+    const comprimento = colheita.valores.find((v) => v.rotulo === "comprimento")?.valorNum ?? undefined;
+    if (!linhas || !comprimento) return undefined;
+    try {
+      return calcularAreaUtilColhida({ numLinhasColhidas: linhas, espacamentoLinhasM: espac, comprimentoColhidoM: comprimento });
+    } catch {
+      return undefined;
+    }
+  }
+
   async listar(experimentoId: string, user: UsuarioAtual) {
     await this.experimentos.garantirAcesso(experimentoId, user);
     return this.prisma.avaliacao.findMany({
@@ -51,6 +73,113 @@ export class AvaliacoesService {
       orderBy: { ordem: "asc" },
       include: { timing: true, _count: { select: { dados: true } } },
     });
+  }
+
+  /**
+   * Adiciona avaliações a partir do catálogo (A5). Resolve o fechamento
+   * transitivo dos pré-requisitos (regra do domínio) — ex.: Produtividade traz
+   * Umidade — e cria uma avaliação por modelo, herdando os campos. Modelos já
+   * presentes no experimento são ignorados (não duplica).
+   */
+  async adicionarDoModelo(experimentoId: string, user: UsuarioAtual, modeloIds: string[]) {
+    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    if (!modeloIds?.length) throw new BadRequestException("Informe ao menos um modelo.");
+
+    const arestas = await this.prisma.modeloAvaliacaoPrereq.findMany({
+      select: { modeloId: true, prerequisitoId: true },
+    });
+    const { todos, adicionados } = resolverPrerequisitos(modeloIds, arestas);
+
+    const modelos = await this.prisma.modeloAvaliacao.findMany({ where: { id: { in: todos } } });
+    if (modelos.length !== todos.length) throw new BadRequestException("Modelo inexistente.");
+
+    const jaPresentes = new Set(
+      (await this.prisma.avaliacao.findMany({
+        where: { experimentoId, modeloId: { in: todos } },
+        select: { modeloId: true },
+      })).map((a) => a.modeloId),
+    );
+
+    let ordem = await this.prisma.avaliacao.count({ where: { experimentoId } });
+    const porId = new Map(modelos.map((m) => [m.id, m]));
+    const criadas = [];
+    for (const id of todos) {
+      if (jaPresentes.has(id)) continue;
+      const m = porId.get(id)!;
+      ordem += 1;
+      criadas.push(
+        await this.prisma.avaliacao.create({
+          data: {
+            experimentoId,
+            modeloId: m.id,
+            nome: m.nome,
+            descricaoColeta: m.descricaoColeta,
+            numeroPontos: m.numeroPontos,
+            metodologia: m.metodologiaRelatorio,
+            unidadeColeta: m.unidadeColeta,
+            unidadeSaida: m.unidadeSaida,
+            formula: m.calculoRelatorio,
+            ordem,
+          },
+          include: { timing: true, _count: { select: { dados: true } } },
+        }),
+      );
+    }
+
+    // pré-requisitos de ATIVIDADE de todas as avaliações resolvidas: cria as faltantes
+    const atividadesAdicionadas = await this.adicionarAtividadesPrereq(experimentoId, todos);
+
+    return {
+      criadas,
+      // avaliações auto-incluídas por serem pré-requisito (para o aviso na UI)
+      prerequisitosAdicionados: adicionados
+        .filter((id) => !jaPresentes.has(id))
+        .map((id) => porId.get(id)?.nome ?? id),
+      // atividades auto-incluídas por serem pré-requisito
+      atividadesAdicionadas,
+    };
+  }
+
+  /** Cria, no experimento, as atividades exigidas (pré-requisito) pelas avaliações
+   *  resolvidas que ainda não existam. Retorna os nomes adicionados. */
+  private async adicionarAtividadesPrereq(experimentoId: string, modeloAvaliacaoIds: string[]): Promise<string[]> {
+    const arestas = await this.prisma.modeloAvaliacaoPrereqAtividade.findMany({
+      where: { modeloAvaliacaoId: { in: modeloAvaliacaoIds } },
+      select: { modeloAtividadeId: true },
+    });
+    const ids = [...new Set(arestas.map((a) => a.modeloAtividadeId))];
+    if (!ids.length) return [];
+
+    const jaPresentes = new Set(
+      (await this.prisma.atividadeExperimento.findMany({
+        where: { experimentoId, modeloId: { in: ids } },
+        select: { modeloId: true },
+      })).map((a) => a.modeloId),
+    );
+    const faltantes = ids.filter((id) => !jaPresentes.has(id));
+    if (!faltantes.length) return [];
+
+    const modelos = await this.prisma.modeloAtividade.findMany({
+      where: { id: { in: faltantes } },
+      include: { campos: { orderBy: { ordem: "asc" } } },
+    });
+    let ordem = await this.prisma.atividadeExperimento.count({ where: { experimentoId } });
+    const nomes: string[] = [];
+    for (const m of modelos) {
+      ordem += 1;
+      await this.prisma.atividadeExperimento.create({
+        data: {
+          experimentoId,
+          modeloId: m.id,
+          nome: m.nome,
+          tipo: m.tipo,
+          ordem,
+          valores: m.campos.length ? { create: m.campos.map((c) => ({ rotulo: c.rotulo })) } : undefined,
+        },
+      });
+      nomes.push(m.nome);
+    }
+    return nomes;
   }
 
   async criar(experimentoId: string, user: UsuarioAtual, dto: CriarAvaliacaoDto) {
@@ -111,6 +240,45 @@ export class AvaliacoesService {
     });
   }
 
+  /** Aplica um grupo de coleta: adiciona as avaliações dos modelos do grupo
+   *  (com pré-requisitos) e as marca com o grupo, p/ filtrar a coleta por grupo. */
+  async aplicarGrupo(experimentoId: string, user: UsuarioAtual, grupoId: string) {
+    const grupo = await this.prisma.grupoColeta.findUnique({ where: { id: grupoId }, include: { itens: true } });
+    if (!grupo) throw new NotFoundException("Grupo de coleta não encontrado.");
+    const modeloIds = grupo.itens.map((i) => i.modeloId);
+    if (!modeloIds.length) throw new BadRequestException("Grupo sem avaliações.");
+    const r = await this.adicionarDoModelo(experimentoId, user, modeloIds);
+    const ids = r.criadas.map((a) => a.id);
+    if (ids.length) await this.prisma.avaliacao.updateMany({ where: { id: { in: ids } }, data: { grupoColetaId: grupoId } });
+    return r;
+  }
+
+  /**
+   * COLETA EM LOTE (Macro B): grava várias avaliações × parcelas numa transação.
+   * Otimiza a coleta quando se registra um conjunto de avaliações junto (ex.:
+   * Umidade + PMG + Produtividade). Idempotente (upsert por chave única).
+   */
+  async lancarLote(experimentoId: string, user: UsuarioAtual, lancamentos: LancamentoLote[]) {
+    await this.experimentos.garantirAcesso(experimentoId, user);
+    if (!lancamentos?.length) return { salvos: 0 };
+    const avalIds = [...new Set(lancamentos.map((l) => l.avaliacaoId))];
+    const validas = await this.prisma.avaliacao.count({ where: { id: { in: avalIds }, experimentoId } });
+    if (validas !== avalIds.length) throw new BadRequestException("Avaliação fora do experimento.");
+
+    const limpos = dedupLancamentos(lancamentos);
+    await this.prisma.$transaction(
+      limpos.map((l) => {
+        const numAmostra = l.numAmostra ?? 1;
+        return this.prisma.avaliacaoDado.upsert({
+          where: { avaliacaoId_parcelaId_numAmostra: { avaliacaoId: l.avaliacaoId, parcelaId: l.parcelaId, numAmostra } },
+          create: { avaliacaoId: l.avaliacaoId, parcelaId: l.parcelaId, numAmostra, valorColetado: l.valorColetado ?? null, origem: "web", syncedAt: new Date() },
+          update: { valorColetado: l.valorColetado ?? null, syncedAt: new Date() },
+        });
+      }),
+    );
+    return { salvos: limpos.length };
+  }
+
   /** Lança/atualiza o VALOR BRUTO por parcela (acesso >= input). */
   async lancar(avaliacaoId: string, user: UsuarioAtual, dados: LancarDadoDto[]) {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
@@ -123,18 +291,12 @@ export class AvaliacoesService {
           parcelaId: d.parcelaId,
           numAmostra,
           valorColetado: d.valorColetado,
-          numLinhasColhidas: d.numLinhasColhidas,
-          comprimentoColhidoM: d.comprimentoColhidoM,
-          areaUtilM2: d.areaUtilM2,
           obs: d.obs,
           origem: d.origem ?? "web",
           syncedAt: new Date(),
         },
         update: {
           valorColetado: d.valorColetado,
-          numLinhasColhidas: d.numLinhasColhidas,
-          comprimentoColhidoM: d.comprimentoColhidoM,
-          areaUtilM2: d.areaUtilM2,
           obs: d.obs,
           syncedAt: new Date(),
         },
@@ -159,9 +321,8 @@ export class AvaliacoesService {
       include: { parcela: { include: { tratamento: true } } },
     });
 
-    const espac = aval.experimento.espacamentoLinhasM ?? undefined;
+    const areaUtil = await this.areaUtilDoExperimento(aval.experimentoId);
     const obs: Observacao[] = dados.map((d) => {
-      const areaUtil = d.areaUtilM2 ?? (d.numLinhasColhidas && d.comprimentoColhidoM && espac ? d.numLinhasColhidas * espac * d.comprimentoColhidoM : undefined);
       let valor = d.valorColetado as number;
       if (aval.formula) {
         try { valor = calcularSaida({ valorColetado: d.valorColetado as number, formula: aval.formula, params: areaUtil ? { areaUtil } : {} }); } catch { /* mantém bruto */ }
@@ -193,14 +354,9 @@ export class AvaliacoesService {
       include: { parcela: { include: { tratamento: true } } },
       orderBy: { parcela: { numero: "asc" } },
     });
-    const espac = aval.experimento.espacamentoLinhasM ?? undefined;
+    const areaUtil = await this.areaUtilDoExperimento(aval.experimentoId);
 
     const linhas = dados.map((d) => {
-      const areaUtil =
-        d.areaUtilM2 ??
-        (d.numLinhasColhidas && d.comprimentoColhidoM && espac
-          ? d.numLinhasColhidas * espac * d.comprimentoColhidoM
-          : undefined);
       let valorSaida: number | null = null;
       if (aval.formula && d.valorColetado != null) {
         try {

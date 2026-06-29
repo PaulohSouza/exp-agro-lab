@@ -21,6 +21,21 @@ export class AvaliacoesController {
     return this.service.criar(id, user, dto);
   }
 
+  @Post("experimentos/:id/avaliacoes/do-modelo")
+  adicionarDoModelo(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() body: { modeloIds: string[] }) {
+    return this.service.adicionarDoModelo(id, user, body.modeloIds);
+  }
+
+  @Post("experimentos/:id/grupos/:grupoId/aplicar")
+  aplicarGrupo(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Param("grupoId") grupoId: string) {
+    return this.service.aplicarGrupo(id, user, grupoId);
+  }
+
+  @Post("experimentos/:id/coleta-lote")
+  lancarLote(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() body: { lancamentos: Array<{ avaliacaoId: string; parcelaId: string; numAmostra?: number; valorColetado?: number | null }> }) {
+    return this.service.lancarLote(id, user, body.lancamentos ?? []);
+  }
+
   @Put("avaliacoes/:id")
   atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: Partial<CriarAvaliacaoDto>) {
     return this.service.atualizar(id, user, dto);

@@ -22,7 +22,11 @@ async function main() {
   await prisma.tratamento.deleteMany();
   await prisma.nivelFator.deleteMany();
   await prisma.fator.deleteMany();
-  await prisma.experimento.deleteMany();
+  await prisma.experimento.deleteMany(); // cascata: atividades do experimento + apontamentos
+  // catálogo (cascatas: prereqs de avaliação/atividade, itens de grupo, campos) — antes da instituição
+  await prisma.grupoColeta.deleteMany();
+  await prisma.modeloAvaliacao.deleteMany();
+  await prisma.modeloAtividade.deleteMany();
   await prisma.aprovadorInstituicao.deleteMany();
   await prisma.user.deleteMany();
   await prisma.unidade.deleteMany();
@@ -76,7 +80,7 @@ async function main() {
     },
   });
 
-  const catCultura = await prisma.categoria.create({ data: { nome: "Cultura" } });
+  const catCultura = await prisma.categoria.create({ data: { nome: "Cultura", eCultura: true } });
   const subAlgodao = await prisma.subcategoria.create({
     data: { categoriaId: catCultura.id, nome: "Algodão" },
   });
@@ -203,6 +207,47 @@ async function main() {
     include: { tratamento: true },
   });
   const areaUtilM2 = calcularAreaUtilColhida({ numLinhasColhidas: 4, espacamentoLinhasM: exp.espacamentoLinhasM ?? 0.45, comprimentoColhidoM: 5 });
+
+  // Colheita = atividade (apontamento) que fornece a área útil (RN-PROD / C5).
+  const modeloColheita = await prisma.modeloAtividade.create({
+    data: {
+      nome: "Colheita", escopo: "sistema", tipo: "apontamento", fornecAreaColheita: true,
+      descricao: "Registra nº de linhas e comprimento colhidos (define a área útil).",
+      campos: { create: [
+        { rotulo: "linhas", tipo: "numero", obrigatorio: true, ordem: 0 },
+        { rotulo: "comprimento", tipo: "numero", unidade: "m", obrigatorio: true, ordem: 1 },
+      ] },
+    },
+  });
+  await prisma.atividadeExperimento.create({
+    data: {
+      experimentoId: exp.id, modeloId: modeloColheita.id, nome: "Colheita", marco: "colheita", tipo: "apontamento", ordem: 1,
+      valores: { create: [{ rotulo: "linhas", valorNum: 4 }, { rotulo: "comprimento", valorNum: 5 }] },
+    },
+  });
+
+  // Catálogo de avaliações demo (sistema): Umidade e Produtividade (exige Umidade + atividade Colheita).
+  const mUmidade = await prisma.modeloAvaliacao.create({
+    data: { nome: "Umidade", escopo: "sistema", unidadeColeta: "%", unidadeSaida: "%", numeroPontos: 1, descricaoColeta: "Umidade dos grãos (para correção a 13%)." },
+  });
+  const mProd = await prisma.modeloAvaliacao.create({
+    data: {
+      nome: "Produtividade", escopo: "sistema", unidadeColeta: "kg", unidadeSaida: "sacas/ha",
+      calculoRelatorio: "(valor / areaUtil) * 10000", numeroPontos: 1,
+      descricaoColeta: "Massa colhida por parcela; área útil vem da atividade Colheita.",
+      prerequisitos: { create: [{ prerequisitoId: mUmidade.id }] },
+      prerequisitosAtividade: { create: [{ modeloAtividadeId: modeloColheita.id }] },
+    },
+  });
+  // Grupo de coleta demo (Macro B): conjunto coletado junto na colheita.
+  await prisma.grupoColeta.create({
+    data: {
+      nome: "Colheita (Umidade + Produtividade)", escopo: "sistema",
+      descricao: "Avaliações coletadas juntas no momento da colheita.",
+      itens: { create: [{ modeloId: mUmidade.id, ordem: 0 }, { modeloId: mProd.id, ordem: 1 }] },
+    },
+  });
+
   const baseKg = [7.0, 8.6, 8.0, 9.6, 8.2]; // por tratamento (T1..T5), kg/parcela
   for (const p of todasParcelas) {
     const base = baseKg[(p.tratamento!.numeroRef - 1) % baseKg.length];
@@ -210,19 +255,19 @@ async function main() {
     const wiggle = ((p.numero % 5) - 2) * 0.06;
     const valor = Math.round((base + efeitoBloco + wiggle) * 100) / 100;
     await prisma.avaliacaoDado.create({
-      data: {
-        avaliacaoId: aval.id,
-        parcelaId: p.id,
-        valorColetado: valor,
-        numLinhasColhidas: 4,
-        comprimentoColhidoM: 5,
-        areaUtilM2,
-        origem: "web",
-      },
+      data: { avaliacaoId: aval.id, parcelaId: p.id, valorColetado: valor, origem: "web" },
     });
   }
   const exemplo = calcularProdutividadeKgHa({ valorKgParcela: baseKg[3], areaUtilM2 });
   console.log(`  produtividade lançada em ${todasParcelas.length} parcelas (ex.: T4 ${baseKg[3]} kg → ${exemplo.toFixed(0)} kg/ha)`);
+
+  // Experimento "sandbox" vazio (lab-style) — usado pelos testes e2e e para demo de período/atividades.
+  await prisma.experimento.create({
+    data: {
+      titulo: "SIM 2-Fatores — Cultivar x Dose (desfolha)", ensaio: "interno",
+      espacamentoLinhasM: 0.45, numRepeticoes: 4, instituicaoId: inst.id, ownerId: admin.id,
+    },
+  });
 
   const nParcelas = await prisma.parcela.count({ where: { experimentoId: exp.id } });
   console.log(`Seed concluído: experimento ${exp.codigo}, ${nParcelas} parcelas, croqui ${croqui.numLinhas}×${croqui.numColunas}.`);

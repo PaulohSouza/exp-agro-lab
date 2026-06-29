@@ -1,6 +1,7 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3001";
 
 export interface Ref { id: string; nome: string }
+export interface Categoria extends Ref { eCultura?: boolean; ativo?: boolean }
 export interface Compartilhamento {
   id: string;
   nivel: "input" | "edit";
@@ -54,10 +55,129 @@ export interface Avaliacao {
   tipo: string;
   ordem: number;
   timingId: string | null;
+  grupoColetaId?: string | null;
   dataPrevista: string | null;
   timing?: Timing | null;
   _count?: { dados: number };
 }
+export type EscopoModelo = "sistema" | "instituicao" | "departamento";
+export interface ModeloAvaliacao {
+  id: string;
+  nome: string;
+  descricaoColeta: string | null;
+  numeroPontos: number;
+  metodologiaRelatorio: string | null;
+  unidadeColeta: string | null;
+  unidadeSaida: string | null;
+  calculoRelatorio: string | null;
+  escopo: EscopoModelo;
+  instituicaoId: string | null;
+  departamentoId: string | null;
+  baseadoEmId: string | null;
+  ativo: boolean;
+  prerequisitos?: { prerequisitoId: string; prerequisito: { id: string; nome: string } }[];
+  prerequisitosAtividade?: { modeloAtividadeId: string; modeloAtividade: { id: string; nome: string; tipo: string } }[];
+  _count?: { avaliacoes: number };
+}
+export interface ModeloAvaliacaoInput {
+  nome: string;
+  descricaoColeta?: string;
+  numeroPontos?: number;
+  metodologiaRelatorio?: string;
+  unidadeColeta?: string;
+  unidadeSaida?: string;
+  calculoRelatorio?: string;
+  escopo: EscopoModelo;
+  departamentoId?: string;
+  baseadoEmId?: string;
+  prerequisitoIds?: string[];
+  prerequisitoAtividadeIds?: string[];
+}
+
+// ---- Atividades (Macro C) ----
+export type TipoAtividade = "acao" | "apontamento";
+export type TipoCampo = "numero" | "texto" | "data" | "booleano";
+export interface ModeloAtividadeCampo {
+  id?: string;
+  rotulo: string;
+  tipo: TipoCampo;
+  unidade?: string | null;
+  obrigatorio: boolean;
+  ordem: number;
+}
+export interface ModeloAtividade {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  tipo: TipoAtividade;
+  metodologiaRelatorio: string | null;
+  escopo: EscopoModelo;
+  instituicaoId: string | null;
+  departamentoId: string | null;
+  ativo: boolean;
+  campos?: ModeloAtividadeCampo[];
+  _count?: { atividades: number };
+}
+export interface ModeloAtividadeInput {
+  nome: string;
+  descricao?: string;
+  tipo: TipoAtividade;
+  metodologiaRelatorio?: string;
+  escopo: EscopoModelo;
+  departamentoId?: string;
+  campos?: { rotulo: string; tipo?: TipoCampo; unidade?: string; obrigatorio?: boolean; ordem?: number }[];
+}
+export interface AtividadeApontamentoValor {
+  id: string;
+  rotulo: string;
+  valorNum: number | null;
+  valorTexto: string | null;
+  valorData: string | null;
+  valorBool: boolean | null;
+}
+export interface ValorApontamentoInput {
+  rotulo: string;
+  valorNum?: number | null;
+  valorTexto?: string | null;
+  valorData?: string | null;
+  valorBool?: boolean | null;
+}
+export interface AtividadeExperimento {
+  id: string;
+  nome: string;
+  tipo: TipoAtividade;
+  marco?: string | null;
+  dataPrevista?: string | null;
+  confirmada?: boolean;
+  data: string | null;
+  responsavel: string | null;
+  obs: string | null;
+  ordem: number;
+  modeloId: string | null;
+  valores: AtividadeApontamentoValor[];
+  modelo?: ModeloAtividade | null;
+}
+
+// ---- Grupos de coleta (Macro B) ----
+export interface GrupoColeta {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  escopo: EscopoModelo;
+  instituicaoId: string | null;
+  departamentoId: string | null;
+  ativo: boolean;
+  itens?: { modeloId: string; modelo: { id: string; nome: string } }[];
+}
+export interface GrupoColetaInput {
+  nome: string;
+  descricao?: string;
+  escopo: EscopoModelo;
+  departamentoId?: string;
+  modeloIds?: string[];
+}
+export interface LancamentoLote { avaliacaoId: string; parcelaId: string; numAmostra?: number; valorColetado?: number | null }
+
 export interface AvaliacaoDado {
   id: string;
   parcelaId: string;
@@ -113,6 +233,8 @@ export interface Experimento {
   metodologia?: string | null;
   justificativa?: string | null;
   observacoes?: string | null;
+  tipoPeriodo?: "safra" | "ano_semestre" | null;
+  anoSemestre?: string | null;
   objetoEstudoId?: string | null;
   localId?: string | null;
   safraId?: string | null;
@@ -238,6 +360,48 @@ export const api = {
   lancarDados: (avaliacaoId: string, dados: Array<Partial<AvaliacaoDado>>) =>
     req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
   relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
+  adicionarAvaliacoesDoModelo: (expId: string, modeloIds: string[]) =>
+    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[]; atividadesAdicionadas: string[] }>(
+      `/experimentos/${expId}/avaliacoes/do-modelo`,
+      { method: "POST", body: JSON.stringify({ modeloIds }) },
+    ),
+
+  // catálogo de modelos de avaliação (multi-escopo)
+  listarModelos: () => req<ModeloAvaliacao[]>("/modelos-avaliacao"),
+  criarModelo: (body: ModeloAvaliacaoInput) =>
+    req<ModeloAvaliacao>("/modelos-avaliacao", { method: "POST", body: JSON.stringify(body) }),
+  atualizarModelo: (id: string, body: Partial<ModeloAvaliacaoInput>) =>
+    req<ModeloAvaliacao>(`/modelos-avaliacao/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  removerModelo: (id: string) => req<{ ok: boolean }>(`/modelos-avaliacao/${id}`, { method: "DELETE" }),
+
+  // catálogo de modelos de atividade (multi-escopo)
+  listarModelosAtividade: () => req<ModeloAtividade[]>("/modelos-atividade"),
+  criarModeloAtividade: (body: ModeloAtividadeInput) =>
+    req<ModeloAtividade>("/modelos-atividade", { method: "POST", body: JSON.stringify(body) }),
+  atualizarModeloAtividade: (id: string, body: Partial<ModeloAtividadeInput>) =>
+    req<ModeloAtividade>(`/modelos-atividade/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  removerModeloAtividade: (id: string) => req<{ ok: boolean }>(`/modelos-atividade/${id}`, { method: "DELETE" }),
+
+  // atividades do experimento
+  listarAtividadesExp: (expId: string) => req<AtividadeExperimento[]>(`/experimentos/${expId}/atividades`),
+  criarAtividadeExp: (expId: string, body: { modeloId?: string; nome?: string; tipo?: TipoAtividade; data?: string; responsavel?: string; obs?: string }) =>
+    req<AtividadeExperimento>(`/experimentos/${expId}/atividades`, { method: "POST", body: JSON.stringify(body) }),
+  registrarApontamento: (atividadeId: string, valores: ValorApontamentoInput[]) =>
+    req<AtividadeExperimento>(`/atividades/${atividadeId}/apontamento`, { method: "POST", body: JSON.stringify({ valores }) }),
+  atualizarAtividadeExp: (atividadeId: string, body: { dataPrevista?: string | null; confirmada?: boolean; data?: string | null; responsavel?: string; obs?: string }) =>
+    req<AtividadeExperimento>(`/atividades/${atividadeId}`, { method: "PUT", body: JSON.stringify(body) }),
+  removerAtividadeExp: (atividadeId: string) => req<{ ok: boolean }>(`/atividades/${atividadeId}`, { method: "DELETE" }),
+  gerarMarcos: (expId: string) => req<{ criados: string[]; eCultura: boolean }>(`/experimentos/${expId}/marcos/gerar`, { method: "POST" }),
+
+  // grupos de coleta + coleta em lote
+  listarGrupos: () => req<GrupoColeta[]>("/grupos-coleta"),
+  criarGrupo: (body: GrupoColetaInput) => req<GrupoColeta>("/grupos-coleta", { method: "POST", body: JSON.stringify(body) }),
+  atualizarGrupo: (id: string, body: Partial<GrupoColetaInput>) => req<GrupoColeta>(`/grupos-coleta/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  removerGrupo: (id: string) => req<{ ok: boolean }>(`/grupos-coleta/${id}`, { method: "DELETE" }),
+  aplicarGrupo: (expId: string, grupoId: string) =>
+    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[]; atividadesAdicionadas: string[] }>(`/experimentos/${expId}/grupos/${grupoId}/aplicar`, { method: "POST" }),
+  lancarLote: (expId: string, lancamentos: LancamentoLote[]) =>
+    req<{ salvos: number }>(`/experimentos/${expId}/coleta-lote`, { method: "POST", body: JSON.stringify({ lancamentos }) }),
   analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
     req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
 
@@ -246,7 +410,9 @@ export const api = {
   safras: () => req<Ref[]>("/cadastros/safras"),
   areas: () => req<Ref[]>("/cadastros/areas"),
   delineamentos: () => req<Ref[]>("/cadastros/delineamentos"),
-  categorias: () => req<Ref[]>("/cadastros/categorias"),
+  categorias: () => req<Categoria[]>("/cadastros/categorias"),
+  atualizarCategoria: (id: string, body: { nome?: string; eCultura?: boolean }) =>
+    req<Categoria>(`/cadastros/categorias/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   subcategorias: (categoriaId: string) => req<Ref[]>(`/cadastros/subcategorias?categoriaId=${categoriaId}`),
   objetos: (subcategoriaId: string) => req<ObjetoEstudo[]>(`/cadastros/objetos?subcategoriaId=${subcategoriaId}`),
   criarCadastro: (tipo: "locais" | "safras" | "areas" | "delineamentos" | "categorias", nome: string) =>
@@ -348,6 +514,6 @@ export async function decisaoCliente(token: string, decisao: "aprovado" | "recus
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */
 export function corTratamento(numeroRef: number): string {
-  const cores = ["#F6A6A6", "#F8C99B", "#F5E69B", "#A8E0B0", "#9BD2F5", "#C9B3F0", "#F0B3D6", "#B3E6E0"];
+  const cores = ["#F6A6A6", "#F8C99B", "#F5E69B", "#CBD2DE", "#9BD2F5", "#C9B3F0", "#F0B3D6", "#E2D7A6"];
   return cores[(numeroRef - 1) % cores.length];
 }

@@ -5,13 +5,14 @@ import { api, baixarExperimentoXlsx, baixarRelatorioPptx, type Experimento } fro
 import { CroquiEditor } from "./CroquiEditor";
 import { TratamentosTab } from "./TratamentosTab";
 import { AvaliacoesTab } from "./AvaliacoesTab";
+import { AtividadesTab } from "./AtividadesTab";
 import { GeralTab } from "./GeralTab";
 import { FatoresTab } from "./FatoresTab";
 import { CompartilharTab } from "./CompartilharTab";
 import { OrdemServicoTab } from "./OrdemServicoTab";
 import { Protected } from "../../../components/Protected";
 
-const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui", "Avaliações", "Compartilhar", "Ordem de Serviço"] as const;
+const ABAS = ["Geral", "Fatores", "Tratamentos", "Croqui", "Avaliações", "Atividades", "Compartilhar", "Ordem de Serviço"] as const;
 type Aba = (typeof ABAS)[number];
 
 export default function DetalheExperimento({ params }: { params: { id: string } }) {
@@ -90,6 +91,12 @@ export default function DetalheExperimento({ params }: { params: { id: string } 
       {aba === "Avaliações" && (
         <Card>
           <AvaliacoesTab exp={exp} onChange={setExp} />
+        </Card>
+      )}
+
+      {aba === "Atividades" && (
+        <Card>
+          <AtividadesTab exp={exp} />
         </Card>
       )}
 
