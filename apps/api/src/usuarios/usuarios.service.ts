@@ -26,7 +26,7 @@ export class UsuariosService {
         email: true,
         papel: true,
         isAdminInstituicao: true,
-        ativo: true,
+        isAtivo: true,
         unidadeId: true,
       },
     });
@@ -66,7 +66,7 @@ export class UsuariosService {
         email: true,
         papel: true,
         isAdminInstituicao: true,
-        ativo: true,
+        isAtivo: true,
       },
     });
     return novo;
@@ -80,7 +80,7 @@ export class UsuariosService {
       papel?: Papel;
       departamentoId?: string | null;
       unidadeId?: string | null;
-      ativo?: boolean;
+      isAtivo?: boolean;
     },
   ) {
     if (!user.isAdminInstituicao) {
@@ -100,7 +100,7 @@ export class UsuariosService {
         papel: dto.papel,
         departamentoId: dto.departamentoId === undefined ? undefined : dto.departamentoId,
         unidadeId: dto.unidadeId === undefined ? undefined : dto.unidadeId,
-        ativo: dto.ativo,
+        isAtivo: dto.isAtivo,
         // mantém o boolean em sincronia quando o papel muda (retrocompat)
         ...(dto.papel ? { isAdminInstituicao: PAPEIS_ADMIN.includes(dto.papel) } : {}),
       },
@@ -112,7 +112,7 @@ export class UsuariosService {
         departamentoId: true,
         unidadeId: true,
         isAdminInstituicao: true,
-        ativo: true,
+        isAtivo: true,
       },
     });
   }

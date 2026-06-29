@@ -133,7 +133,7 @@ export function CompartilharTab({ exp }: { exp: Experimento }) {
                     {s.nivel}
                   </span>
                 </td>
-                <td style={td}>{s.aceito ? "ativo" : "convite pendente"}</td>
+                <td style={td}>{s.isAceito ? "ativo" : "convite pendente"}</td>
                 <td style={td}>
                   <button
                     onClick={async () => {

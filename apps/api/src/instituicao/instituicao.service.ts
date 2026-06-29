@@ -48,7 +48,7 @@ export class InstituicaoService {
     if (existe) {
       return this.prisma.aprovadorInstituicao.update({
         where: { id: existe.id },
-        data: { ativo: true },
+        data: { isAtivo: true },
       });
     }
     return this.prisma.aprovadorInstituicao.create({

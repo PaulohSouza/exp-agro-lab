@@ -92,7 +92,7 @@ export class AtividadeExperimentoService {
     const campos = (atv.modelo?.campos ?? []).map((c) => ({
       rotulo: c.rotulo,
       tipo: c.tipo,
-      obrigatorio: c.obrigatorio,
+      isObrigatorio: c.isObrigatorio,
     }));
     if (campos.length) {
       const erros = validarApontamento(campos, valores);
@@ -127,12 +127,12 @@ export class AtividadeExperimentoService {
       where: { id: experimentoId },
       select: {
         objetoEstudo: {
-          select: { subcategoria: { select: { categoria: { select: { eCultura: true } } } } },
+          select: { subcategoria: { select: { categoria: { select: { isCultura: true } } } } },
         },
       },
     });
-    const eCultura = exp?.objetoEstudo?.subcategoria?.categoria?.eCultura ?? false;
-    const desejados = marcosPadrao(eCultura);
+    const isCultura = exp?.objetoEstudo?.subcategoria?.categoria?.isCultura ?? false;
+    const desejados = marcosPadrao(isCultura);
 
     const existentes = new Set(
       (
@@ -147,7 +147,7 @@ export class AtividadeExperimentoService {
     // Modelo de Colheita (apontamento linhas/comprimento) que fornece a área útil (RN-PROD / C5).
     const modeloColheita = faltantes.includes("colheita")
       ? await this.prisma.modeloAtividade.findFirst({
-          where: { fornecAreaColheita: true, ativo: true },
+          where: { isFonteAreaColheita: true, isAtivo: true },
           include: { campos: { orderBy: { ordem: "asc" } } },
         })
       : null;
@@ -173,7 +173,7 @@ export class AtividadeExperimentoService {
         });
       }
     }
-    return { criados: faltantes.map((m) => ROTULO_MARCO[m]), eCultura };
+    return { criados: faltantes.map((m) => ROTULO_MARCO[m]), isCultura };
   }
 
   /** Atualiza um marco/atividade: previsão, confirmação e data realizada. */
@@ -182,7 +182,7 @@ export class AtividadeExperimentoService {
     user: UsuarioAtual,
     dto: {
       dataPrevista?: string | null;
-      confirmada?: boolean;
+      isConfirmada?: boolean;
       data?: string | null;
       responsavel?: string;
       obs?: string;
@@ -203,7 +203,7 @@ export class AtividadeExperimentoService {
             : dto.dataPrevista
               ? new Date(dto.dataPrevista)
               : null,
-        confirmada: dto.confirmada,
+        isConfirmada: dto.isConfirmada,
         data: dto.data === undefined ? undefined : dto.data ? new Date(dto.data) : null,
         responsavel: dto.responsavel,
         obs: dto.obs,

@@ -22,12 +22,12 @@ export class CadastrosController {
   @Get("categorias") categorias() {
     return this.service.listarCategorias();
   }
-  @Post("categorias") criarCategoria(@Body() d: { nome: string; eCultura?: boolean }) {
+  @Post("categorias") criarCategoria(@Body() d: { nome: string; isCultura?: boolean }) {
     return this.service.criarCategoria(d);
   }
   @Put("categorias/:id") atualizarCategoria(
     @Param("id") id: string,
-    @Body() d: { nome?: string; eCultura?: boolean },
+    @Body() d: { nome?: string; isCultura?: boolean },
   ) {
     return this.service.atualizarCategoria(id, d);
   }

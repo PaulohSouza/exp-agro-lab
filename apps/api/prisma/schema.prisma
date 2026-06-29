@@ -18,7 +18,7 @@ model Instituicao {
   cnpj              String?
   politicaAprovacao PoliticaAprovacao @default(todos)
   nAprovadores      Int      @default(1)
-  ativo             Boolean  @default(true)
+  isAtivo             Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -42,7 +42,7 @@ model Departamento {
   id            String   @id @default(cuid())
   instituicaoId String
   nome          String
-  ativo         Boolean  @default(true)
+  isAtivo         Boolean  @default(true)
   createdAt     DateTime @default(now())
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   unidades      Unidade[]
@@ -60,7 +60,7 @@ model Unidade {
   departamentoId String?
   nome          String
   tipo          TipoUnidade @default(unidade)
-  ativo         Boolean  @default(true)
+  isAtivo         Boolean  @default(true)
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   departamento  Departamento? @relation(fields: [departamentoId], references: [id])
   usuarios      User[]
@@ -83,7 +83,7 @@ model User {
   papel              Papel    @default(analista)
   // Mantido por retrocompatibilidade na fatia 1; papel é a nova fonte da verdade. @see RN-RBAC
   isAdminInstituicao Boolean  @default(false)
-  ativo              Boolean  @default(true)
+  isAtivo              Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -112,9 +112,9 @@ enum Papel {
 model Categoria {
   id    String @id @default(cuid())
   nome  String
-  ativo Boolean @default(true)
+  isAtivo Boolean @default(true)
   // Quando true, ensaios com objeto desta categoria ganham marcos de Semeadura/Colheita.
-  eCultura Boolean @default(false)
+  isCultura Boolean @default(false)
   subcategorias Subcategoria[]
 }
 
@@ -122,7 +122,7 @@ model Subcategoria {
   id          String @id @default(cuid())
   categoriaId String
   nome        String
-  ativo       Boolean @default(true)
+  isAtivo       Boolean @default(true)
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
   objetos     ObjetoEstudo[]
 }
@@ -132,7 +132,7 @@ model ObjetoEstudo {
   subcategoriaId String
   nome           String
   obs            String?
-  ativo          Boolean @default(true)
+  isAtivo          Boolean @default(true)
   subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
   experimentos   Experimento[]
 }
@@ -296,7 +296,7 @@ model Produto {
   id    String @id @default(cuid())
   nome  String
   marca String?
-  ativo Boolean @default(true)
+  isAtivo Boolean @default(true)
   usos  TratamentoProduto[]
 }
 
@@ -304,7 +304,7 @@ model Atividade {
   id         String @id @default(cuid())
   nome       String
   valorVenda Float?
-  ativo      Boolean @default(true)
+  isAtivo      Boolean @default(true)
   usos       TratamentoProduto[]
 }
 
@@ -371,7 +371,7 @@ model Avaliacao {
   unidadeSaida  String?
   formula       String?
   tipo          TipoAvaliacao @default(calendarizada)
-  personalizada Boolean @default(false)
+  isPersonalizada Boolean @default(false)
   escala        String?
   timingId      String?
   dataPrevista  DateTime?
@@ -409,7 +409,7 @@ model ModeloAvaliacao {
   instituicaoId        String?            // dono quando escopo = instituicao/departamento
   departamentoId       String?            // dono quando escopo = departamento
   baseadoEmId          String?            // derivado de outro modelo (ex.: depto herda do sistema)
-  ativo                Boolean  @default(true)
+  isAtivo                Boolean  @default(true)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -468,7 +468,7 @@ model GrupoColeta {
   escopo         EscopoModelo @default(instituicao)
   instituicaoId  String?
   departamentoId String?
-  ativo          Boolean @default(true)
+  isAtivo          Boolean @default(true)
   createdAt      DateTime @default(now())
 
   instituicao   Instituicao?  @relation(fields: [instituicaoId], references: [id])
@@ -505,11 +505,11 @@ model ModeloAtividade {
   metodologiaRelatorio String? @db.Text
   // Quando true, a atividade (com campos linhas/comprimento) fornece a área útil
   // do ensaio para o cálculo de produtividade (RN-PROD / C5).
-  fornecAreaColheita   Boolean @default(false)
+  isFonteAreaColheita   Boolean @default(false)
   escopo               EscopoModelo @default(sistema)
   instituicaoId        String?
   departamentoId       String?
-  ativo                Boolean @default(true)
+  isAtivo                Boolean @default(true)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -550,7 +550,7 @@ model ModeloAtividadeCampo {
   rotulo      String
   tipo        TipoCampo @default(numero)
   unidade     String?
-  obrigatorio Boolean @default(false)
+  isObrigatorio Boolean @default(false)
   ordem       Int     @default(0)
   modelo      ModeloAtividade @relation(fields: [modeloId], references: [id], onDelete: Cascade)
 
@@ -573,7 +573,7 @@ model AtividadeExperimento {
   tipo          TipoAtividade @default(acao)
   marco         MarcoTipo?         // quando preenchido, é um marco do cronograma
   dataPrevista  DateTime?          // previsão (marco)
-  confirmada    Boolean @default(false) // marco confirmado pelo usuário
+  isConfirmada    Boolean @default(false) // marco confirmado pelo usuário
   data          DateTime?          // data realizada/confirmada
   responsavel   String?
   obs           String? @db.Text
@@ -640,7 +640,7 @@ model ExperimentoCompartilhamento {
   userId         String?
   convidadoEmail String?
   nivel          NivelCompartilhamento @default(input)
-  aceito         Boolean @default(false)
+  isAceito         Boolean @default(false)
   token          String? @unique
   createdAt      DateTime @default(now())
   experimento    Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
@@ -676,7 +676,7 @@ model AprovadorInstituicao {
   id            String @id @default(cuid())
   instituicaoId String
   userId        String
-  ativo         Boolean @default(true)
+  isAtivo         Boolean @default(true)
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   user          User        @relation(fields: [userId], references: [id])
 

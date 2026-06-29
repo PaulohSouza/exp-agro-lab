@@ -60,7 +60,7 @@ export class ModeloAvaliacaoService {
             ],
           };
     return this.prisma.modeloAvaliacao.findMany({
-      where: { ...where, ativo: true },
+      where: { ...where, isAtivo: true },
       orderBy: [{ escopo: "asc" }, { nome: "asc" }],
       include: { ...INCLUDE_PREREQS, _count: { select: { avaliacoes: true } } },
     });
@@ -146,7 +146,7 @@ export class ModeloAvaliacaoService {
 
   async remover(user: UsuarioAtual, id: string) {
     await this.garantirAcesso(user, id);
-    await this.prisma.modeloAvaliacao.update({ where: { id }, data: { ativo: false } });
+    await this.prisma.modeloAvaliacao.update({ where: { id }, data: { isAtivo: false } });
     return { ok: true };
   }
 

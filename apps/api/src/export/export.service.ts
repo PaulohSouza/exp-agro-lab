@@ -104,7 +104,7 @@ export class ExportService {
     // Área útil única do ensaio: vem da atividade de Colheita (RN-PROD / C5).
     const espac = exp.espacamentoLinhasM ?? undefined;
     const colheita = await this.prisma.atividadeExperimento.findFirst({
-      where: { experimentoId: id, modelo: { fornecAreaColheita: true } },
+      where: { experimentoId: id, modelo: { isFonteAreaColheita: true } },
       include: { valores: true },
     });
     const linhasC = colheita?.valores.find((v) => v.rotulo === "linhas")?.valorNum ?? undefined;

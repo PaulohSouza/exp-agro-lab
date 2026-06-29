@@ -43,7 +43,7 @@ export class AtividadeExperimentoController {
     @Body()
     dto: {
       dataPrevista?: string | null;
-      confirmada?: boolean;
+      isConfirmada?: boolean;
       data?: string | null;
       responsavel?: string;
       obs?: string;

@@ -78,7 +78,7 @@ export class OrdemServicoService {
     await this.prisma.aprovacaoOSInterna.deleteMany({ where: { ordemServicoId: id } });
 
     const aprovadores = await this.prisma.aprovadorInstituicao.count({
-      where: { instituicaoId: os.experimento.instituicaoId, ativo: true },
+      where: { instituicaoId: os.experimento.instituicaoId, isAtivo: true },
     });
 
     if (aprovadores > 0) {
@@ -106,7 +106,7 @@ export class OrdemServicoService {
       throw new BadRequestException("OS não está em aprovação interna.");
     }
     const aprovador = await this.prisma.aprovadorInstituicao.findFirst({
-      where: { instituicaoId: os.experimento.instituicaoId, userId: user.userId, ativo: true },
+      where: { instituicaoId: os.experimento.instituicaoId, userId: user.userId, isAtivo: true },
     });
     if (!aprovador) throw new ForbiddenException("Você não é aprovador desta instituição.");
 
@@ -137,7 +137,7 @@ export class OrdemServicoService {
       where: { id: os.experimento.instituicaoId },
     });
     const ativos = await this.prisma.aprovadorInstituicao.findMany({
-      where: { instituicaoId: os.experimento.instituicaoId, ativo: true },
+      where: { instituicaoId: os.experimento.instituicaoId, isAtivo: true },
       select: { userId: true },
     });
     const ativosIds = new Set(ativos.map((a) => a.userId));

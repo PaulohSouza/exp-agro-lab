@@ -7,13 +7,13 @@ export class CadastrosService {
 
   // produtos / atividades
   listarProdutos() {
-    return this.prisma.produto.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } });
+    return this.prisma.produto.findMany({ where: { isAtivo: true }, orderBy: { nome: "asc" } });
   }
   criarProduto(dto: { nome: string; marca?: string }) {
     return this.prisma.produto.create({ data: { nome: dto.nome, marca: dto.marca } });
   }
   listarAtividades() {
-    return this.prisma.atividade.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } });
+    return this.prisma.atividade.findMany({ where: { isAtivo: true }, orderBy: { nome: "asc" } });
   }
   criarAtividade(dto: { nome: string; valorVenda?: number }) {
     return this.prisma.atividade.create({ data: { nome: dto.nome, valorVenda: dto.valorVenda } });
@@ -21,22 +21,22 @@ export class CadastrosService {
 
   // objeto de estudo genérico: categoria → subcategoria → objeto
   listarCategorias() {
-    return this.prisma.categoria.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } });
+    return this.prisma.categoria.findMany({ where: { isAtivo: true }, orderBy: { nome: "asc" } });
   }
-  criarCategoria(dto: { nome: string; eCultura?: boolean }) {
+  criarCategoria(dto: { nome: string; isCultura?: boolean }) {
     return this.prisma.categoria.create({
-      data: { nome: dto.nome, eCultura: dto.eCultura ?? false },
+      data: { nome: dto.nome, isCultura: dto.isCultura ?? false },
     });
   }
-  atualizarCategoria(id: string, dto: { nome?: string; eCultura?: boolean }) {
+  atualizarCategoria(id: string, dto: { nome?: string; isCultura?: boolean }) {
     return this.prisma.categoria.update({
       where: { id },
-      data: { nome: dto.nome, eCultura: dto.eCultura },
+      data: { nome: dto.nome, isCultura: dto.isCultura },
     });
   }
   listarSubcategorias(categoriaId?: string) {
     return this.prisma.subcategoria.findMany({
-      where: { ativo: true, ...(categoriaId ? { categoriaId } : {}) },
+      where: { isAtivo: true, ...(categoriaId ? { categoriaId } : {}) },
       orderBy: { nome: "asc" },
     });
   }
@@ -47,7 +47,7 @@ export class CadastrosService {
   }
   listarObjetos(subcategoriaId?: string) {
     return this.prisma.objetoEstudo.findMany({
-      where: { ativo: true, ...(subcategoriaId ? { subcategoriaId } : {}) },
+      where: { isAtivo: true, ...(subcategoriaId ? { subcategoriaId } : {}) },
       orderBy: { nome: "asc" },
     });
   }

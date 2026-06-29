@@ -5,13 +5,13 @@ export interface Ref {
   nome: string;
 }
 export interface Categoria extends Ref {
-  eCultura?: boolean;
-  ativo?: boolean;
+  isCultura?: boolean;
+  isAtivo?: boolean;
 }
 export interface Compartilhamento {
   id: string;
   nivel: "input" | "edit";
-  aceito: boolean;
+  isAceito: boolean;
   convidadoEmail: string | null;
   user?: { id: string; nome: string; email: string } | null;
 }
@@ -95,7 +95,7 @@ export interface ModeloAvaliacao {
   instituicaoId: string | null;
   departamentoId: string | null;
   baseadoEmId: string | null;
-  ativo: boolean;
+  isAtivo: boolean;
   prerequisitos?: { prerequisitoId: string; prerequisito: { id: string; nome: string } }[];
   prerequisitosAtividade?: {
     modeloAtividadeId: string;
@@ -126,7 +126,7 @@ export interface ModeloAtividadeCampo {
   rotulo: string;
   tipo: TipoCampo;
   unidade?: string | null;
-  obrigatorio: boolean;
+  isObrigatorio: boolean;
   ordem: number;
 }
 export interface ModeloAtividade {
@@ -138,7 +138,7 @@ export interface ModeloAtividade {
   escopo: EscopoModelo;
   instituicaoId: string | null;
   departamentoId: string | null;
-  ativo: boolean;
+  isAtivo: boolean;
   campos?: ModeloAtividadeCampo[];
   _count?: { atividades: number };
 }
@@ -153,7 +153,7 @@ export interface ModeloAtividadeInput {
     rotulo: string;
     tipo?: TipoCampo;
     unidade?: string;
-    obrigatorio?: boolean;
+    isObrigatorio?: boolean;
     ordem?: number;
   }[];
 }
@@ -178,7 +178,7 @@ export interface AtividadeExperimento {
   tipo: TipoAtividade;
   marco?: string | null;
   dataPrevista?: string | null;
-  confirmada?: boolean;
+  isConfirmada?: boolean;
   data: string | null;
   responsavel: string | null;
   obs: string | null;
@@ -196,7 +196,7 @@ export interface GrupoColeta {
   escopo: EscopoModelo;
   instituicaoId: string | null;
   departamentoId: string | null;
-  ativo: boolean;
+  isAtivo: boolean;
   itens?: { modeloId: string; modelo: { id: string; nome: string } }[];
 }
 export interface GrupoColetaInput {
@@ -271,7 +271,7 @@ export interface Instituicao {
 export interface Aprovador {
   id: string;
   userId: string;
-  ativo: boolean;
+  isAtivo: boolean;
   user: { id: string; nome: string; email: string };
 }
 export interface AnaliseResultado {
@@ -365,12 +365,12 @@ export interface Usuario {
   departamentoId?: string | null;
   unidadeId?: string | null;
   isAdminInstituicao: boolean;
-  ativo: boolean;
+  isAtivo: boolean;
 }
 export interface Departamento {
   id: string;
   nome: string;
-  ativo: boolean;
+  isAtivo: boolean;
   _count?: { unidades: number; usuarios: number };
 }
 export interface Responsavel {
@@ -546,7 +546,7 @@ export const api = {
     atividadeId: string,
     body: {
       dataPrevista?: string | null;
-      confirmada?: boolean;
+      isConfirmada?: boolean;
       data?: string | null;
       responsavel?: string;
       obs?: string;
@@ -559,7 +559,7 @@ export const api = {
   removerAtividadeExp: (atividadeId: string) =>
     req<{ ok: boolean }>(`/atividades/${atividadeId}`, { method: "DELETE" }),
   gerarMarcos: (expId: string) =>
-    req<{ criados: string[]; eCultura: boolean }>(`/experimentos/${expId}/marcos/gerar`, {
+    req<{ criados: string[]; isCultura: boolean }>(`/experimentos/${expId}/marcos/gerar`, {
       method: "POST",
     }),
 
@@ -590,7 +590,7 @@ export const api = {
   areas: () => req<Ref[]>("/cadastros/areas"),
   delineamentos: () => req<Ref[]>("/cadastros/delineamentos"),
   categorias: () => req<Categoria[]>("/cadastros/categorias"),
-  atualizarCategoria: (id: string, body: { nome?: string; eCultura?: boolean }) =>
+  atualizarCategoria: (id: string, body: { nome?: string; isCultura?: boolean }) =>
     req<Categoria>(`/cadastros/categorias/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   subcategorias: (categoriaId: string) =>
     req<Ref[]>(`/cadastros/subcategorias?categoriaId=${categoriaId}`),
@@ -626,7 +626,7 @@ export const api = {
       papel?: Papel;
       departamentoId?: string | null;
       unidadeId?: string | null;
-      ativo?: boolean;
+      isAtivo?: boolean;
     },
   ) => req<Usuario>(`/usuarios/${id}`, { method: "PUT", body: JSON.stringify(body) }),
 
@@ -635,7 +635,7 @@ export const api = {
   unidades: () => req<Unidade[]>("/departamentos/unidades"),
   criarDepartamento: (nome: string) =>
     req<Departamento>("/departamentos", { method: "POST", body: JSON.stringify({ nome }) }),
-  atualizarDepartamento: (id: string, body: { nome?: string; ativo?: boolean }) =>
+  atualizarDepartamento: (id: string, body: { nome?: string; isAtivo?: boolean }) =>
     req<Departamento>(`/departamentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   desativarDepartamento: (id: string) =>
     req<{ ok: boolean }>(`/departamentos/${id}`, { method: "DELETE" }),

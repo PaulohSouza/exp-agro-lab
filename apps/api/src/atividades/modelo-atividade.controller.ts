@@ -8,7 +8,7 @@ interface CampoBody {
   rotulo: string;
   tipo?: TipoCampo;
   unidade?: string;
-  obrigatorio?: boolean;
+  isObrigatorio?: boolean;
   ordem?: number;
 }
 interface ModeloAtividadeBody {
