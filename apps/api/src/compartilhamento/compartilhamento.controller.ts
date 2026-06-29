@@ -16,7 +16,7 @@ export class CompartilhamentoController {
   compartilhar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: { email: string; nivel: "input" | "edit" },
+    @Body() dto: { email: string; nivel: "INPUT" | "EDIT" },
   ) {
     return this.service.compartilhar(id, user, dto);
   }

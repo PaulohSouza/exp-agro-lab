@@ -52,7 +52,7 @@ export class AuthService {
         nome: dto.adminNome,
         email: dto.adminEmail,
         senhaHash: AuthService.hash(dto.adminSenha),
-        papel: "gestao_instituicao",
+        papel: "GESTAO_INSTITUICAO",
         isAdminInstituicao: true,
       },
     });

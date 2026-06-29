@@ -13,11 +13,11 @@ export function GeralTab({
   const [f, setF] = useState({
     titulo: exp.titulo ?? "",
     codigo: exp.codigo ?? "",
-    ensaio: exp.ensaio ?? "interno",
+    ensaio: exp.ensaio ?? "INTERNO",
     objetivo: exp.objetivo ?? "",
     cultivar: exp.cultivar ?? "",
     localId: exp.localId ?? "",
-    tipoPeriodo: exp.tipoPeriodo ?? "safra",
+    tipoPeriodo: exp.tipoPeriodo ?? "SAFRA",
     safraId: exp.safraId ?? "",
     anoSemestre: exp.anoSemestre ?? "",
     areaPesquisaId: exp.areaPesquisaId ?? "",
@@ -80,9 +80,9 @@ export function GeralTab({
       localId: f.localId,
       areaPesquisaId: f.areaPesquisaId,
       delineamentoId: f.delineamentoId,
-      tipoPeriodo: f.tipoPeriodo as "safra" | "ano_semestre",
-      safraId: f.tipoPeriodo === "safra" ? f.safraId : "",
-      anoSemestre: f.tipoPeriodo === "ano_semestre" ? f.anoSemestre : "",
+      tipoPeriodo: f.tipoPeriodo as "SAFRA" | "ANO_SEMESTRE",
+      safraId: f.tipoPeriodo === "SAFRA" ? f.safraId : "",
+      anoSemestre: f.tipoPeriodo === "ANO_SEMESTRE" ? f.anoSemestre : "",
       numRepeticoes: num(f.numRepeticoes),
       parcelaLarguraM: num(f.parcelaLarguraM),
       parcelaComprimentoM: num(f.parcelaComprimentoM),
@@ -137,8 +137,8 @@ export function GeralTab({
         </Campo>
         <Campo label="Ensaio">
           <select style={inp} value={f.ensaio} onChange={(e) => up("ensaio", e.target.value)}>
-            <option value="interno">interno</option>
-            <option value="comercial">comercial</option>
+            <option value="INTERNO">interno</option>
+            <option value="COMERCIAL">comercial</option>
           </select>
         </Campo>
 
@@ -155,10 +155,10 @@ export function GeralTab({
               onChange={(e) => up("tipoPeriodo", e.target.value)}
               style={{ padding: 8, borderRadius: 6, border: "1px solid #d6d6e6", fontSize: 13 }}
             >
-              <option value="safra">Safra</option>
-              <option value="ano_semestre">Ano.semestre</option>
+              <option value="SAFRA">Safra</option>
+              <option value="ANO_SEMESTRE">Ano.semestre</option>
             </select>
-            {f.tipoPeriodo === "safra" ? (
+            {f.tipoPeriodo === "SAFRA" ? (
               <Select v={f.safraId} set={(v) => up("safraId", v)} opts={refs.safras} />
             ) : (
               <input

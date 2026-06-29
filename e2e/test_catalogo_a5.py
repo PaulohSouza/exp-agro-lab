@@ -52,7 +52,7 @@ def run() -> int:
         print(f"✓ sigla de escopo na opção: {opt_prod.inner_text().strip()}")
 
         # filtro por escopo (Geral/sistema) mantém Produtividade visível
-        page.get_by_label("Filtrar por escopo").select_option("sistema")
+        page.get_by_label("Filtrar por escopo").select_option("SISTEMA")
         value = sel.locator("option", has_text="Produtividade").first.get_attribute("value")
         assert value, "Produtividade (sistema) não está no catálogo"
         sel.select_option(value)

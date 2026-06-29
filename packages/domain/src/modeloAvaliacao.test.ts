@@ -7,18 +7,18 @@ import {
   type ModeloEscopoRef,
 } from "./modeloAvaliacao.js";
 
-const sistema: ModeloEscopoRef = { id: "sis", escopo: "sistema" };
-const instA: ModeloEscopoRef = { id: "iA", escopo: "instituicao", instituicaoId: "A" };
-const instB: ModeloEscopoRef = { id: "iB", escopo: "instituicao", instituicaoId: "B" };
+const SISTEMA: ModeloEscopoRef = { id: "sis", escopo: "SISTEMA" };
+const instA: ModeloEscopoRef = { id: "iA", escopo: "INSTITUICAO", instituicaoId: "A" };
+const instB: ModeloEscopoRef = { id: "iB", escopo: "INSTITUICAO", instituicaoId: "B" };
 const deptA1: ModeloEscopoRef = {
   id: "d1",
-  escopo: "departamento",
+  escopo: "DEPARTAMENTO",
   instituicaoId: "A",
   departamentoId: "D1",
 };
 const deptA2: ModeloEscopoRef = {
   id: "d2",
-  escopo: "departamento",
+  escopo: "DEPARTAMENTO",
   instituicaoId: "A",
   departamentoId: "D2",
 };
@@ -26,9 +26,9 @@ const deptA2: ModeloEscopoRef = {
 describe("visibilidade por escopo", () => {
   const ctx = { instituicaoId: "A", departamentoId: "D1" };
 
-  it("sistema é sempre visível", () => {
-    expect(modeloVisivel(sistema, ctx)).toBe(true);
-    expect(modeloVisivel(sistema, {})).toBe(true);
+  it("SISTEMA é sempre visível", () => {
+    expect(modeloVisivel(SISTEMA, ctx)).toBe(true);
+    expect(modeloVisivel(SISTEMA, {})).toBe(true);
   });
 
   it("instituição: só a do usuário", () => {
@@ -36,7 +36,7 @@ describe("visibilidade por escopo", () => {
     expect(modeloVisivel(instB, ctx)).toBe(false);
   });
 
-  it("departamento: só o do usuário", () => {
+  it("DEPARTAMENTO: só o do usuário", () => {
     expect(modeloVisivel(deptA1, ctx)).toBe(true);
     expect(modeloVisivel(deptA2, ctx)).toBe(false);
   });
@@ -47,29 +47,29 @@ describe("visibilidade por escopo", () => {
   });
 
   it("modelosVisiveis filtra e preserva ordem (os 3 escopos rotuláveis)", () => {
-    const todos = [sistema, instA, instB, deptA1, deptA2];
+    const todos = [SISTEMA, instA, instB, deptA1, deptA2];
     expect(modelosVisiveis(todos, ctx).map((m) => m.id)).toEqual(["sis", "iA", "d1"]);
   });
 });
 
 describe("capacidade de gestão por papel", () => {
-  it("admin_sistema gere qualquer escopo", () => {
-    expect(podeGerenciarEscopo("admin_sistema", "sistema")).toBe(true);
-    expect(podeGerenciarEscopo("admin_sistema", "departamento")).toBe(true);
+  it("ADMIN_SISTEMA gere qualquer escopo", () => {
+    expect(podeGerenciarEscopo("ADMIN_SISTEMA", "SISTEMA")).toBe(true);
+    expect(podeGerenciarEscopo("ADMIN_SISTEMA", "DEPARTAMENTO")).toBe(true);
   });
-  it("gestao_instituicao: instituição e departamento, nunca sistema", () => {
-    expect(podeGerenciarEscopo("gestao_instituicao", "instituicao")).toBe(true);
-    expect(podeGerenciarEscopo("gestao_instituicao", "departamento")).toBe(true);
-    expect(podeGerenciarEscopo("gestao_instituicao", "sistema")).toBe(false);
+  it("GESTAO_INSTITUICAO: instituição e DEPARTAMENTO, nunca SISTEMA", () => {
+    expect(podeGerenciarEscopo("GESTAO_INSTITUICAO", "INSTITUICAO")).toBe(true);
+    expect(podeGerenciarEscopo("GESTAO_INSTITUICAO", "DEPARTAMENTO")).toBe(true);
+    expect(podeGerenciarEscopo("GESTAO_INSTITUICAO", "SISTEMA")).toBe(false);
   });
-  it("gestao_departamento: só departamento", () => {
-    expect(podeGerenciarEscopo("gestao_departamento", "departamento")).toBe(true);
-    expect(podeGerenciarEscopo("gestao_departamento", "instituicao")).toBe(false);
+  it("GESTAO_DEPARTAMENTO: só DEPARTAMENTO", () => {
+    expect(podeGerenciarEscopo("GESTAO_DEPARTAMENTO", "DEPARTAMENTO")).toBe(true);
+    expect(podeGerenciarEscopo("GESTAO_DEPARTAMENTO", "INSTITUICAO")).toBe(false);
   });
   it("papéis operacionais não gerem catálogo", () => {
-    for (const e of ["sistema", "instituicao", "departamento"] as const) {
-      expect(podeGerenciarEscopo("pesquisador", e)).toBe(false);
-      expect(podeGerenciarEscopo("assistente", e)).toBe(false);
+    for (const e of ["SISTEMA", "INSTITUICAO", "DEPARTAMENTO"] as const) {
+      expect(podeGerenciarEscopo("PESQUISADOR", e)).toBe(false);
+      expect(podeGerenciarEscopo("ASSISTENTE", e)).toBe(false);
     }
   });
 });

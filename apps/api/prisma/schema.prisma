@@ -16,7 +16,7 @@ model Instituicao {
   id                String   @id @default(cuid())
   nome              String
   cnpj              String?
-  politicaAprovacao PoliticaAprovacao @default(todos)
+  politicaAprovacao PoliticaAprovacao @default(TODOS)
   nAprovadores      Int      @default(1)
   isAtivo             Boolean  @default(true)
   createdAt         DateTime @default(now())
@@ -33,8 +33,8 @@ model Instituicao {
 }
 
 enum PoliticaAprovacao {
-  todos
-  n_de_m
+  TODOS
+  N_DE_M
 }
 
 // Departamento agrupa unidades/laboratórios dentro da instituição (RF-21b).
@@ -59,7 +59,7 @@ model Unidade {
   instituicaoId String
   departamentoId String?
   nome          String
-  tipo          TipoUnidade @default(unidade)
+  tipo          TipoUnidade @default(UNIDADE)
   isAtivo         Boolean  @default(true)
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   departamento  Departamento? @relation(fields: [departamentoId], references: [id])
@@ -68,8 +68,8 @@ model Unidade {
 }
 
 enum TipoUnidade {
-  unidade
-  laboratorio
+  UNIDADE
+  LABORATORIO
 }
 
 model User {
@@ -80,7 +80,7 @@ model User {
   nome               String
   email              String   @unique
   senhaHash          String
-  papel              Papel    @default(analista)
+  papel              Papel    @default(ANALISTA)
   // Mantido por retrocompatibilidade na fatia 1; papel é a nova fonte da verdade. @see RN-RBAC
   isAdminInstituicao Boolean  @default(false)
   isAtivo              Boolean  @default(true)
@@ -98,13 +98,13 @@ model User {
 
 // Papéis com escopo (RN-RBAC). admin_sistema é GLOBAL (cross-institution).
 enum Papel {
-  admin_sistema
-  gestao_instituicao
-  gestao_departamento
-  coordenador_area
-  pesquisador
-  analista
-  assistente
+  ADMIN_SISTEMA
+  GESTAO_INSTITUICAO
+  GESTAO_DEPARTAMENTO
+  COORDENADOR_AREA
+  PESQUISADOR
+  ANALISTA
+  ASSISTENTE
 }
 
 // ----------------------------- Cadastros base ---------------------------- 
@@ -168,8 +168,8 @@ model Experimento {
   codigo           String?
   titulo           String
   objetivo         String?  @db.Text
-  ensaio           Ensaio   @default(interno)
-  status           StatusExperimento @default(Inserindo)
+  ensaio           Ensaio   @default(INTERNO)
+  status           StatusExperimento @default(INSERINDO)
 
   instituicaoId    String
   unidadeId        String?
@@ -181,7 +181,7 @@ model Experimento {
   delineamentoId   String?
 
   // Período do ensaio: safra (campo) OU ano.semestre (laboratório).
-  tipoPeriodo      TipoPeriodo @default(safra)
+  tipoPeriodo      TipoPeriodo @default(SAFRA)
   anoSemestre      String?  // ex.: "2026.1" quando tipoPeriodo = ano_semestre
 
   cultivar         String?
@@ -244,16 +244,16 @@ model ExperimentoResponsavel {
 }
 
 enum Ensaio {
-  interno
-  comercial
+  INTERNO
+  COMERCIAL
 }
 
 enum StatusExperimento {
-  Inserindo
-  AprovadoCAD
-  RecusadoCAD
-  EmConducao
-  Concluido
+  INSERINDO
+  APROVADO_CAD
+  RECUSADO_CAD
+  EM_CONDUCAO
+  CONCLUIDO
 }
 
 model Fator {
@@ -261,14 +261,14 @@ model Fator {
   experimentoId String
   ordem         Int
   nome          String
-  tipo          TipoFator @default(qualitativo)
+  tipo          TipoFator @default(QUALITATIVO)
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
   niveis        NivelFator[]
 }
 
 enum TipoFator {
-  qualitativo
-  quantitativo
+  QUALITATIVO
+  QUANTITATIVO
 }
 
 model NivelFator {
@@ -370,7 +370,7 @@ model Avaliacao {
   unidadeColeta String?
   unidadeSaida  String?
   formula       String?
-  tipo          TipoAvaliacao @default(calendarizada)
+  tipo          TipoAvaliacao @default(CALENDARIZADA)
   isPersonalizada Boolean @default(false)
   escala        String?
   timingId      String?
@@ -387,8 +387,8 @@ model Avaliacao {
 }
 
 enum TipoAvaliacao {
-  calendarizada
-  condicional
+  CALENDARIZADA
+  CONDICIONAL
 }
 
 // ----------------------- Catálogo de avaliações (multi-escopo) -----------------------
@@ -405,7 +405,7 @@ model ModeloAvaliacao {
   unidadeColeta        String?            // ex.: kg
   unidadeSaida         String?            // ex.: sacas/ha
   calculoRelatorio     String?            // fórmula de conversão
-  escopo               EscopoModelo @default(sistema)
+  escopo               EscopoModelo @default(SISTEMA)
   instituicaoId        String?            // dono quando escopo = instituicao/departamento
   departamentoId       String?            // dono quando escopo = departamento
   baseadoEmId          String?            // derivado de outro modelo (ex.: depto herda do sistema)
@@ -431,9 +431,9 @@ model ModeloAvaliacao {
 }
 
 enum EscopoModelo {
-  sistema
-  instituicao
-  departamento
+  SISTEMA
+  INSTITUICAO
+  DEPARTAMENTO
 }
 
 // Pré-requisito entre avaliações: ex.: Produtividade exige Umidade (conversão a 13%).
@@ -465,7 +465,7 @@ model GrupoColeta {
   id             String  @id @default(cuid())
   nome           String
   descricao      String?
-  escopo         EscopoModelo @default(instituicao)
+  escopo         EscopoModelo @default(INSTITUICAO)
   instituicaoId  String?
   departamentoId String?
   isAtivo          Boolean @default(true)
@@ -501,12 +501,12 @@ model ModeloAtividade {
   id                   String  @id @default(cuid())
   nome                 String
   descricao            String? @db.Text
-  tipo                 TipoAtividade @default(acao)
+  tipo                 TipoAtividade @default(ACAO)
   metodologiaRelatorio String? @db.Text
   // Quando true, a atividade (com campos linhas/comprimento) fornece a área útil
   // do ensaio para o cálculo de produtividade (RN-PROD / C5).
   isFonteAreaColheita   Boolean @default(false)
-  escopo               EscopoModelo @default(sistema)
+  escopo               EscopoModelo @default(SISTEMA)
   instituicaoId        String?
   departamentoId       String?
   isAtivo                Boolean @default(true)
@@ -525,22 +525,22 @@ model ModeloAtividade {
 }
 
 enum TipoAtividade {
-  acao
-  apontamento
+  ACAO
+  APONTAMENTO
 }
 
 enum TipoPeriodo {
-  safra
-  ano_semestre
+  SAFRA
+  ANO_SEMESTRE
 }
 
 // Marcos do cronograma do ensaio.
 enum MarcoTipo {
-  implantacao
-  inicio
-  fim
-  semeadura
-  colheita
+  IMPLANTACAO
+  INICIO
+  FIM
+  SEMEADURA
+  COLHEITA
 }
 
 // Campo parametrizado de uma atividade com apontamento (ex.: CO2 → vento, umidade, data).
@@ -548,7 +548,7 @@ model ModeloAtividadeCampo {
   id          String @id @default(cuid())
   modeloId    String
   rotulo      String
-  tipo        TipoCampo @default(numero)
+  tipo        TipoCampo @default(NUMERO)
   unidade     String?
   isObrigatorio Boolean @default(false)
   ordem       Int     @default(0)
@@ -558,10 +558,10 @@ model ModeloAtividadeCampo {
 }
 
 enum TipoCampo {
-  numero
-  texto
-  data
-  booleano
+  NUMERO
+  TEXTO
+  DATA
+  BOOLEANO
 }
 
 // Registro de uma atividade no experimento (nível experimento, não por parcela).
@@ -570,7 +570,7 @@ model AtividadeExperimento {
   experimentoId String
   modeloId      String?
   nome          String
-  tipo          TipoAtividade @default(acao)
+  tipo          TipoAtividade @default(ACAO)
   marco         MarcoTipo?         // quando preenchido, é um marco do cronograma
   dataPrevista  DateTime?          // previsão (marco)
   isConfirmada    Boolean @default(false) // marco confirmado pelo usuário
@@ -614,7 +614,7 @@ model AvaliacaoDado {
   obs                String? @db.Text
   status             String?
   fotoUrl            String?
-  origem             OrigemColeta @default(web)
+  origem             OrigemColeta @default(WEB)
   dispositivoId      String?
   syncedAt           DateTime?
   createdAt          DateTime @default(now())
@@ -628,8 +628,8 @@ model AvaliacaoDado {
 }
 
 enum OrigemColeta {
-  web
-  mobile
+  WEB
+  MOBILE
 }
 
 // -------------------- Compartilhamento / Ordem de Serviço ---------------- 
@@ -639,7 +639,7 @@ model ExperimentoCompartilhamento {
   experimentoId  String
   userId         String?
   convidadoEmail String?
-  nivel          NivelCompartilhamento @default(input)
+  nivel          NivelCompartilhamento @default(INPUT)
   isAceito         Boolean @default(false)
   token          String? @unique
   createdAt      DateTime @default(now())
@@ -650,14 +650,14 @@ model ExperimentoCompartilhamento {
 }
 
 enum NivelCompartilhamento {
-  input
-  edit
+  INPUT
+  EDIT
 }
 
 model OrdemServico {
   id            String @id @default(cuid())
   experimentoId String
-  status        StatusOS @default(rascunho)
+  status        StatusOS @default(RASCUNHO)
   createdAt     DateTime @default(now())
   experimento   Experimento @relation(fields: [experimentoId], references: [id])
   aprovacoesInternas AprovacaoOSInterna[]
@@ -665,11 +665,11 @@ model OrdemServico {
 }
 
 enum StatusOS {
-  rascunho
-  aguardando_aprovacao_interna
-  aguardando_aprovacao_cliente
-  aprovada
-  recusada
+  RASCUNHO
+  AGUARDANDO_APROVACAO_INTERNA
+  AGUARDANDO_APROVACAO_CLIENTE
+  APROVADA
+  RECUSADA
 }
 
 model AprovadorInstituicao {
@@ -698,7 +698,7 @@ model AprovacaoCliente {
   ordemServicoId String @unique
   clienteEmail   String
   token          String @unique
-  decisao        Decisao @default(pendente)
+  decisao        Decisao @default(PENDENTE)
   motivo         String?
   decididoEm     DateTime?
   ip             String?
@@ -706,9 +706,9 @@ model AprovacaoCliente {
 }
 
 enum Decisao {
-  pendente
-  aprovado
-  recusado
+  PENDENTE
+  APROVADO
+  RECUSADO
 }
 
 // -------------------------------- Suporte -------------------------------- 
@@ -719,7 +719,7 @@ model EmailLog {
   para      String
   assunto   String
   htmlPath  String?
-  status    StatusEmail @default(simulado)
+  status    StatusEmail @default(SIMULADO)
   erro      String? @db.Text
   refTipo   String?
   refId     String?
@@ -727,9 +727,9 @@ model EmailLog {
 }
 
 enum StatusEmail {
-  simulado
-  enviado
-  erro
+  SIMULADO
+  ENVIADO
+  ERRO
 }
 
 model StatusHistorico {

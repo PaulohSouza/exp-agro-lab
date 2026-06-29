@@ -11,7 +11,7 @@ import type { UsuarioAtual } from "../auth/jwt.strategy";
 export interface CriarExperimentoDto {
   titulo: string;
   objetivo?: string;
-  ensaio?: "interno" | "comercial";
+  ensaio?: "INTERNO" | "COMERCIAL";
   cultivar?: string;
   objetoEstudoId?: string;
   localId?: string;
@@ -33,7 +33,7 @@ export interface AtualizarExperimentoDto extends Partial<CriarExperimentoDto> {
   tipoExecucao?: string;
   previsaoSemeadura?: string;
   dataSemeadura?: string;
-  tipoPeriodo?: "safra" | "ano_semestre";
+  tipoPeriodo?: "SAFRA" | "ANO_SEMESTRE";
   anoSemestre?: string;
 }
 
@@ -41,7 +41,7 @@ export interface DefinirFatoresDto {
   fatores: Array<{
     ordem: number;
     nome: string;
-    tipo?: "qualitativo" | "quantitativo";
+    tipo?: "QUALITATIVO" | "QUANTITATIVO";
     niveis: string[];
   }>;
 }
@@ -53,7 +53,7 @@ export class ExperimentosService {
   /** Lista experimentos da instituição do usuário (+ compartilhados — etapa C). */
   async listar(user: UsuarioAtual) {
     // super-admin global: enxerga todas as instituições (RN-RBAC).
-    if (user.papel === "admin_sistema") {
+    if (user.papel === "ADMIN_SISTEMA") {
       const todos = await this.prisma.experimento.findMany({
         where: { deletedAt: null },
         orderBy: { createdAt: "desc" },
@@ -110,8 +110,8 @@ export class ExperimentosService {
   async garantirAcesso(
     id: string,
     user: UsuarioAtual,
-    exigir?: "edit",
-  ): Promise<"own" | "edit" | "input"> {
+    exigir?: "EDIT",
+  ): Promise<"own" | "EDIT" | "INPUT"> {
     const exp = await this.prisma.experimento.findFirst({
       where: { id, deletedAt: null },
       select: {
@@ -122,15 +122,15 @@ export class ExperimentosService {
     });
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
 
-    let nivel: "own" | "edit" | "input" | null = null;
-    if (user.papel === "admin_sistema")
+    let nivel: "own" | "EDIT" | "INPUT" | null = null;
+    if (user.papel === "ADMIN_SISTEMA")
       nivel = "own"; // super-admin global (RN-RBAC)
     else if (exp.instituicaoId === user.instituicaoId) nivel = "own";
     else if (exp.compartilhamentos.length)
-      nivel = exp.compartilhamentos[0].nivel === "edit" ? "edit" : "input";
+      nivel = exp.compartilhamentos[0].nivel === "EDIT" ? "EDIT" : "INPUT";
 
     if (!nivel) throw new ForbiddenException("Sem acesso a este experimento.");
-    if (exigir === "edit" && nivel === "input") {
+    if (exigir === "EDIT" && nivel === "INPUT") {
       throw new ForbiddenException("Permissão apenas de inserção de dados (input).");
     }
     return nivel;
@@ -148,7 +148,7 @@ export class ExperimentosService {
   }
 
   async adicionarResponsavel(id: string, user: UsuarioAtual, userId: string) {
-    await this.garantirAcesso(id, user, "edit");
+    await this.garantirAcesso(id, user, "EDIT");
     const exp = await this.prisma.experimento.findUnique({
       where: { id },
       select: { instituicaoId: true },
@@ -170,7 +170,7 @@ export class ExperimentosService {
   }
 
   async removerResponsavel(id: string, user: UsuarioAtual, userId: string) {
-    await this.garantirAcesso(id, user, "edit");
+    await this.garantirAcesso(id, user, "EDIT");
     await this.prisma.experimentoResponsavel.deleteMany({ where: { experimentoId: id, userId } });
     return { ok: true };
   }
@@ -218,7 +218,7 @@ export class ExperimentosService {
       data: {
         titulo: dto.titulo,
         objetivo: dto.objetivo,
-        ensaio: dto.ensaio ?? "interno",
+        ensaio: dto.ensaio ?? "INTERNO",
         cultivar: dto.cultivar,
         objetoEstudoId: dto.objetoEstudoId,
         localId: dto.localId,
@@ -237,7 +237,7 @@ export class ExperimentosService {
   }
 
   async atualizar(id: string, user: UsuarioAtual, dto: AtualizarExperimentoDto) {
-    await this.garantirAcesso(id, user, "edit");
+    await this.garantirAcesso(id, user, "EDIT");
     await this.prisma.experimento.update({
       where: { id },
       data: {
@@ -271,7 +271,7 @@ export class ExperimentosService {
 
   /** Define fatores/níveis e DERIVA os tratamentos (produto cartesiano dos níveis). */
   async definirFatores(id: string, user: UsuarioAtual, dto: DefinirFatoresDto) {
-    await this.garantirAcesso(id, user, "edit");
+    await this.garantirAcesso(id, user, "EDIT");
     if (!dto.fatores?.length) throw new BadRequestException("Informe ao menos 1 fator.");
     if (dto.fatores.length > 3) throw new BadRequestException("Máximo de 3 fatores.");
     for (const f of dto.fatores) {
@@ -290,7 +290,7 @@ export class ExperimentosService {
           experimentoId: id,
           ordem: f.ordem,
           nome: f.nome,
-          tipo: f.tipo ?? "qualitativo",
+          tipo: f.tipo ?? "QUALITATIVO",
           niveis: { create: f.niveis.map((v) => ({ valor: v })) },
         },
       });
@@ -318,7 +318,7 @@ export class ExperimentosService {
     user: UsuarioAtual,
     opts: { delineamento?: Delineamento; blocos?: number; seed?: number; numeroInicial?: number },
   ) {
-    await this.garantirAcesso(id, user, "edit");
+    await this.garantirAcesso(id, user, "EDIT");
     const exp = await this.prisma.experimento.findUnique({
       where: { id },
       include: { tratamentos: { orderBy: { numeroRef: "asc" } }, delineamento: true },
@@ -374,7 +374,7 @@ export class ExperimentosService {
       isInicio?: boolean;
     }>,
   ) {
-    await this.garantirAcesso(id, user, "edit");
+    await this.garantirAcesso(id, user, "EDIT");
     await this.prisma.$transaction(
       parcelas.map((p) =>
         this.prisma.parcela.update({

@@ -5,8 +5,8 @@
  * @see SDD/04-design-detalhado/08-catalogo-avaliacoes.md (Demanda C)
  */
 
-export type TipoAtividade = "acao" | "apontamento";
-export type TipoCampo = "numero" | "texto" | "data" | "booleano";
+export type TipoAtividade = "ACAO" | "APONTAMENTO";
+export type TipoCampo = "NUMERO" | "TEXTO" | "DATA" | "BOOLEANO";
 
 /** Definição de um campo parametrizado de uma atividade com apontamento. */
 export interface CampoDef {
@@ -26,19 +26,19 @@ export interface ValorApontamento {
 
 /** Slot esperado por tipo de campo. */
 const SLOT: Record<TipoCampo, keyof ValorApontamento> = {
-  numero: "valorNum",
-  texto: "valorTexto",
-  data: "valorData",
-  booleano: "valorBool",
+  NUMERO: "valorNum",
+  TEXTO: "valorTexto",
+  DATA: "valorData",
+  BOOLEANO: "valorBool",
 };
 
 function preenchido(v: ValorApontamento | undefined, tipo: TipoCampo): boolean {
   if (!v) return false;
   const val = v[SLOT[tipo]];
   if (val === undefined || val === null) return false;
-  if (tipo === "texto") return String(val).trim().length > 0;
-  if (tipo === "numero") return typeof val === "number" && !Number.isNaN(val);
-  return true; // data (string ISO) ou booleano
+  if (tipo === "TEXTO") return String(val).trim().length > 0;
+  if (tipo === "NUMERO") return typeof val === "number" && !Number.isNaN(val);
+  return true; // DATA (string ISO) ou BOOLEANO
 }
 
 /**
@@ -79,17 +79,17 @@ export function validarApontamento(campos: CampoDef[], valores: ValorApontamento
 
 /** Atividade de ação não tem apontamento; com apontamento exige campos. */
 export function apontamentoEsperado(tipo: TipoAtividade): boolean {
-  return tipo === "apontamento";
+  return tipo === "APONTAMENTO";
 }
 
-export type MarcoTipo = "implantacao" | "inicio" | "fim" | "semeadura" | "colheita";
+export type MarcoTipo = "IMPLANTACAO" | "INICIO" | "FIM" | "SEMEADURA" | "COLHEITA";
 export type StatusMarco = "confirmado" | "pendente" | "atrasado";
 
 /** Marcos padrão de um ensaio; semeadura/colheita só quando o objeto é cultura. */
 export function marcosPadrao(isCultura: boolean): MarcoTipo[] {
-  const base: MarcoTipo[] = ["implantacao", "inicio"];
-  if (isCultura) base.push("semeadura", "colheita");
-  base.push("fim");
+  const base: MarcoTipo[] = ["IMPLANTACAO", "INICIO"];
+  if (isCultura) base.push("SEMEADURA", "COLHEITA");
+  base.push("FIM");
   return base;
 }
 

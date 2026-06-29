@@ -4,18 +4,18 @@ import { api, type Experimento, type OrdemServico } from "../../../lib/api";
 import { getUser } from "../../../lib/auth";
 
 const LABEL: Record<string, string> = {
-  rascunho: "Rascunho",
-  aguardando_aprovacao_interna: "Aguardando aprovação interna",
-  aguardando_aprovacao_cliente: "Aguardando aprovação do cliente",
-  aprovada: "Aprovada",
-  recusada: "Recusada",
+  RASCUNHO: "Rascunho",
+  AGUARDANDO_APROVACAO_INTERNA: "Aguardando aprovação interna",
+  AGUARDANDO_APROVACAO_CLIENTE: "Aguardando aprovação do cliente",
+  APROVADA: "Aprovada",
+  RECUSADA: "Recusada",
 };
 const COR: Record<string, string> = {
-  rascunho: "#a9abbd",
-  aguardando_aprovacao_interna: "#F3C17A",
-  aguardando_aprovacao_cliente: "#4EC2F0",
-  aprovada: "#6FA830",
-  recusada: "#F34343",
+  RASCUNHO: "#a9abbd",
+  AGUARDANDO_APROVACAO_INTERNA: "#F3C17A",
+  AGUARDANDO_APROVACAO_CLIENTE: "#4EC2F0",
+  APROVADA: "#6FA830",
+  RECUSADA: "#F34343",
 };
 
 export function OrdemServicoTab({ exp }: { exp: Experimento }) {
@@ -57,12 +57,12 @@ export function OrdemServicoTab({ exp }: { exp: Experimento }) {
     setClienteEmail("");
     recarregar();
   }
-  async function aprovar(os: OrdemServico, decisao: "aprovado" | "recusado") {
+  async function aprovar(os: OrdemServico, decisao: "APROVADO" | "RECUSADO") {
     await api.aprovarInternoOS(os.id, decisao);
     recarregar();
   }
 
-  if (exp.ensaio !== "comercial") {
+  if (exp.ensaio !== "COMERCIAL") {
     return (
       <p style={{ color: "#7987A1" }}>
         Ordem de Serviço aplica-se ao fluxo <strong>comercial</strong>. Mude o ensaio na aba Geral
@@ -115,7 +115,7 @@ export function OrdemServicoTab({ exp }: { exp: Experimento }) {
             <code style={{ color: "#7987A1", fontSize: 12 }}>{os.id.slice(-6)}</code>
           </div>
 
-          {(os.status === "rascunho" || os.status === "recusada") && (
+          {(os.status === "RASCUNHO" || os.status === "RECUSADA") && (
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <input
                 placeholder="e-mail do cliente"
@@ -129,12 +129,12 @@ export function OrdemServicoTab({ exp }: { exp: Experimento }) {
             </div>
           )}
 
-          {os.status === "aguardando_aprovacao_interna" && meId && aprovadorIds.has(meId) && (
+          {os.status === "AGUARDANDO_APROVACAO_INTERNA" && meId && aprovadorIds.has(meId) && (
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => aprovar(os, "aprovado")} style={btn("#6FA830")}>
+              <button onClick={() => aprovar(os, "APROVADO")} style={btn("#6FA830")}>
                 Aprovar (interno)
               </button>
-              <button onClick={() => aprovar(os, "recusado")} style={btn("#F34343")}>
+              <button onClick={() => aprovar(os, "RECUSADO")} style={btn("#F34343")}>
                 Recusar
               </button>
             </div>
@@ -149,7 +149,7 @@ export function OrdemServicoTab({ exp }: { exp: Experimento }) {
             <p style={{ fontSize: 13, color: "#1F2940" }}>
               Cliente: {os.aprovacaoCliente.clienteEmail} —{" "}
               <strong>{os.aprovacaoCliente.decisao}</strong>
-              {os.status === "aguardando_aprovacao_cliente" && (
+              {os.status === "AGUARDANDO_APROVACAO_CLIENTE" && (
                 <a
                   href={`/aprovacao/${os.aprovacaoCliente.token}`}
                   target="_blank"

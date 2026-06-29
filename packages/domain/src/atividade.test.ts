@@ -9,9 +9,9 @@ import {
 
 // Ex.: aplicação via CO2 → vento (num), umidade (num), data (data)
 const camposCO2: CampoDef[] = [
-  { rotulo: "vento", tipo: "numero", isObrigatorio: true },
-  { rotulo: "umidade", tipo: "numero", isObrigatorio: true },
-  { rotulo: "data", tipo: "data", isObrigatorio: true },
+  { rotulo: "vento", tipo: "NUMERO", isObrigatorio: true },
+  { rotulo: "umidade", tipo: "NUMERO", isObrigatorio: true },
+  { rotulo: "data", tipo: "DATA", isObrigatorio: true },
 ];
 
 describe("validarApontamento", () => {
@@ -43,7 +43,7 @@ describe("validarApontamento", () => {
 
   it("acusa tipo divergente (texto onde se espera número)", () => {
     const erros = validarApontamento(
-      [{ rotulo: "vento", tipo: "numero", isObrigatorio: true }],
+      [{ rotulo: "vento", tipo: "NUMERO", isObrigatorio: true }],
       [{ rotulo: "vento", valorTexto: "forte" }],
     );
     expect(erros.some((e) => e.includes("vento"))).toBe(true);
@@ -60,24 +60,24 @@ describe("validarApontamento", () => {
   });
 
   it("campo opcional ausente não gera erro", () => {
-    const erros = validarApontamento([{ rotulo: "obs", tipo: "texto", isObrigatorio: false }], []);
+    const erros = validarApontamento([{ rotulo: "obs", tipo: "TEXTO", isObrigatorio: false }], []);
     expect(erros).toEqual([]);
   });
 });
 
 describe("apontamentoEsperado", () => {
   it("ação não tem apontamento; apontamento tem", () => {
-    expect(apontamentoEsperado("acao")).toBe(false);
-    expect(apontamentoEsperado("apontamento")).toBe(true);
+    expect(apontamentoEsperado("ACAO")).toBe(false);
+    expect(apontamentoEsperado("APONTAMENTO")).toBe(true);
   });
 });
 
 describe("marcos do cronograma", () => {
   it("não-cultura: implantação, início, fim", () => {
-    expect(marcosPadrao(false)).toEqual(["implantacao", "inicio", "fim"]);
+    expect(marcosPadrao(false)).toEqual(["IMPLANTACAO", "INICIO", "FIM"]);
   });
   it("cultura: inclui semeadura e colheita antes do fim", () => {
-    expect(marcosPadrao(true)).toEqual(["implantacao", "inicio", "semeadura", "colheita", "fim"]);
+    expect(marcosPadrao(true)).toEqual(["IMPLANTACAO", "INICIO", "SEMEADURA", "COLHEITA", "FIM"]);
   });
 
   it("statusMarco: confirmado tem prioridade", () => {

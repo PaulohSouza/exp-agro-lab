@@ -47,13 +47,13 @@ export class ModeloAtividadeService {
   async listar(user: UsuarioAtual) {
     const departamentoId = await this.departamentoDoUsuario(user);
     const where =
-      user.papel === "admin_sistema"
+      user.papel === "ADMIN_SISTEMA"
         ? {}
         : {
             OR: [
-              { escopo: "sistema" as const },
-              { escopo: "instituicao" as const, instituicaoId: user.instituicaoId },
-              ...(departamentoId ? [{ escopo: "departamento" as const, departamentoId }] : []),
+              { escopo: "SISTEMA" as const },
+              { escopo: "INSTITUICAO" as const, instituicaoId: user.instituicaoId },
+              ...(departamentoId ? [{ escopo: "DEPARTAMENTO" as const, departamentoId }] : []),
             ],
           };
     return this.prisma.modeloAtividade.findMany({
@@ -70,17 +70,17 @@ export class ModeloAtividadeService {
       data: {
         nome: dto.nome,
         descricao: dto.descricao,
-        tipo: dto.tipo ?? "acao",
+        tipo: dto.tipo ?? "ACAO",
         metodologiaRelatorio: dto.metodologiaRelatorio,
         escopo: dto.escopo,
         instituicaoId,
         departamentoId,
         campos:
-          dto.tipo === "apontamento" && dto.campos?.length
+          dto.tipo === "APONTAMENTO" && dto.campos?.length
             ? {
                 create: dto.campos.map((c, i) => ({
                   rotulo: c.rotulo,
-                  tipo: c.tipo ?? "numero",
+                  tipo: c.tipo ?? "NUMERO",
                   unidade: c.unidade,
                   isObrigatorio: c.isObrigatorio ?? false,
                   ordem: c.ordem ?? i,
@@ -102,7 +102,7 @@ export class ModeloAtividadeService {
             data: dto.campos.map((c, i) => ({
               modeloId: id,
               rotulo: c.rotulo,
-              tipo: c.tipo ?? "numero",
+              tipo: c.tipo ?? "NUMERO",
               unidade: c.unidade,
               isObrigatorio: c.isObrigatorio ?? false,
               ordem: c.ordem ?? i,
@@ -138,8 +138,8 @@ export class ModeloAtividadeService {
   }
 
   private async donoDoEscopo(user: UsuarioAtual, dto: ModeloAtividadeDto) {
-    if (dto.escopo === "sistema") return { instituicaoId: null, departamentoId: null };
-    if (dto.escopo === "instituicao")
+    if (dto.escopo === "SISTEMA") return { instituicaoId: null, departamentoId: null };
+    if (dto.escopo === "INSTITUICAO")
       return { instituicaoId: user.instituicaoId, departamentoId: null };
     if (!dto.departamentoId)
       throw new BadRequestException("departamentoId é obrigatório no escopo de departamento.");
@@ -148,7 +148,7 @@ export class ModeloAtividadeService {
       select: { instituicaoId: true },
     });
     if (!depto) throw new NotFoundException("Departamento não encontrado.");
-    if (depto.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+    if (depto.instituicaoId !== user.instituicaoId && user.papel !== "ADMIN_SISTEMA") {
       throw new ForbiddenException("Departamento de outra instituição.");
     }
     return { instituicaoId: depto.instituicaoId, departamentoId: dto.departamentoId };
@@ -162,9 +162,9 @@ export class ModeloAtividadeService {
     if (!m) throw new NotFoundException("Modelo de atividade não encontrado.");
     this.exigirGestao(user.papel, m.escopo);
     if (
-      m.escopo !== "sistema" &&
+      m.escopo !== "SISTEMA" &&
       m.instituicaoId !== user.instituicaoId &&
-      user.papel !== "admin_sistema"
+      user.papel !== "ADMIN_SISTEMA"
     ) {
       throw new ForbiddenException("Modelo de outra instituição.");
     }

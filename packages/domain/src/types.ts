@@ -1,6 +1,6 @@
 /** Tipos centrais do domínio EXP-AGROLAB. */
 
-export type Ensaio = "interno" | "comercial";
+export type Ensaio = "INTERNO" | "COMERCIAL";
 
 export type Delineamento = "DIC" | "DBC" | "FATORIAL";
 
@@ -13,9 +13,9 @@ export type Delineamento = "DIC" | "DBC" | "FATORIAL";
 export type Esquema = "fatorial" | "parcela_subdividida";
 
 export type StatusExperimento =
-  "Inserindo" | "AprovadoCAD" | "RecusadoCAD" | "EmConducao" | "Concluido";
+  "INSERINDO" | "APROVADO_CAD" | "RECUSADO_CAD" | "EM_CONDUCAO" | "CONCLUIDO";
 
-export type NivelCompartilhamento = "input" | "edit";
+export type NivelCompartilhamento = "INPUT" | "EDIT";
 
 /** Tratamento mínimo necessário para montar o croqui. */
 export interface TratamentoRef {

@@ -19,13 +19,13 @@ export class DepartamentosController {
   }
 
   @Post()
-  @RequirePapel("gestao_instituicao")
+  @RequirePapel("GESTAO_INSTITUICAO")
   criar(@CurrentUser() user: UsuarioAtual, @Body() dto: { nome: string }) {
     return this.service.criar(user, dto);
   }
 
   @Put(":id")
-  @RequirePapel("gestao_instituicao")
+  @RequirePapel("GESTAO_INSTITUICAO")
   atualizar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
@@ -35,7 +35,7 @@ export class DepartamentosController {
   }
 
   @Delete(":id")
-  @RequirePapel("gestao_instituicao")
+  @RequirePapel("GESTAO_INSTITUICAO")
   desativar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
     return this.service.desativar(user, id);
   }

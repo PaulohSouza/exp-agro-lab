@@ -82,10 +82,10 @@ export default function InstituicaoPage() {
                 onChange={(e) => salvarPolitica(e.target.value, inst.nAprovadores)}
                 style={inp}
               >
-                <option value="todos">Todos os aprovadores</option>
-                <option value="n_de_m">N de M aprovadores</option>
+                <option value="TODOS">Todos os aprovadores</option>
+                <option value="N_DE_M">N de M aprovadores</option>
               </select>
-              {inst.politicaAprovacao === "n_de_m" && (
+              {inst.politicaAprovacao === "N_DE_M" && (
                 <label style={{ fontSize: 13, color: "#1F2940" }}>
                   N ={" "}
                   <input

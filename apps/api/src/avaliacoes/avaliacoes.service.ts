@@ -17,7 +17,7 @@ export interface CriarAvaliacaoDto {
   unidadeColeta?: string;
   unidadeSaida?: string;
   formula?: string;
-  tipo?: "calendarizada" | "condicional";
+  tipo?: "CALENDARIZADA" | "CONDICIONAL";
   isPersonalizada?: boolean;
   escala?: string;
   timingId?: string;
@@ -30,7 +30,7 @@ export interface LancarDadoDto {
   numAmostra?: number;
   valorColetado?: number;
   obs?: string;
-  origem?: "web" | "mobile";
+  origem?: "WEB" | "MOBILE";
 }
 
 @Injectable()
@@ -99,7 +99,7 @@ export class AvaliacoesService {
    * presentes no experimento são ignorados (não duplica).
    */
   async adicionarDoModelo(experimentoId: string, user: UsuarioAtual, modeloIds: string[]) {
-    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(experimentoId, user, "EDIT");
     if (!modeloIds?.length) throw new BadRequestException("Informe ao menos um modelo.");
 
     const arestas = await this.prisma.modeloAvaliacaoPrereq.findMany({
@@ -209,7 +209,7 @@ export class AvaliacoesService {
   }
 
   async criar(experimentoId: string, user: UsuarioAtual, dto: CriarAvaliacaoDto) {
-    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(experimentoId, user, "EDIT");
     const ordem =
       dto.ordem ?? (await this.prisma.avaliacao.count({ where: { experimentoId } })) + 1;
     return this.prisma.avaliacao.create({
@@ -220,7 +220,7 @@ export class AvaliacoesService {
         unidadeColeta: dto.unidadeColeta,
         unidadeSaida: dto.unidadeSaida,
         formula: dto.formula,
-        tipo: dto.tipo ?? "calendarizada",
+        tipo: dto.tipo ?? "CALENDARIZADA",
         isPersonalizada: dto.isPersonalizada ?? false,
         escala: dto.escala,
         timingId: dto.timingId || null,
@@ -232,7 +232,7 @@ export class AvaliacoesService {
   }
 
   async atualizar(id: string, user: UsuarioAtual, dto: Partial<CriarAvaliacaoDto>) {
-    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(id), user, "edit");
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(id), user, "EDIT");
     return this.prisma.avaliacao.update({
       where: { id },
       data: {
@@ -252,7 +252,7 @@ export class AvaliacoesService {
   }
 
   async remover(id: string, user: UsuarioAtual) {
-    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(id), user, "edit");
+    await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(id), user, "EDIT");
     await this.prisma.avaliacaoDado.deleteMany({ where: { avaliacaoId: id } });
     await this.prisma.avaliacao.delete({ where: { id } });
     return { ok: true };
@@ -318,7 +318,7 @@ export class AvaliacoesService {
             parcelaId: l.parcelaId,
             numAmostra,
             valorColetado: l.valorColetado ?? null,
-            origem: "web",
+            origem: "WEB",
             syncedAt: new Date(),
           },
           update: { valorColetado: l.valorColetado ?? null, syncedAt: new Date() },
@@ -343,7 +343,7 @@ export class AvaliacoesService {
           numAmostra,
           valorColetado: d.valorColetado,
           obs: d.obs,
-          origem: d.origem ?? "web",
+          origem: d.origem ?? "WEB",
           syncedAt: new Date(),
         },
         update: {

@@ -135,7 +135,7 @@ export function AtividadesTab({ exp }: { exp: Experimento }) {
           {modelos.map((m) => (
             <option key={m.id} value={m.id}>
               {m.nome}
-              {m.tipo === "apontamento" ? " (apontamento)" : ""}
+              {m.tipo === "APONTAMENTO" ? " (apontamento)" : ""}
             </option>
           ))}
         </select>
@@ -179,7 +179,7 @@ function MarcoRow({ marco, onChange }: { marco: AtividadeExperimento; onChange: 
   }
 
   const atrasado = !isConfirmada && prevista && prevista < new Date().toISOString().slice(0, 10);
-  const campos = marco.tipo === "apontamento" ? (marco.modelo?.campos ?? []) : [];
+  const campos = marco.tipo === "APONTAMENTO" ? (marco.modelo?.campos ?? []) : [];
   return (
     <>
       <tr style={{ borderTop: "1px solid #eef0f5" }}>
@@ -344,9 +344,9 @@ function AtividadeCard({
     const init: Record<string, string | boolean> = {};
     for (const c of campos) {
       const v = valorDe(c.rotulo);
-      if (c.tipo === "booleano") init[c.rotulo] = v?.valorBool ?? false;
-      else if (c.tipo === "data") init[c.rotulo] = v?.valorData ? v.valorData.slice(0, 10) : "";
-      else if (c.tipo === "numero") init[c.rotulo] = v?.valorNum != null ? String(v.valorNum) : "";
+      if (c.tipo === "BOOLEANO") init[c.rotulo] = v?.valorBool ?? false;
+      else if (c.tipo === "DATA") init[c.rotulo] = v?.valorData ? v.valorData.slice(0, 10) : "";
+      else if (c.tipo === "NUMERO") init[c.rotulo] = v?.valorNum != null ? String(v.valorNum) : "";
       else init[c.rotulo] = v?.valorTexto ?? "";
     }
     return init;
@@ -359,9 +359,9 @@ function AtividadeCard({
     setErro(null);
     const valores: ValorApontamentoInput[] = campos.map((c) => {
       const raw = form[c.rotulo];
-      if (c.tipo === "booleano") return { rotulo: c.rotulo, valorBool: Boolean(raw) };
-      if (c.tipo === "data") return { rotulo: c.rotulo, valorData: raw ? String(raw) : null };
-      if (c.tipo === "numero")
+      if (c.tipo === "BOOLEANO") return { rotulo: c.rotulo, valorBool: Boolean(raw) };
+      if (c.tipo === "DATA") return { rotulo: c.rotulo, valorData: raw ? String(raw) : null };
+      if (c.tipo === "NUMERO")
         return { rotulo: c.rotulo, valorNum: raw === "" ? null : Number(raw) };
       return { rotulo: c.rotulo, valorTexto: raw ? String(raw) : null };
     });
@@ -402,21 +402,21 @@ function AtividadeCard({
         <strong>{atividade.nome}</strong>
         <span
           style={{
-            background: atividade.tipo === "apontamento" ? "#4EC2F0" : "#C9B3F0",
+            background: atividade.tipo === "APONTAMENTO" ? "#4EC2F0" : "#C9B3F0",
             color: "#1F2940",
             borderRadius: 6,
             padding: "1px 8px",
             fontSize: 11,
           }}
         >
-          {atividade.tipo === "apontamento" ? "apontamento" : "ação"}
+          {atividade.tipo === "APONTAMENTO" ? "APONTAMENTO" : "ação"}
         </span>
         <button onClick={remover} style={{ ...mini("#F34343"), marginLeft: "auto" }}>
           excluir
         </button>
       </div>
 
-      {atividade.tipo === "apontamento" && campos.length > 0 && (
+      {atividade.tipo === "APONTAMENTO" && campos.length > 0 && (
         <div style={{ padding: 14 }}>
           <div
             style={{
@@ -432,7 +432,7 @@ function AtividadeCard({
                   {c.unidade ? ` (${c.unidade})` : ""}
                   {c.isObrigatorio ? " *" : ""}
                 </div>
-                {c.tipo === "booleano" ? (
+                {c.tipo === "BOOLEANO" ? (
                   <input
                     type="checkbox"
                     checked={Boolean(form[c.rotulo])}
@@ -440,7 +440,7 @@ function AtividadeCard({
                   />
                 ) : (
                   <input
-                    type={c.tipo === "numero" ? "number" : c.tipo === "data" ? "date" : "text"}
+                    type={c.tipo === "NUMERO" ? "number" : c.tipo === "DATA" ? "date" : "text"}
                     value={String(form[c.rotulo] ?? "")}
                     onChange={(e) => setForm({ ...form, [c.rotulo]: e.target.value })}
                     style={{ ...inp, width: "100%" }}
@@ -458,7 +458,7 @@ function AtividadeCard({
           </div>
         </div>
       )}
-      {atividade.tipo === "acao" && (
+      {atividade.tipo === "ACAO" && (
         <div style={{ padding: 14, fontSize: 13, color: "#7987A1" }}>
           Atividade de ação — sem coleta de dados.
         </div>

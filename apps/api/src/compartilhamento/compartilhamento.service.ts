@@ -48,12 +48,12 @@ export class CompartilhamentoService {
   async compartilhar(
     experimentoId: string,
     user: UsuarioAtual,
-    dto: { email: string; nivel: "input" | "edit" },
+    dto: { email: string; nivel: "INPUT" | "EDIT" },
   ) {
     const exp = await this.carregarExp(experimentoId);
     if (!this.podeGerenciar(exp, user))
       throw new ForbiddenException("Apenas o dono ou admin compartilha.");
-    const nivel = dto.nivel === "edit" ? "edit" : "input";
+    const nivel = dto.nivel === "EDIT" ? "EDIT" : "INPUT";
 
     const alvo = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (alvo) {

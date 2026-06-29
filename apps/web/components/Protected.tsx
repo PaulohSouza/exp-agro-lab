@@ -88,11 +88,11 @@ const navlink: React.CSSProperties = {
 };
 
 const PAPEL_CURTO: Record<string, string> = {
-  admin_sistema: "admin do sistema",
-  gestao_instituicao: "gestão da instituição",
-  gestao_departamento: "gestão de departamento",
-  coordenador_area: "coordenador de área",
-  pesquisador: "pesquisador",
-  analista: "analista",
-  assistente: "assistente",
+  ADMIN_SISTEMA: "admin do sistema",
+  GESTAO_INSTITUICAO: "gestão da instituição",
+  GESTAO_DEPARTAMENTO: "gestão de departamento",
+  COORDENADOR_AREA: "coordenador de área",
+  PESQUISADOR: "pesquisador",
+  ANALISTA: "analista",
+  ASSISTENTE: "assistente",
 };

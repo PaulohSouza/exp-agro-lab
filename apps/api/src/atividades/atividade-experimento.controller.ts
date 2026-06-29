@@ -7,7 +7,7 @@ import type { ValorApontamento } from "@exp/domain";
 interface CriarAtividadeBody {
   modeloId?: string;
   nome?: string;
-  tipo?: "acao" | "apontamento";
+  tipo?: "ACAO" | "APONTAMENTO";
   data?: string;
   responsavel?: string;
   obs?: string;
