@@ -7,6 +7,15 @@ import {
 } from "./experimentos.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
+import { ZodValidationPipe } from "../common/zod-validation.pipe";
+import {
+  criarExperimentoSchema,
+  atualizarExperimentoSchema,
+  definirFatoresSchema,
+  gerarCroquiSchema,
+  salvarCroquiSchema,
+  adicionarResponsavelSchema,
+} from "./experimentos.schema";
 
 @Controller("experimentos")
 export class ExperimentosController {
@@ -23,7 +32,10 @@ export class ExperimentosController {
   }
 
   @Post()
-  criar(@CurrentUser() user: UsuarioAtual, @Body() dto: CriarExperimentoDto) {
+  criar(
+    @CurrentUser() user: UsuarioAtual,
+    @Body(new ZodValidationPipe(criarExperimentoSchema)) dto: CriarExperimentoDto,
+  ) {
     return this.service.criar(user, dto);
   }
 
@@ -31,7 +43,7 @@ export class ExperimentosController {
   atualizar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: AtualizarExperimentoDto,
+    @Body(new ZodValidationPipe(atualizarExperimentoSchema)) dto: AtualizarExperimentoDto,
   ) {
     return this.service.atualizar(id, user, dto);
   }
@@ -40,7 +52,7 @@ export class ExperimentosController {
   definirFatores(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: DefinirFatoresDto,
+    @Body(new ZodValidationPipe(definirFatoresSchema)) dto: DefinirFatoresDto,
   ) {
     return this.service.definirFatores(id, user, dto);
   }
@@ -49,7 +61,7 @@ export class ExperimentosController {
   gerarCroqui(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body()
+    @Body(new ZodValidationPipe(gerarCroquiSchema))
     body: {
       delineamento?: "DIC" | "DBC" | "FATORIAL";
       blocos?: number;
@@ -64,7 +76,7 @@ export class ExperimentosController {
   salvarCroqui(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body()
+    @Body(new ZodValidationPipe(salvarCroquiSchema))
     body: {
       parcelas: Array<{
         id: string;
@@ -89,7 +101,7 @@ export class ExperimentosController {
   adicionarResponsavel(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() body: { userId: string },
+    @Body(new ZodValidationPipe(adicionarResponsavelSchema)) body: { userId: string },
   ) {
     return this.service.adicionarResponsavel(id, user, body.userId);
   }

@@ -1,8 +1,16 @@
+import { z } from "zod";
+import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Body, Controller, Get, Param, Post, Req } from "@nestjs/common";
 import { OrdemServicoService } from "./ordem-servico.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { Public } from "../auth/public.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
+
+const submeterSchema = z.object({ clienteEmail: z.string().email("E-mail inválido") });
+const decisaoSchema = z.object({
+  decisao: z.enum(["APROVADO", "RECUSADO"]),
+  motivo: z.string().optional(),
+});
 
 @Controller()
 export class OrdemServicoController {
@@ -22,7 +30,7 @@ export class OrdemServicoController {
   submeter(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: { clienteEmail: string },
+    @Body(new ZodValidationPipe(submeterSchema)) dto: { clienteEmail: string },
   ) {
     return this.service.submeter(id, user, dto);
   }
@@ -31,7 +39,8 @@ export class OrdemServicoController {
   aprovarInterno(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string },
+    @Body(new ZodValidationPipe(decisaoSchema))
+    dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string },
   ) {
     return this.service.aprovarInterno(id, user, dto);
   }
@@ -40,7 +49,8 @@ export class OrdemServicoController {
   @Post("aprovacao-cliente/:token")
   decisaoCliente(
     @Param("token") token: string,
-    @Body() dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string },
+    @Body(new ZodValidationPipe(decisaoSchema))
+    dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string },
     @Req() req: { ip?: string },
   ) {
     return this.service.decisaoCliente(token, { ...dto, ip: req.ip });

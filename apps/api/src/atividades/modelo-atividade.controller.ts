@@ -1,8 +1,28 @@
+import { z } from "zod";
+import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
 import { ModeloAtividadeService } from "./modelo-atividade.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 import type { EscopoModelo, TipoAtividade, TipoCampo } from "@exp/domain";
+
+const campoSchema = z.object({
+  rotulo: z.string().min(1),
+  tipo: z.enum(["NUMERO", "TEXTO", "DATA", "BOOLEANO"]),
+  unidade: z.string().optional(),
+  isObrigatorio: z.boolean().optional(),
+  ordem: z.number().int().optional(),
+});
+const modeloAtividadeSchema = z.object({
+  nome: z.string().min(1, "Nome obrigatório"),
+  descricao: z.string().optional(),
+  tipo: z.enum(["ACAO", "APONTAMENTO"]),
+  metodologiaRelatorio: z.string().optional(),
+  escopo: z.enum(["SISTEMA", "INSTITUICAO", "DEPARTAMENTO"]),
+  departamentoId: z.string().optional(),
+  campos: z.array(campoSchema).optional(),
+});
+const modeloAtividadePartialSchema = modeloAtividadeSchema.partial();
 
 interface CampoBody {
   rotulo: string;
@@ -31,7 +51,10 @@ export class ModeloAtividadeController {
   }
 
   @Post()
-  criar(@CurrentUser() user: UsuarioAtual, @Body() dto: ModeloAtividadeBody) {
+  criar(
+    @CurrentUser() user: UsuarioAtual,
+    @Body(new ZodValidationPipe(modeloAtividadeSchema)) dto: ModeloAtividadeBody,
+  ) {
     return this.service.criar(user, dto);
   }
 
@@ -39,7 +62,7 @@ export class ModeloAtividadeController {
   atualizar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: Partial<ModeloAtividadeBody>,
+    @Body(new ZodValidationPipe(modeloAtividadePartialSchema)) dto: Partial<ModeloAtividadeBody>,
   ) {
     return this.service.atualizar(user, id, dto);
   }
