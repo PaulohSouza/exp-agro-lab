@@ -69,7 +69,7 @@ describe("gerarParcelaSubdividida (split-plot 2×3 em 4 blocos)", () => {
     expect(c.parcelas).toHaveLength(24);
     expect(c.numLinhas).toBe(8);
     expect(c.numColunas).toBe(3);
-    expect(c.esquema).toBe("parcela_subdividida");
+    expect(c.esquema).toBe("PARCELA_SUBDIVIDIDA");
     expect(c.delineamento).toBe("DBC");
   });
 

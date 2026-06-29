@@ -164,7 +164,7 @@ export function gerarParcelaSubdividida(
     numLinhas: blocos * a,
     numColunas: b,
     delineamento: "DBC",
-    esquema: "parcela_subdividida",
+    esquema: "PARCELA_SUBDIVIDIDA",
   };
 }
 

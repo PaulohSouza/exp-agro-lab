@@ -198,6 +198,10 @@ model Experimento {
   numeroTratamentos      Int?
   totalParcelas       Int?
 
+  // Arranjo dos fatores (só relevante com ≥2 fatores). Ver SDD 04/06.
+  esquema             EsquemaCroqui?
+  fatorPrincipalOrdem Int?           // qual fator vai na parcela principal (default = ordem 1)
+
   previsaoSemeadura DateTime?
   dataSemeadura     DateTime?
 
@@ -340,6 +344,11 @@ model TratamentoProduto {
   @@index([tratamentoId])
 }
 
+enum EsquemaCroqui {
+  FATORIAL
+  PARCELA_SUBDIVIDIDA
+}
+
 model Parcela {
   id            String @id @default(cuid())
   experimentoId String
@@ -349,6 +358,11 @@ model Parcela {
   posicaoLinha      Int
   posicaoColuna     Int
   isInicio      Boolean @default(false)
+  // Split-plot (PARCELA_SUBDIVIDIDA): id da parcela principal; nível do fator
+  // principal/subfator. Ausentes no esquema fatorial (retrocompatível). Ver SDD 06.
+  grupoPrincipal  Int?
+  nivelPrincipal  Int?
+  nivelSub        Int?
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
   tratamento    Tratamento  @relation(fields: [tratamentoId], references: [id])
   dados         AvaliacaoDado[]

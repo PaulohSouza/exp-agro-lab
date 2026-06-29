@@ -110,6 +110,14 @@ export const DOMINIOS: Record<string, ValorDominio[]> = {
     { codigo: "ENVIADO", rotulo: "Enviado" },
     { codigo: "ERRO", rotulo: "Erro" },
   ],
+  EsquemaCroqui: [
+    { codigo: "FATORIAL", rotulo: "Fatorial", descricao: "Casualização livre dentro do bloco." },
+    {
+      codigo: "PARCELA_SUBDIVIDIDA",
+      rotulo: "Parcela subdividida (split-plot)",
+      descricao: "Fator principal na parcela principal, subfator na subparcela; dois erros.",
+    },
+  ],
 };
 
 /** Enums do Prisma por domínio — base do teste de cobertura (anti-órfão). */
@@ -131,6 +139,7 @@ const PRISMA_ENUMS: Record<string, Record<string, string>> = {
   StatusOS: Prisma.StatusOS,
   Decisao: Prisma.Decisao,
   StatusEmail: Prisma.StatusEmail,
+  EsquemaCroqui: Prisma.EsquemaCroqui,
 };
 
 /**
