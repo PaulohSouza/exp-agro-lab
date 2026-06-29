@@ -247,7 +247,7 @@ export interface AprovacaoInterna {
   aprovadorUserId: string;
   decisao: string;
   motivo: string | null;
-  at: string;
+  decididoAt: string;
 }
 export interface AprovacaoCliente {
   id: string;
