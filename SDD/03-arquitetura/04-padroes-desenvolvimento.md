@@ -6,17 +6,18 @@
 
 ---
 
-## 0. Decisões deste padrão (ponto de veto)
+## 0. Decisões deste padrão (confirmadas)
 
-Estas são as escolhas que definem todo o resto. Estão marcadas para revisão — se discordar de alguma, é só dizer e ajusto o documento + o plano de refactor.
+Estas são as escolhas que definem todo o resto. **Confirmadas pelo autor.**
 
 | # | Decisão | Escolha adotada | Por quê |
 |---|---|---|---|
 | **D1** | Idioma dos **identificadores** | **PT no domínio + EN no técnico**; **UI/output sempre PT** | Preserva o vocabulário agronômico do TCC/relatório (parcela, tratamento, croqui) e respeita as libs (Service, createdAt). Formaliza o CLAUDE.md. |
 | **D2** | Casing de **tabelas/colunas** | **Default do Prisma** (model PascalCase, coluna camelCase, **sem `@map`**) | Idiomático em Prisma/TS, **zero migração de renomeação**. O `snake_case` do esboço era convenção do Eloquent/Laravel. |
-| **D3** | Valores de **enum** | **`UPPER_SNAKE_CASE`** | Segue o esboço (enum case = `ACTIVE`) e deixa claro que são constantes. Hoje há mistura (`interno` vs `Inserindo`). |
-| **D4** | **Booleanos** | Prefixo **`is`/`has`/`can`/`should`** | Convenção TS e do esboço. Hoje há mistura (`ativo`, `isInicio`, `eCultura`). |
+| **D3** | Valores de **enum** | **`UPPER_SNAKE_CASE`** | Deixa claro que são constantes. Antes havia mistura (`interno` vs `Inserindo`). |
+| **D4** | **Booleanos** | Prefixo **`is`/`has`/`can`/`should`** | Convenção TS. Antes havia mistura (`ativo`, `isInicio`, `eCultura`). |
 | **D5** | **Estratégia de refactor** | **Incremental** (documenta agora, trava o novo via lint, refatora o legado ao tocar) | Não trava o roadmap; menor risco que um big-bang. Ver §12. |
+| **D6** | **Significado de enumerados vive no banco** | Todo valor enumerado tem **referência legível no banco** (rótulo/descrição), via tabela de domínio. Enums seguem existindo como tipo. | O significado de cada código é **dado**, consultável pelo usuário/admin — não fica só no código. Ver §4.9. |
 
 > **Importante:** D2/D3/D4 implicam **migrações de banco** no legado. Por D5, isso é feito **aos poucos**. Código **novo** já nasce no padrão.
 
@@ -155,11 +156,42 @@ model Avaliacao {
 ### 4.7 Enums (D3)
 - **Tipo:** `PascalCase` (`StatusExperimento`, `TipoAvaliacao`).
 - **Valores:** `UPPER_SNAKE_CASE` (`EM_CONDUCAO`, `APROVADO_CAD`, `ANO_SEMESTRE`, `INTERNO`).
-- ❌ Hoje há mistura (`interno`/`comercial` minúsculo vs `Inserindo`/`AprovadoCAD` PascalCase) — alvo de migração incremental.
+- **Use códigos legíveis, nunca inteiros mágicos.** Prefira `EM_CONDUCAO` a `3`. Se um valor numérico for inevitável (ex.: sistema legado), ele **precisa** da referência da §4.9.
+- Mapas de label (enum → rótulo PT) têm a **key** no valor do enum (`EM_CONDUCAO:`) e o **valor** em PT (`"Em condução"`). Evoluir para o banco (§4.9).
 
 ### 4.8 Índices
 - `@@index([fk])` em **toda FK** usada em busca/escopo (multi-tenancy: `instituicaoId`, `departamentoId`).
 - `@@unique([...])` para chaves naturais/idempotência (`@@unique([avaliacaoId, parcelaId, numeroAmostra])`).
+
+### 4.9 Referência de enumerados no banco (D6)
+
+**Regra:** nenhum valor enumerado pode existir no sistema sem uma **referência legível no banco** que diga o que ele significa — mesmo que seja apenas uma tabela auxiliar de cadastro. Se um status é `1/2/3` (ou um código como `EM_CONDUCAO`), tem de haver um lugar no banco onde o usuário/admin capture o significado de cada valor.
+
+**Por quê:** o significado dos códigos passa a ser **dado** (consultável, exportável, traduzível, auditável), não conhecimento preso no código. Rótulos deixam de ser hardcoded em mapas de UI.
+
+**Padrão recomendado (não-destrutivo): tabela de domínio.** Os enums seguem existindo como **tipo** (Prisma enum / `enum` no banco) para integridade e type-safety; em paralelo, uma tabela de dicionário documenta cada valor:
+
+```prisma
+/// Dicionário de valores enumerados (cadastro auxiliar). Uma linha por (dominio, codigo).
+model DominioValor {
+  id        String  @id @default(cuid())
+  dominio   String  // ex.: "StatusExperimento"
+  codigo    String  // ex.: "EM_CONDUCAO"
+  rotulo    String  // ex.: "Em condução"  (PT — D1)
+  descricao String? @db.Text
+  ordem     Int     @default(0)
+  isAtivo   Boolean @default(true)
+
+  @@unique([dominio, codigo])
+  @@index([dominio])
+}
+```
+
+- **Seedada** com todos os valores de todos os enums + rótulo/descrição em PT. O seed é a fonte; um teste garante que todo valor de enum tem linha correspondente (sem órfãos nos dois sentidos).
+- A **API expõe** os rótulos (ex.: `GET /dominios/:dominio`) e a **UI consome do banco**, substituindo os mapas hardcoded.
+- Quando o domínio de valores é mutável pelo usuário (cadastro de verdade, não constante de negócio), prefira **tabela-lookup com FK** (`statusId → Status`) em vez de `enum`. `enum` fica para conjuntos fechados e estáveis (regra de negócio).
+
+> Em projetos novos, criar a tabela de domínio **junto** com os primeiros enums. Em legado, é um passo de adoção incremental (§12).
 
 ---
 
@@ -272,22 +304,26 @@ criar(@Param("id") id: string, @Body(new ZodPipe(criarLancamentoSchema)) dto: Cr
 
 **Já em conformidade:** FK `<entidade>Id` + relação camelCase; PK `id cuid()`; rotas kebab-case plural; DI (sem `new` indevido); models PascalCase; domínio puro testado.
 
-**Fora do padrão (alvos de refactor incremental):**
+**Progresso por tema (1 PR por tema, verificado com typecheck + testes + e2e):**
 
-| Área | Hoje | Alvo | Custo |
-|---|---|---|---|
-| Booleanos (D4) | `ativo`, `eCultura`, `isInicio`, `fornecAreaColheita`, `confirmada`, `aceito`, `personalizada` | prefixo `is/has/can` | migração de coluna |
-| Enums (D3) | `interno` vs `Inserindo` (mistura) | `UPPER_SNAKE_CASE` | migração de dados |
-| Timestamps | `at`, `decididoEm` avulsos | `createdAt`/`...At` | migração de coluna |
-| Abreviações | `obs`, `num*`, `pos*`, `seq`, `refTipo` | por extenso | migração de coluna |
-| Idioma | model `User` | `Usuario` | migração + refs |
-| Validação | `@Body()` sem DTO/Zod | DTO Zod + pipe | só código (sem migração) |
-| Ferramental | sem ESLint/Prettier | configs compartilhadas + lint no CI | só config |
+| # | Tema | Alvo | Custo | Status |
+|---|---|---|---|---|
+| — | Ferramental | ESLint/Prettier + naming-convention no CI | só config | ✅ feito |
+| — | Documento | este padrão | doc | ✅ feito |
+| 1 | Booleanos (D4) | prefixo `is/has/can` | migração (RENAME COLUMN) | ✅ feito |
+| 2 | Enums (D3) | `UPPER_SNAKE_CASE` | migração de dados | ✅ feito |
+| 3 | Timestamps | `at`/`decididoEm` → sufixo `At` | migração de coluna | ⏳ |
+| 4 | Abreviações | `obs`/`num*`/`pos*`/`seq`/`refTipo` → por extenso | migração de coluna | ⏳ |
+| 5 | Idioma | model `User` → `Usuario` | migração + refs | ⏳ |
+| 6 | Referência de enums (D6) | tabela `DominioValor` + seed + API/UI (§4.9) | código + tabela nova | ⏳ |
+| — | Validação | `@Body()` → DTO Zod + pipe | só código | ⏳ |
 
-**Plano (incremental):**
-1. **Trava o novo:** adicionar ESLint/Prettier + naming-convention (§9) e rodar no CI. Daqui pra frente, código novo nasce no padrão.
-2. **Ganhos sem migração primeiro:** camada de validação Zod nos controllers; `User`→`Usuario` (refs); remover entidade crua sensível das respostas.
-3. **Migrações agrupadas por tema** (uma migration por tema p/ revisar fácil): (a) booleanos, (b) abreviações, (c) timestamps, (d) enums. Cada uma com `@@map`/`@map`? **Não** (D2) — renomeia a coluna de fato.
-4. Atualizar `seed.ts`, `packages/domain`, web e mobile a cada migração; manter testes verdes.
+**Já em conformidade:** FK `<entidade>Id` + relação camelCase; PK `id cuid()`; rotas kebab-case plural; DI (sem `new` indevido); models PascalCase; domínio puro testado; booleanos e enums no padrão.
 
-> Ordem sugerida casa com o roadmap: itens **sem migração** (passos 1–2) entram já; os de migração (passo 3) entram quando se tocar a área correspondente, para não abrir frente de risco isolada.
+**Como cada tema de migração é feito (receita validada nos temas 1–2):**
+1. Schema + domínio (uniões espelho) → `prisma generate` → **typecheck como guia** dos literais a trocar.
+2. Literais frouxos (string solta, mapas de label, `<option value>`, e2e) tratados por varredura controlada — **palavras ambíguas preservadas** (ex.: `"data"` rótulo vs `DATA` tipo; `"todos"` filtro vs enum; `StatusMarco`).
+3. Migração **preservando dados** (RENAME COLUMN p/ rename; ENUM→VARCHAR→UPDATE→ENUM p/ valores). Verificar `migrate diff` (sem drift).
+4. Atualizar `seed.ts`, web, mobile, **e2e**; rodar typecheck + domain + analytics + 5 e2e — tudo verde antes do PR.
+
+> Itens **sem migração** (validação Zod) podem entrar a qualquer momento. Os de migração vão **um por PR**, sobre uma `main` estável (pilha rasa), para revisão fácil e baixo risco.
