@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancela execuções antigas do mesmo branch/PR ao chegar um push novo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1 — núcleo puro: build + typecheck + testes (domain 59 + analytics 24).
+  # Não precisa de banco.
+  # ---------------------------------------------------------------------------
+  unit:
+    name: Build + typecheck + testes unitários
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (turbo — gera Prisma Client, compila api/web/packages)
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Testes (domain + analytics)
+        run: pnpm test
+
+  # ---------------------------------------------------------------------------
+  # Job 2 — e2e (Playwright Python) contra API:3001 + Web:3000 com MySQL real.
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: e2e (Playwright)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: expagrolab_dev
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/expagrolab_dev
+      PORT: "3001"
+      JWT_SECRET: ci-secret-not-for-prod
+      JWT_EXPIRES: 7d
+      EMAIL_ENABLED: "false"
+      SIMULATE_SEND: "true"
+      SIMULATE_OUTPUT_DIR: apps/api/email-previews
+      EMAIL_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_BASE: http://localhost:3001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (api + web + packages)
+        run: pnpm build
+
+      - name: Aplicar migrações
+        run: pnpm --filter @exp/api exec prisma migrate deploy
+
+      - name: Seed (cenário PC1699)
+        run: pnpm --filter @exp/api db:seed
+
+      - name: Instalar Playwright + Chromium
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright==1.60.0
+          playwright install --with-deps chromium
+
+      - name: Subir API (:3001) e Web (:3000)
+        run: |
+          node apps/api/dist/main.js > /tmp/api.log 2>&1 &
+          pnpm --filter @exp/web start > /tmp/web.log 2>&1 &
+          echo "Aguardando servidores…"
+          for i in $(seq 1 60); do
+            api=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health || true)
+            web=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/login || true)
+            if [ "$api" = "200" ] && [ "$web" = "200" ]; then
+              echo "Prontos após ${i} tentativa(s): api=$api web=$web"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Servidores não subiram a tempo (api=$api web=$web)"
+          echo "--- api.log ---"; cat /tmp/api.log || true
+          echo "--- web.log ---"; cat /tmp/web.log || true
+          exit 1
+
+      - name: Rodar suites e2e
+        run: |
+          set -e
+          for t in test_catalogo test_catalogo_a5 test_atividades test_grupos test_periodo_marcos; do
+            echo "::group::$t"
+            python3 "e2e/$t.py"
+            echo "::endgroup::"
+          done
+
+      - name: Logs dos servidores (em caso de falha)
+        if: failure()
+        run: |
+          echo "--- api.log ---"; cat /tmp/api.log || true
+          echo "--- web.log ---"; cat /tmp/web.log || true
