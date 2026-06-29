@@ -67,6 +67,8 @@ export class ExperimentosController {
       blocos?: number;
       seed?: number;
       numeroInicial?: number;
+      esquema?: "FATORIAL" | "PARCELA_SUBDIVIDIDA";
+      fatorPrincipalOrdem?: number;
     },
   ) {
     return this.service.gerarCroqui(id, user, body ?? {});
@@ -86,6 +88,9 @@ export class ExperimentosController {
         posicaoColuna: number;
         numero: number;
         isInicio?: boolean;
+        grupoPrincipal?: number | null;
+        nivelPrincipal?: number | null;
+        nivelSub?: number | null;
       }>;
     },
   ) {

@@ -3,8 +3,19 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  UnprocessableEntityException,
 } from "@nestjs/common";
-import { gerarCroqui, type Delineamento, type TratamentoRef } from "@exp/domain";
+import {
+  gerarCroqui,
+  gerarParcelaSubdividida,
+  validarParcelaSubdividida,
+  type Croqui,
+  type Delineamento,
+  type Esquema,
+  type Parcela as ParcelaDominio,
+  type TratamentoRef,
+  type TratamentoFatorial,
+} from "@exp/domain";
 import { PrismaService } from "../prisma/prisma.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 
@@ -316,28 +327,66 @@ export class ExperimentosService {
   async gerarCroqui(
     id: string,
     user: UsuarioAtual,
-    opts: { delineamento?: Delineamento; blocos?: number; seed?: number; numeroInicial?: number },
+    opts: {
+      delineamento?: Delineamento;
+      blocos?: number;
+      seed?: number;
+      numeroInicial?: number;
+      esquema?: Esquema;
+      fatorPrincipalOrdem?: number;
+    },
   ) {
     await this.garantirAcesso(id, user, "EDIT");
     const exp = await this.prisma.experimento.findUnique({
       where: { id },
-      include: { tratamentos: { orderBy: { numeroRef: "asc" } }, delineamento: true },
+      include: {
+        tratamentos: { orderBy: { numeroRef: "asc" } },
+        fatores: { include: { niveis: true }, orderBy: { ordem: "asc" } },
+        delineamento: true,
+      },
     });
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
     if (!exp.tratamentos.length)
       throw new BadRequestException("Defina os fatores/tratamentos antes do croqui.");
 
-    const delineamento = opts.delineamento ?? mapDelineamento(exp.delineamento?.nome);
     const blocos = opts.blocos ?? exp.numeroRepeticoes ?? 4;
-    const trats: TratamentoRef[] = exp.tratamentos.map((t) => ({
-      id: t.id,
-      numeroRef: t.numeroRef,
-    }));
+    const seed = opts.seed ?? 1;
+    const numeroInicial = opts.numeroInicial ?? 1;
+    const esquema = opts.esquema ?? exp.esquema ?? null;
 
-    const croqui = gerarCroqui(delineamento, trats, blocos, {
-      seed: opts.seed ?? 1,
-      numeroInicial: opts.numeroInicial ?? 1,
-    });
+    let croqui;
+    let fatorPrincipalOrdem: number | null = null;
+    if (esquema === "PARCELA_SUBDIVIDIDA") {
+      if (exp.fatores.length !== 2) {
+        throw new BadRequestException(
+          "Parcela subdividida exige exatamente 2 fatores (principal e subfator).",
+        );
+      }
+      const [fA, fB] = exp.fatores; // ordem asc
+      fatorPrincipalOrdem = opts.fatorPrincipalOrdem ?? exp.fatorPrincipalOrdem ?? fA.ordem;
+      const principalEhA = fatorPrincipalOrdem === fA.ordem;
+      const nB = fB.niveis.length;
+      // Tratamento numeroRef n → combo (n-1) do produto cartesiano (B varia mais rápido).
+      const tratFatorial: TratamentoFatorial[] = exp.tratamentos.map((t) => {
+        const c = t.numeroRef - 1;
+        const idxA = Math.floor(c / nB);
+        const idxB = c % nB;
+        return {
+          id: t.id,
+          numeroRef: t.numeroRef,
+          nivelPrincipal: principalEhA ? idxA : idxB,
+          nivelSub: principalEhA ? idxB : idxA,
+        };
+      });
+      croqui = gerarParcelaSubdividida(tratFatorial, blocos, { seed, numeroInicial });
+    } else {
+      const delineamento = opts.delineamento ?? mapDelineamento(exp.delineamento?.nome);
+      const trats: TratamentoRef[] = exp.tratamentos.map((t) => ({
+        id: t.id,
+        numeroRef: t.numeroRef,
+      }));
+      croqui = gerarCroqui(delineamento, trats, blocos, { seed, numeroInicial });
+    }
 
     await this.prisma.avaliacaoDado.deleteMany({ where: { parcela: { experimentoId: id } } });
     await this.prisma.parcela.deleteMany({ where: { experimentoId: id } });
@@ -350,17 +399,27 @@ export class ExperimentosService {
         posicaoLinha: p.posicaoLinha,
         posicaoColuna: p.posicaoColuna,
         isInicio: p.isInicio,
+        grupoPrincipal: p.grupoPrincipal ?? null,
+        nivelPrincipal: p.nivelPrincipal ?? null,
+        nivelSub: p.nivelSub ?? null,
       })),
     });
     await this.prisma.experimento.update({
       where: { id },
-      data: { numeroRepeticoes: blocos, totalParcelas: croqui.parcelas.length },
+      data: {
+        numeroRepeticoes: blocos,
+        totalParcelas: croqui.parcelas.length,
+        esquema: esquema ?? undefined,
+        fatorPrincipalOrdem,
+      },
     });
 
     return this.carregar(id);
   }
 
-  /** Salva o layout editado (drag-drop). Exige nível edit. */
+  /** Salva o layout editado (drag-drop). Exige nível edit.
+   *  No split-plot, revalida a integridade (grupos contíguos, DBC do principal)
+   *  com o domínio antes de gravar — rejeita 422 se a edição separou uma parcela. */
   async salvarCroqui(
     id: string,
     user: UsuarioAtual,
@@ -372,9 +431,41 @@ export class ExperimentosService {
       posicaoColuna: number;
       numero: number;
       isInicio?: boolean;
+      grupoPrincipal?: number | null;
+      nivelPrincipal?: number | null;
+      nivelSub?: number | null;
     }>,
   ) {
     await this.garantirAcesso(id, user, "EDIT");
+    const exp = await this.prisma.experimento.findUnique({
+      where: { id },
+      select: { esquema: true, tratamentos: { select: { id: true, numeroRef: true } } },
+    });
+
+    if (exp?.esquema === "PARCELA_SUBDIVIDIDA") {
+      const refPorTrat = new Map(exp.tratamentos.map((t) => [t.id, t.numeroRef]));
+      const croqui: Croqui = {
+        numLinhas: Math.max(...parcelas.map((p) => p.posicaoLinha)) + 1,
+        numColunas: Math.max(...parcelas.map((p) => p.posicaoColuna)) + 1,
+        delineamento: "DBC",
+        esquema: "PARCELA_SUBDIVIDIDA",
+        parcelas: parcelas.map((p): ParcelaDominio => ({
+          numero: p.numero,
+          bloco: p.bloco,
+          tratamentoId: p.tratamentoId,
+          tratamentoNumeroRef: refPorTrat.get(p.tratamentoId) ?? 0,
+          posicaoLinha: p.posicaoLinha,
+          posicaoColuna: p.posicaoColuna,
+          isInicio: p.isInicio ?? false,
+          grupoPrincipal: p.grupoPrincipal ?? undefined,
+          nivelPrincipal: p.nivelPrincipal ?? undefined,
+          nivelSub: p.nivelSub ?? undefined,
+        })),
+      };
+      const v = validarParcelaSubdividida(croqui);
+      if (!v.ok) throw new UnprocessableEntityException(v.erros);
+    }
+
     await this.prisma.$transaction(
       parcelas.map((p) =>
         this.prisma.parcela.update({
@@ -386,6 +477,9 @@ export class ExperimentosService {
             posicaoColuna: p.posicaoColuna,
             numero: p.numero,
             isInicio: p.isInicio ?? false,
+            grupoPrincipal: p.grupoPrincipal ?? null,
+            nivelPrincipal: p.nivelPrincipal ?? null,
+            nivelSub: p.nivelSub ?? null,
           },
         }),
       ),
