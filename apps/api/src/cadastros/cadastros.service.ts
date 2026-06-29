@@ -51,9 +51,9 @@ export class CadastrosService {
       orderBy: { nome: "asc" },
     });
   }
-  criarObjeto(dto: { subcategoriaId: string; nome: string; obs?: string }) {
+  criarObjeto(dto: { subcategoriaId: string; nome: string; observacoes?: string }) {
     return this.prisma.objetoEstudo.create({
-      data: { subcategoriaId: dto.subcategoriaId, nome: dto.nome, obs: dto.obs },
+      data: { subcategoriaId: dto.subcategoriaId, nome: dto.nome, observacoes: dto.observacoes },
     });
   }
 

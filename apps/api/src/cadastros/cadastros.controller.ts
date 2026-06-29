@@ -42,7 +42,7 @@ export class CadastrosController {
   @Get("objetos") objetos(@Query("subcategoriaId") subcategoriaId?: string) {
     return this.service.listarObjetos(subcategoriaId);
   }
-  @Post("objetos") criarObjeto(@Body() d: { subcategoriaId: string; nome: string; obs?: string }) {
+  @Post("objetos") criarObjeto(@Body() d: { subcategoriaId: string; nome: string; observacoes?: string }) {
     return this.service.criarObjeto(d);
   }
 

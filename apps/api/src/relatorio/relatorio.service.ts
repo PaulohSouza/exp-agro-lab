@@ -75,8 +75,8 @@ export class RelatorioService {
       ["Local", exp.local?.nome ?? "—"],
       ["Safra", exp.safra?.nome ?? "—"],
       ["Delineamento", exp.delineamento?.nome ?? "—"],
-      ["Tratamentos", String(exp.numTratamentos ?? "—")],
-      ["Repetições", String(exp.numRepeticoes ?? "—")],
+      ["Tratamentos", String(exp.numeroTratamentos ?? "—")],
+      ["Repetições", String(exp.numeroRepeticoes ?? "—")],
       ["Total de parcelas", String(exp.totalParcelas ?? "—")],
     ];
     resumo.addTable(

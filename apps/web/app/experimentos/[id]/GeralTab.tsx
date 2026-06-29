@@ -22,10 +22,10 @@ export function GeralTab({
     anoSemestre: exp.anoSemestre ?? "",
     areaPesquisaId: exp.areaPesquisaId ?? "",
     delineamentoId: exp.delineamentoId ?? "",
-    numRepeticoes: exp.numRepeticoes?.toString() ?? "",
+    numeroRepeticoes: exp.numeroRepeticoes?.toString() ?? "",
     parcelaLarguraM: exp.parcelaLarguraM?.toString() ?? "",
     parcelaComprimentoM: exp.parcelaComprimentoM?.toString() ?? "",
-    parcelaNumLinhas: exp.parcelaNumLinhas?.toString() ?? "",
+    parcelaNumeroLinhas: exp.parcelaNumeroLinhas?.toString() ?? "",
     espacamentoLinhasM: exp.espacamentoLinhasM?.toString() ?? "",
     metodologia: exp.metodologia ?? "",
     observacoes: exp.observacoes ?? "",
@@ -83,10 +83,10 @@ export function GeralTab({
       tipoPeriodo: f.tipoPeriodo as "SAFRA" | "ANO_SEMESTRE",
       safraId: f.tipoPeriodo === "SAFRA" ? f.safraId : "",
       anoSemestre: f.tipoPeriodo === "ANO_SEMESTRE" ? f.anoSemestre : "",
-      numRepeticoes: num(f.numRepeticoes),
+      numeroRepeticoes: num(f.numeroRepeticoes),
       parcelaLarguraM: num(f.parcelaLarguraM),
       parcelaComprimentoM: num(f.parcelaComprimentoM),
-      parcelaNumLinhas: num(f.parcelaNumLinhas),
+      parcelaNumeroLinhas: num(f.parcelaNumeroLinhas),
       espacamentoLinhasM: num(f.espacamentoLinhasM),
       metodologia: f.metodologia,
       observacoes: f.observacoes,
@@ -187,8 +187,8 @@ export function GeralTab({
         <Campo label="Repetições/blocos">
           <input
             style={inp}
-            value={f.numRepeticoes}
-            onChange={(e) => up("numRepeticoes", e.target.value)}
+            value={f.numeroRepeticoes}
+            onChange={(e) => up("numeroRepeticoes", e.target.value)}
           />
         </Campo>
         <Campo label="Cultivar / variedade">
@@ -248,8 +248,8 @@ export function GeralTab({
           <Campo label="Nº de linhas">
             <input
               style={inp}
-              value={f.parcelaNumLinhas}
-              onChange={(e) => up("parcelaNumLinhas", e.target.value)}
+              value={f.parcelaNumeroLinhas}
+              onChange={(e) => up("parcelaNumeroLinhas", e.target.value)}
             />
           </Campo>
           <Campo label="Espaçamento linhas (m)">

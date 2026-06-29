@@ -18,8 +18,8 @@ describe("dedupLancamentos (coleta em lote)", () => {
   });
   it("distingue por amostra", () => {
     const r = dedupLancamentos([
-      { avaliacaoId: "a", parcelaId: "p1", numAmostra: 1, valorColetado: 1 },
-      { avaliacaoId: "a", parcelaId: "p1", numAmostra: 2, valorColetado: 2 },
+      { avaliacaoId: "a", parcelaId: "p1", numeroAmostra: 1, valorColetado: 1 },
+      { avaliacaoId: "a", parcelaId: "p1", numeroAmostra: 2, valorColetado: 2 },
     ]);
     expect(r).toHaveLength(2);
   });

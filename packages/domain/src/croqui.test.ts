@@ -152,7 +152,7 @@ describe("operações de arraste split-plot (impedem separar a parcela)", () => 
     const corrompido = {
       ...c,
       parcelas: c.parcelas.map((p) =>
-        p.grupoPrincipal === 0 && p.posColuna === 0 ? { ...p, nivelPrincipal: 99 } : p,
+        p.grupoPrincipal === 0 && p.posicaoColuna === 0 ? { ...p, nivelPrincipal: 99 } : p,
       ),
     };
     const r = validarParcelaSubdividida(corrompido);

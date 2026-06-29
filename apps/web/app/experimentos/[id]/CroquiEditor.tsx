@@ -26,12 +26,12 @@ export function CroquiEditor({
     return m;
   }, [exp.tratamentos]);
 
-  const numColunas = Math.max(1, ...parcelas.map((p) => p.posColuna + 1));
-  const numLinhas = Math.max(1, ...parcelas.map((p) => p.posLinha + 1));
+  const numColunas = Math.max(1, ...parcelas.map((p) => p.posicaoColuna + 1));
+  const numLinhas = Math.max(1, ...parcelas.map((p) => p.posicaoLinha + 1));
   const grade: (Parcela | null)[][] = Array.from({ length: numLinhas }, () =>
     Array.from({ length: numColunas }, () => null),
   );
-  for (const p of parcelas) grade[p.posLinha][p.posColuna] = p;
+  for (const p of parcelas) grade[p.posicaoLinha][p.posicaoColuna] = p;
 
   function soltar(alvoId: string) {
     if (!dragId || dragId === alvoId) return;
@@ -63,7 +63,7 @@ export function CroquiEditor({
     const seed = Math.floor(Math.random() * 1e9);
     // delineamento omitido => API usa o delineamento cadastrado no experimento
     const atualizado = await api.gerarCroqui(exp.id, {
-      blocos: exp.numRepeticoes ?? 4,
+      blocos: exp.numeroRepeticoes ?? 4,
       seed,
       numeroInicial: 1,
     });
@@ -140,7 +140,7 @@ export function CroquiEditor({
                     </div>
                     <div style={{ fontWeight: 700, color: "#1F2940" }}>{t?.tag ?? "?"}</div>
                     <div style={{ fontSize: 11, color: "#444" }}>
-                      {String.fromCharCode(65 + p.posColuna)}
+                      {String.fromCharCode(65 + p.posicaoColuna)}
                     </div>
                   </div>
                 );

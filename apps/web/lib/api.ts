@@ -36,7 +36,7 @@ export interface Timing {
 }
 export interface TratamentoProduto {
   id: string;
-  seq: number;
+  sequencia: number;
   produtoId: string;
   modoAplicacao: string | null;
   dose: number | null;
@@ -62,8 +62,8 @@ export interface Parcela {
   tratamentoId: string;
   bloco: number;
   numero: number;
-  posLinha: number;
-  posColuna: number;
+  posicaoLinha: number;
+  posicaoColuna: number;
   isInicio: boolean;
 }
 export interface Avaliacao {
@@ -181,7 +181,7 @@ export interface AtividadeExperimento {
   isConfirmada?: boolean;
   data: string | null;
   responsavel: string | null;
-  obs: string | null;
+  observacoes: string | null;
   ordem: number;
   modeloId: string | null;
   valores: AtividadeApontamentoValor[];
@@ -209,19 +209,19 @@ export interface GrupoColetaInput {
 export interface LancamentoLote {
   avaliacaoId: string;
   parcelaId: string;
-  numAmostra?: number;
+  numeroAmostra?: number;
   valorColetado?: number | null;
 }
 
 export interface AvaliacaoDado {
   id: string;
   parcelaId: string;
-  numAmostra: number;
+  numeroAmostra: number;
   valorColetado: number | null;
   numLinhasColhidas: number | null;
   comprimentoColhidoM: number | null;
   areaUtilM2: number | null;
-  obs: string | null;
+  observacoes: string | null;
   parcela?: Parcela & { tratamento?: Tratamento };
 }
 export interface RelatorioAvaliacao {
@@ -266,7 +266,7 @@ export interface Instituicao {
   id: string;
   nome: string;
   politicaAprovacao: string;
-  nAprovadores: number;
+  numeroAprovadores: number;
 }
 export interface Aprovador {
   id: string;
@@ -312,9 +312,9 @@ export interface Experimento {
   delineamentoId?: string | null;
   parcelaLarguraM?: number | null;
   parcelaComprimentoM?: number | null;
-  parcelaNumLinhas?: number | null;
-  numTratamentos: number | null;
-  numRepeticoes: number | null;
+  parcelaNumeroLinhas?: number | null;
+  numeroTratamentos: number | null;
+  numeroRepeticoes: number | null;
   totalParcelas: number | null;
   espacamentoLinhasM: number | null;
   objetoEstudo?: Ref | null;
@@ -530,7 +530,7 @@ export const api = {
       tipo?: TipoAtividade;
       data?: string;
       responsavel?: string;
-      obs?: string;
+      observacoes?: string;
     },
   ) =>
     req<AtividadeExperimento>(`/experimentos/${expId}/atividades`, {
@@ -549,7 +549,7 @@ export const api = {
       isConfirmada?: boolean;
       data?: string | null;
       responsavel?: string;
-      obs?: string;
+      observacoes?: string;
     },
   ) =>
     req<AtividadeExperimento>(`/atividades/${atividadeId}`, {
@@ -663,7 +663,7 @@ export const api = {
 
   // instituição + aprovadores
   obterInstituicao: () => req<Instituicao>("/instituicao"),
-  atualizarInstituicao: (body: { politicaAprovacao?: string; nAprovadores?: number }) =>
+  atualizarInstituicao: (body: { politicaAprovacao?: string; numeroAprovadores?: number }) =>
     req<Instituicao>("/instituicao", { method: "PUT", body: JSON.stringify(body) }),
   listarAprovadores: () => req<Aprovador[]>("/instituicao/aprovadores"),
   adicionarAprovador: (userId: string) =>

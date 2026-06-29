@@ -20,9 +20,9 @@ export interface CriarExperimentoDto {
   delineamentoId?: string;
   parcelaLarguraM?: number;
   parcelaComprimentoM?: number;
-  parcelaNumLinhas?: number;
+  parcelaNumeroLinhas?: number;
   espacamentoLinhasM?: number;
-  numRepeticoes?: number;
+  numeroRepeticoes?: number;
 }
 
 export interface AtualizarExperimentoDto extends Partial<CriarExperimentoDto> {
@@ -195,12 +195,12 @@ export class ExperimentosService {
           orderBy: { numeroRef: "asc" },
           include: {
             produtos: {
-              orderBy: { seq: "asc" },
+              orderBy: { sequencia: "asc" },
               include: { produto: true, timing: true, atividade: true },
             },
           },
         },
-        parcelas: { orderBy: [{ posColuna: "asc" }, { posLinha: "asc" }] },
+        parcelas: { orderBy: [{ posicaoColuna: "asc" }, { posicaoLinha: "asc" }] },
         avaliacoes: {
           orderBy: { ordem: "asc" },
           include: { timing: true, _count: { select: { dados: true } } },
@@ -227,9 +227,9 @@ export class ExperimentosService {
         delineamentoId: dto.delineamentoId,
         parcelaLarguraM: dto.parcelaLarguraM,
         parcelaComprimentoM: dto.parcelaComprimentoM,
-        parcelaNumLinhas: dto.parcelaNumLinhas,
+        parcelaNumeroLinhas: dto.parcelaNumeroLinhas,
         espacamentoLinhasM: dto.espacamentoLinhasM,
-        numRepeticoes: dto.numRepeticoes,
+        numeroRepeticoes: dto.numeroRepeticoes,
         instituicaoId: user.instituicaoId,
         ownerId: user.userId,
       },
@@ -257,9 +257,9 @@ export class ExperimentosService {
         delineamentoId: dto.delineamentoId === undefined ? undefined : dto.delineamentoId || null,
         parcelaLarguraM: dto.parcelaLarguraM,
         parcelaComprimentoM: dto.parcelaComprimentoM,
-        parcelaNumLinhas: dto.parcelaNumLinhas,
+        parcelaNumeroLinhas: dto.parcelaNumeroLinhas,
         espacamentoLinhasM: dto.espacamentoLinhasM,
-        numRepeticoes: dto.numRepeticoes,
+        numeroRepeticoes: dto.numeroRepeticoes,
         previsaoSemeadura: dto.previsaoSemeadura ? new Date(dto.previsaoSemeadura) : undefined,
         dataSemeadura: dto.dataSemeadura ? new Date(dto.dataSemeadura) : undefined,
         tipoPeriodo: dto.tipoPeriodo,
@@ -307,7 +307,7 @@ export class ExperimentosService {
 
     await this.prisma.experimento.update({
       where: { id },
-      data: { numTratamentos: combos.length },
+      data: { numeroTratamentos: combos.length },
     });
     return this.carregar(id);
   }
@@ -328,7 +328,7 @@ export class ExperimentosService {
       throw new BadRequestException("Defina os fatores/tratamentos antes do croqui.");
 
     const delineamento = opts.delineamento ?? mapDelineamento(exp.delineamento?.nome);
-    const blocos = opts.blocos ?? exp.numRepeticoes ?? 4;
+    const blocos = opts.blocos ?? exp.numeroRepeticoes ?? 4;
     const trats: TratamentoRef[] = exp.tratamentos.map((t) => ({
       id: t.id,
       numeroRef: t.numeroRef,
@@ -347,14 +347,14 @@ export class ExperimentosService {
         tratamentoId: p.tratamentoId,
         bloco: p.bloco,
         numero: p.numero,
-        posLinha: p.posLinha,
-        posColuna: p.posColuna,
+        posicaoLinha: p.posicaoLinha,
+        posicaoColuna: p.posicaoColuna,
         isInicio: p.isInicio,
       })),
     });
     await this.prisma.experimento.update({
       where: { id },
-      data: { numRepeticoes: blocos, totalParcelas: croqui.parcelas.length },
+      data: { numeroRepeticoes: blocos, totalParcelas: croqui.parcelas.length },
     });
 
     return this.carregar(id);
@@ -368,8 +368,8 @@ export class ExperimentosService {
       id: string;
       tratamentoId: string;
       bloco: number;
-      posLinha: number;
-      posColuna: number;
+      posicaoLinha: number;
+      posicaoColuna: number;
       numero: number;
       isInicio?: boolean;
     }>,
@@ -382,8 +382,8 @@ export class ExperimentosService {
           data: {
             tratamentoId: p.tratamentoId,
             bloco: p.bloco,
-            posLinha: p.posLinha,
-            posColuna: p.posColuna,
+            posicaoLinha: p.posicaoLinha,
+            posicaoColuna: p.posicaoColuna,
             numero: p.numero,
             isInicio: p.isInicio ?? false,
           },

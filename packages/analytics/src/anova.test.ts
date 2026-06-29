@@ -4,7 +4,7 @@ import type { Observacao } from "./types.js";
 
 describe("ANOVA 1 fator DIC (cálculo conhecido)", () => {
   // A=[1,2,3], B=[4,5,6] -> SQtotal=17.5, SQtrat=13.5, SQres=4, F=13.5
-  const obs: Observacao[] = [
+  const observacoes: Observacao[] = [
     { tratamento: "A", valor: 1 },
     { tratamento: "A", valor: 2 },
     { tratamento: "A", valor: 3 },
@@ -12,7 +12,7 @@ describe("ANOVA 1 fator DIC (cálculo conhecido)", () => {
     { tratamento: "B", valor: 5 },
     { tratamento: "B", valor: 6 },
   ];
-  const r = anovaUmFator(obs, "DIC");
+  const r = anovaUmFator(observacoes, "DIC");
 
   it("SQ e F batem com o cálculo manual", () => {
     const total = r.tabela.find((l) => l.fonte === "Total")!;
@@ -40,7 +40,7 @@ describe("ANOVA 1 fator DIC (cálculo conhecido)", () => {
 });
 
 describe("LSD: agrupamento de letras", () => {
-  const obs: Observacao[] = [
+  const observacoes: Observacao[] = [
     { tratamento: "A", valor: 30 },
     { tratamento: "A", valor: 30.5 },
     { tratamento: "A", valor: 29.5 },
@@ -51,7 +51,7 @@ describe("LSD: agrupamento de letras", () => {
     { tratamento: "C", valor: 21 },
     { tratamento: "C", valor: 20 },
   ];
-  const r = anovaUmFator(obs, "DIC");
+  const r = anovaUmFator(observacoes, "DIC");
 
   it("A separado; B e C compartilham letra", () => {
     const la = r.medias.find((m) => m.tratamento === "A")!.letra!;
@@ -64,15 +64,15 @@ describe("LSD: agrupamento de letras", () => {
 });
 
 describe("ANOVA DBC (decomposição com bloco)", () => {
-  const obs: Observacao[] = [];
+  const observacoes: Observacao[] = [];
   const valores: Record<string, number[]> = {
     T1: [10, 12, 11, 13],
     T2: [15, 16, 14, 17],
     T3: [20, 19, 21, 22],
   };
   for (const t of Object.keys(valores))
-    valores[t].forEach((v, b) => obs.push({ tratamento: t, bloco: b + 1, valor: v }));
-  const r = anovaUmFator(obs, "DBC");
+    valores[t].forEach((v, b) => observacoes.push({ tratamento: t, bloco: b + 1, valor: v }));
+  const r = anovaUmFator(observacoes, "DBC");
 
   it("SQtrat + SQbloco + SQres = SQtotal", () => {
     const get = (f: string) => r.tabela.find((l) => l.fonte === f)!.sq;

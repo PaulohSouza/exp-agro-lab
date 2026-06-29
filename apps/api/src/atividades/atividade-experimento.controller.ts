@@ -10,7 +10,7 @@ interface CriarAtividadeBody {
   tipo?: "ACAO" | "APONTAMENTO";
   data?: string;
   responsavel?: string;
-  obs?: string;
+  observacoes?: string;
 }
 
 @Controller()
@@ -46,7 +46,7 @@ export class AtividadeExperimentoController {
       isConfirmada?: boolean;
       data?: string | null;
       responsavel?: string;
-      obs?: string;
+      observacoes?: string;
     },
   ) {
     return this.service.atualizar(id, user, dto);
