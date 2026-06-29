@@ -1,5 +1,11 @@
 # C5 — Plano de migração: Colheita como Atividade
 
+> **STATUS: IMPLEMENTADO** (migration `20260629151806_c5_colheita_atividade`). A área útil vem da
+> atividade Colheita (`ModeloAtividade.fornecAreaColheita`, campos `linhas`/`comprimento`) via
+> `areaUtilDoExperimento` em `avaliacoes.service`. RN-PROD validado (CV 1,22%, área 9 m²).
+> A migração de dados foi feita por **re-seed** (dev), conforme autorizado. O texto abaixo é o plano original.
+
+
 > Runbook da fatia C5. Move os apontamentos de colheita de `AvaliacaoDado` para uma
 > **Atividade com apontamento** (nível experimento), repontando o cálculo de
 > produtividade. É a etapa de **maior risco** da Macro C (toca RN-PROD, seed, análise,

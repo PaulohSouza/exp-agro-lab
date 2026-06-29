@@ -503,6 +503,9 @@ model ModeloAtividade {
   descricao            String? @db.Text
   tipo                 TipoAtividade @default(acao)
   metodologiaRelatorio String? @db.Text
+  // Quando true, a atividade (com campos linhas/comprimento) fornece a área útil
+  // do ensaio para o cálculo de produtividade (RN-PROD / C5).
+  fornecAreaColheita   Boolean @default(false)
   escopo               EscopoModelo @default(sistema)
   instituicaoId        String?
   departamentoId       String?
@@ -606,11 +609,8 @@ model AvaliacaoDado {
   parcelaId          String
   numAmostra         Int     @default(1)
   // Valor BRUTO coletado no campo. A produtividade (kg/ha) é apresentada no relatório.
+  // RN-PROD: a área útil vem da ATIVIDADE de Colheita (linhas/comprimento), nível experimento — ver C5.
   valorColetado      Float?
-  // Apontamentos da ATIVIDADE de colheita (RN-PROD): registrados no momento da atividade.
-  numLinhasColhidas  Int?
-  comprimentoColhidoM Float?
-  areaUtilM2         Float?
   obs                String? @db.Text
   status             String?
   fotoUrl            String?

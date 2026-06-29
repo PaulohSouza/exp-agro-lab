@@ -33,7 +33,7 @@ export class SyncService {
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
     const dados = await this.prisma.avaliacaoDado.findMany({
       where: { avaliacao: { experimentoId }, deletedAt: null },
-      select: { avaliacaoId: true, parcelaId: true, numAmostra: true, valorColetado: true, numLinhasColhidas: true, comprimentoColhidoM: true, updatedAt: true },
+      select: { avaliacaoId: true, parcelaId: true, numAmostra: true, valorColetado: true, updatedAt: true },
     });
     return { experimento: exp, dados, serverTime: Date.now() };
   }
@@ -71,11 +71,11 @@ export class SyncService {
         where: { avaliacaoId_parcelaId_numAmostra: { avaliacaoId: c.avaliacaoId, parcelaId: c.parcelaId, numAmostra: c.numAmostra } },
         create: {
           avaliacaoId: c.avaliacaoId, parcelaId: c.parcelaId, numAmostra: c.numAmostra,
-          valorColetado: c.valorColetado, numLinhasColhidas: c.numLinhasColhidas, comprimentoColhidoM: c.comprimentoColhidoM,
+          valorColetado: c.valorColetado,
           obs: c.obs, origem: "mobile", dispositivoId: c.dispositivoId, syncedAt: new Date(),
         },
         update: {
-          valorColetado: c.valorColetado, numLinhasColhidas: c.numLinhasColhidas, comprimentoColhidoM: c.comprimentoColhidoM,
+          valorColetado: c.valorColetado,
           obs: c.obs, dispositivoId: c.dispositivoId, syncedAt: new Date(),
         },
       });

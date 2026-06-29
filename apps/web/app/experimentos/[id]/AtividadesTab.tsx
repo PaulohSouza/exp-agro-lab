@@ -85,26 +85,69 @@ function MarcoRow({ marco, onChange }: { marco: AtividadeExperimento; onChange: 
   }
 
   const atrasado = !confirmada && prevista && prevista < new Date().toISOString().slice(0, 10);
+  const campos = marco.tipo === "apontamento" ? marco.modelo?.campos ?? [] : [];
   return (
-    <tr style={{ borderTop: "1px solid #eef0f5" }}>
-      <td style={{ padding: "8px 12px" }}>
-        <strong>{marco.nome}</strong>
-        {atrasado && <span style={{ marginLeft: 8, background: "#F34343", color: "#fff", borderRadius: 6, padding: "1px 6px", fontSize: 11 }}>atrasado</span>}
-        {confirmada && <span style={{ marginLeft: 8, background: "#4EC2F0", color: "#1F2940", borderRadius: 6, padding: "1px 6px", fontSize: 11 }}>confirmado</span>}
-      </td>
-      <td style={{ padding: "8px 12px" }}>
-        <input type="date" value={prevista} onChange={(e) => { setPrevista(e.target.value); salvar({ dataPrevista: e.target.value || null }); }} style={inp} />
-      </td>
-      <td style={{ padding: "8px 12px" }}>
-        <input type="checkbox" checked={confirmada} onChange={(e) => { setConfirmada(e.target.checked); salvar({ confirmada: e.target.checked }); }} />
-      </td>
-      <td style={{ padding: "8px 12px" }}>
-        <input type="date" value={data} onChange={(e) => { setData(e.target.value); salvar({ data: e.target.value || null }); }} style={inp} />
-      </td>
-      <td style={{ padding: "8px 12px" }}>
-        <button aria-label={`Remover ${marco.nome}`} onClick={async () => { if (confirm(`Remover o marco "${marco.nome}"?`)) { await api.removerAtividadeExp(marco.id); onChange(); } }} style={mini("#F34343")}>×</button>
-      </td>
-    </tr>
+    <>
+      <tr style={{ borderTop: "1px solid #eef0f5" }}>
+        <td style={{ padding: "8px 12px" }}>
+          <strong>{marco.nome}</strong>
+          {atrasado && <span style={{ marginLeft: 8, background: "#F34343", color: "#fff", borderRadius: 6, padding: "1px 6px", fontSize: 11 }}>atrasado</span>}
+          {confirmada && <span style={{ marginLeft: 8, background: "#4EC2F0", color: "#1F2940", borderRadius: 6, padding: "1px 6px", fontSize: 11 }}>confirmado</span>}
+        </td>
+        <td style={{ padding: "8px 12px" }}>
+          <input type="date" value={prevista} onChange={(e) => { setPrevista(e.target.value); salvar({ dataPrevista: e.target.value || null }); }} style={inp} />
+        </td>
+        <td style={{ padding: "8px 12px" }}>
+          <input type="checkbox" checked={confirmada} onChange={(e) => { setConfirmada(e.target.checked); salvar({ confirmada: e.target.checked }); }} />
+        </td>
+        <td style={{ padding: "8px 12px" }}>
+          <input type="date" value={data} onChange={(e) => { setData(e.target.value); salvar({ data: e.target.value || null }); }} style={inp} />
+        </td>
+        <td style={{ padding: "8px 12px" }}>
+          <button aria-label={`Remover ${marco.nome}`} onClick={async () => { if (confirm(`Remover o marco "${marco.nome}"?`)) { await api.removerAtividadeExp(marco.id); onChange(); } }} style={mini("#F34343")}>×</button>
+        </td>
+      </tr>
+      {campos.length > 0 && (
+        <tr style={{ background: "#f7fafd" }}>
+          <td colSpan={5} style={{ padding: "4px 12px 10px 24px" }}><MarcoMedicoes marco={marco} onChange={onChange} /></td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+/** Campos de apontamento de um marco (ex.: Colheita → linhas/comprimento, define a área útil). */
+function MarcoMedicoes({ marco, onChange }: { marco: AtividadeExperimento; onChange: () => void }) {
+  const campos = marco.modelo?.campos ?? [];
+  const [vals, setVals] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const c of campos) init[c.rotulo] = (marco.valores.find((v) => v.rotulo === c.rotulo)?.valorNum ?? "").toString();
+    return init;
+  });
+  const [msg, setMsg] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function salvar() {
+    setMsg(null); setErro(null);
+    try {
+      await api.registrarApontamento(marco.id, campos.map((c) => ({ rotulo: c.rotulo, valorNum: vals[c.rotulo] === "" ? null : Number(vals[c.rotulo]) })));
+      setMsg("medições salvas"); onChange();
+    } catch (e) { setErro(e instanceof Error ? e.message.replace(/^\d+\s*/, "") : "falha"); }
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      <span style={{ fontSize: 12, color: "#7987A1" }}>medições:</span>
+      {campos.map((c) => (
+        <label key={c.rotulo} style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
+          {c.rotulo}{c.unidade ? ` (${c.unidade})` : ""}
+          <input type="number" value={vals[c.rotulo] ?? ""} onChange={(e) => setVals({ ...vals, [c.rotulo]: e.target.value })} style={{ ...inp, width: 80 }} />
+        </label>
+      ))}
+      <button onClick={salvar} style={mini("#1F2940")}>salvar medições</button>
+      {msg && <span style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      {erro && <span style={{ fontSize: 12, color: "#F34343" }}>{erro}</span>}
+    </div>
   );
 }
 

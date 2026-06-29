@@ -194,13 +194,13 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
 function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; voltar: () => void }) {
   const usaArea = !!aval.formula && /areaUtil/.test(aval.formula);
   const tratPorId = useMemo(() => new Map((exp.tratamentos ?? []).map((t) => [t.id, t])), [exp.tratamentos]);
-  const [valores, setValores] = useState<Record<string, { valor: string; linhas: string; comp: string }>>({});
+  const [valores, setValores] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     api.listarDados(aval.id).then((dados: AvaliacaoDado[]) => {
-      const m: Record<string, { valor: string; linhas: string; comp: string }> = {};
-      for (const d of dados) m[d.parcelaId] = { valor: d.valorColetado?.toString() ?? "", linhas: d.numLinhasColhidas?.toString() ?? "", comp: d.comprimentoColhidoM?.toString() ?? "" };
+      const m: Record<string, string> = {};
+      for (const d of dados) m[d.parcelaId] = d.valorColetado?.toString() ?? "";
       setValores(m);
     });
   }, [aval.id]);
@@ -209,13 +209,8 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
 
   async function salvar() {
     const dados = parcelas
-      .filter((p) => valores[p.id]?.valor)
-      .map((p) => ({
-        parcelaId: p.id,
-        valorColetado: Number(valores[p.id].valor),
-        numLinhasColhidas: usaArea && valores[p.id].linhas ? Number(valores[p.id].linhas) : undefined,
-        comprimentoColhidoM: usaArea && valores[p.id].comp ? Number(valores[p.id].comp) : undefined,
-      }));
+      .filter((p) => valores[p.id])
+      .map((p) => ({ parcelaId: p.id, valorColetado: Number(valores[p.id]) }));
     await api.lancarDados(aval.id, dados);
     setMsg(`${dados.length} lançamento(s) salvos (valor bruto).`);
   }
@@ -225,31 +220,29 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12 }}>
         <button onClick={voltar} style={mini("#a9abbd")}>← voltar</button>
         <strong>Lançar: {aval.nome}</strong>
-        <span style={{ color: "#7987A1", fontSize: 13 }}>valor bruto por parcela{usaArea ? " + apontamentos da colheita" : ""}</span>
-        <button onClick={salvar} style={mini("#6FA830")}>Salvar</button>
-        {msg && <span style={{ color: "#6FA830", fontSize: 13 }}>{msg}</span>}
+        <span style={{ color: "#7987A1", fontSize: 13 }}>valor bruto por parcela</span>
+        <button onClick={salvar} style={mini("#1F2940")}>Salvar</button>
+        {msg && <span style={{ color: "#1F2940", fontSize: 13 }}>{msg}</span>}
       </div>
+      {usaArea && (
+        <p style={{ color: "#7987A1", fontSize: 12, background: "#eef6fc", padding: 8, borderRadius: 6 }}>
+          ℹ️ A área útil para o cálculo (kg/ha) vem da atividade <strong>Colheita</strong> (nº de linhas e comprimento) na aba Atividades — não é coletada por parcela.
+        </p>
+      )}
       <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead><tr style={{ color: "#7987A1", textAlign: "left" }}>
           <th style={th}>Parcela</th><th style={th}>Bloco</th><th style={th}>Trat.</th>
           <th style={th}>Valor ({aval.unidadeColeta ?? "bruto"})</th>
-          {usaArea && <><th style={th}>Nº linhas</th><th style={th}>Compr. (m)</th></>}
         </tr></thead>
         <tbody>
-          {parcelas.map((p) => {
-            const v = valores[p.id] ?? { valor: "", linhas: "", comp: "" };
-            const set = (campo: "valor" | "linhas" | "comp", val: string) => setValores({ ...valores, [p.id]: { ...v, [campo]: val } });
-            return (
-              <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f8" }}>
-                <td style={td}>{p.numero}{p.isInicio ? " ★" : ""}</td>
-                <td style={td}>{p.bloco}</td>
-                <td style={td}>{tratPorId.get(p.tratamentoId)?.tag ?? "?"}</td>
-                <td style={td}><input value={v.valor} onChange={(e) => set("valor", e.target.value)} style={{ ...inp, width: 90 }} /></td>
-                {usaArea && <td style={td}><input value={v.linhas} onChange={(e) => set("linhas", e.target.value)} style={{ ...inp, width: 70 }} /></td>}
-                {usaArea && <td style={td}><input value={v.comp} onChange={(e) => set("comp", e.target.value)} style={{ ...inp, width: 70 }} /></td>}
-              </tr>
-            );
-          })}
+          {parcelas.map((p) => (
+            <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f8" }}>
+              <td style={td}>{p.numero}{p.isInicio ? " ★" : ""}</td>
+              <td style={td}>{p.bloco}</td>
+              <td style={td}>{tratPorId.get(p.tratamentoId)?.tag ?? "?"}</td>
+              <td style={td}><input value={valores[p.id] ?? ""} onChange={(e) => setValores({ ...valores, [p.id]: e.target.value })} style={{ ...inp, width: 90 }} /></td>
+            </tr>
+          ))}
         </tbody>
       </table></div>
     </div>

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
-import { calcularSaida, resolverPrerequisitos } from "@exp/domain";
+import { calcularSaida, resolverPrerequisitos, calcularAreaUtilColhida } from "@exp/domain";
 import { anovaUmFator, type Observacao, type Delineamento } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
@@ -23,9 +23,6 @@ export interface LancarDadoDto {
   parcelaId: string;
   numAmostra?: number;
   valorColetado?: number;
-  numLinhasColhidas?: number;
-  comprimentoColhidoM?: number;
-  areaUtilM2?: number;
   obs?: string;
   origem?: "web" | "mobile";
 }
@@ -42,6 +39,31 @@ export class AvaliacoesService {
     const a = await this.prisma.avaliacao.findUnique({ where: { id: avaliacaoId }, select: { experimentoId: true } });
     if (!a) throw new NotFoundException("Avaliação não encontrada.");
     return a.experimentoId;
+  }
+
+  /**
+   * Área útil (m²) do ensaio para o cálculo de produtividade (RN-PROD / C5):
+   * vem da ATIVIDADE de Colheita (modelo `fornecAreaColheita`), com os campos
+   * `linhas` e `comprimento` × o espaçamento do experimento. Única para todas as
+   * parcelas. Retorna undefined se a colheita ainda não foi registrada.
+   */
+  private async areaUtilDoExperimento(experimentoId: string): Promise<number | undefined> {
+    const exp = await this.prisma.experimento.findUnique({ where: { id: experimentoId }, select: { espacamentoLinhasM: true } });
+    const espac = exp?.espacamentoLinhasM ?? undefined;
+    if (!espac) return undefined;
+    const colheita = await this.prisma.atividadeExperimento.findFirst({
+      where: { experimentoId, modelo: { fornecAreaColheita: true } },
+      include: { valores: true },
+    });
+    if (!colheita) return undefined;
+    const linhas = colheita.valores.find((v) => v.rotulo === "linhas")?.valorNum ?? undefined;
+    const comprimento = colheita.valores.find((v) => v.rotulo === "comprimento")?.valorNum ?? undefined;
+    if (!linhas || !comprimento) return undefined;
+    try {
+      return calcularAreaUtilColhida({ numLinhasColhidas: linhas, espacamentoLinhasM: espac, comprimentoColhidoM: comprimento });
+    } catch {
+      return undefined;
+    }
   }
 
   async listar(experimentoId: string, user: UsuarioAtual) {
@@ -230,18 +252,12 @@ export class AvaliacoesService {
           parcelaId: d.parcelaId,
           numAmostra,
           valorColetado: d.valorColetado,
-          numLinhasColhidas: d.numLinhasColhidas,
-          comprimentoColhidoM: d.comprimentoColhidoM,
-          areaUtilM2: d.areaUtilM2,
           obs: d.obs,
           origem: d.origem ?? "web",
           syncedAt: new Date(),
         },
         update: {
           valorColetado: d.valorColetado,
-          numLinhasColhidas: d.numLinhasColhidas,
-          comprimentoColhidoM: d.comprimentoColhidoM,
-          areaUtilM2: d.areaUtilM2,
           obs: d.obs,
           syncedAt: new Date(),
         },
@@ -266,9 +282,8 @@ export class AvaliacoesService {
       include: { parcela: { include: { tratamento: true } } },
     });
 
-    const espac = aval.experimento.espacamentoLinhasM ?? undefined;
+    const areaUtil = await this.areaUtilDoExperimento(aval.experimentoId);
     const obs: Observacao[] = dados.map((d) => {
-      const areaUtil = d.areaUtilM2 ?? (d.numLinhasColhidas && d.comprimentoColhidoM && espac ? d.numLinhasColhidas * espac * d.comprimentoColhidoM : undefined);
       let valor = d.valorColetado as number;
       if (aval.formula) {
         try { valor = calcularSaida({ valorColetado: d.valorColetado as number, formula: aval.formula, params: areaUtil ? { areaUtil } : {} }); } catch { /* mantém bruto */ }
@@ -300,14 +315,9 @@ export class AvaliacoesService {
       include: { parcela: { include: { tratamento: true } } },
       orderBy: { parcela: { numero: "asc" } },
     });
-    const espac = aval.experimento.espacamentoLinhasM ?? undefined;
+    const areaUtil = await this.areaUtilDoExperimento(aval.experimentoId);
 
     const linhas = dados.map((d) => {
-      const areaUtil =
-        d.areaUtilM2 ??
-        (d.numLinhasColhidas && d.comprimentoColhidoM && espac
-          ? d.numLinhasColhidas * espac * d.comprimentoColhidoM
-          : undefined);
       let valorSaida: number | null = null;
       if (aval.formula && d.valorColetado != null) {
         try {

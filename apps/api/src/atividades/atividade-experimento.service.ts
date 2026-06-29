@@ -126,11 +126,22 @@ export class AtividadeExperimentoService {
     );
     const faltantes = desejados.filter((m) => !existentes.has(m));
     let ordem = await this.prisma.atividadeExperimento.count({ where: { experimentoId } });
+    // Modelo de Colheita (apontamento linhas/comprimento) que fornece a área útil (RN-PROD / C5).
+    const modeloColheita = faltantes.includes("colheita")
+      ? await this.prisma.modeloAtividade.findFirst({ where: { fornecAreaColheita: true, ativo: true }, include: { campos: { orderBy: { ordem: "asc" } } } })
+      : null;
     for (const m of faltantes) {
       ordem += 1;
-      await this.prisma.atividadeExperimento.create({
-        data: { experimentoId, nome: ROTULO_MARCO[m], marco: m, tipo: "acao", ordem },
-      });
+      if (m === "colheita" && modeloColheita) {
+        await this.prisma.atividadeExperimento.create({
+          data: {
+            experimentoId, marco: m, nome: ROTULO_MARCO[m], modeloId: modeloColheita.id, tipo: modeloColheita.tipo, ordem,
+            valores: modeloColheita.campos.length ? { create: modeloColheita.campos.map((c) => ({ rotulo: c.rotulo })) } : undefined,
+          },
+        });
+      } else {
+        await this.prisma.atividadeExperimento.create({ data: { experimentoId, nome: ROTULO_MARCO[m], marco: m, tipo: "acao", ordem } });
+      }
     }
     return { criados: faltantes.map((m) => ROTULO_MARCO[m]), eCultura };
   }

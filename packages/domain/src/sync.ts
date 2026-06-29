@@ -8,8 +8,6 @@ export interface ColetaOffline {
   parcelaId: string;
   numAmostra: number;
   valorColetado?: number;
-  numLinhasColhidas?: number;
-  comprimentoColhidoM?: number;
   /** epoch ms da última edição local (base para resolução de conflito). */
   clientUpdatedAt: number;
 }
