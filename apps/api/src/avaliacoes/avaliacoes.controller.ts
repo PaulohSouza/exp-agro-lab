@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import {
   AvaliacoesService,
@@ -6,6 +8,42 @@ import {
 } from "./avaliacoes.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
+
+const criarAvaliacaoSchema = z.object({
+  nome: z.string().min(1, "Nome obrigatório"),
+  metodologia: z.string().optional(),
+  unidadeColeta: z.string().optional(),
+  unidadeSaida: z.string().optional(),
+  formula: z.string().optional(),
+  tipo: z.enum(["CALENDARIZADA", "CONDICIONAL"]).optional(),
+  isPersonalizada: z.boolean().optional(),
+  escala: z.string().optional(),
+  timingId: z.string().optional(),
+  dataPrevista: z.string().optional(),
+});
+const atualizarAvaliacaoSchema = criarAvaliacaoSchema.partial();
+const doModeloSchema = z.object({ modeloIds: z.array(z.string()) });
+const lancarSchema = z.object({
+  dados: z.array(
+    z.object({
+      parcelaId: z.string(),
+      numeroAmostra: z.number().int().optional(),
+      valorColetado: z.number().optional(),
+      observacoes: z.string().optional(),
+      origem: z.enum(["WEB", "MOBILE"]).optional(),
+    }),
+  ),
+});
+const coletaLoteSchema = z.object({
+  lancamentos: z.array(
+    z.object({
+      avaliacaoId: z.string(),
+      parcelaId: z.string(),
+      numeroAmostra: z.number().int().optional(),
+      valorColetado: z.number().nullable().optional(),
+    }),
+  ),
+});
 
 @Controller()
 export class AvaliacoesController {
@@ -20,7 +58,7 @@ export class AvaliacoesController {
   criar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: CriarAvaliacaoDto,
+    @Body(new ZodValidationPipe(criarAvaliacaoSchema)) dto: CriarAvaliacaoDto,
   ) {
     return this.service.criar(id, user, dto);
   }
@@ -29,7 +67,7 @@ export class AvaliacoesController {
   adicionarDoModelo(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() body: { modeloIds: string[] },
+    @Body(new ZodValidationPipe(doModeloSchema)) body: { modeloIds: string[] },
   ) {
     return this.service.adicionarDoModelo(id, user, body.modeloIds);
   }
@@ -47,7 +85,7 @@ export class AvaliacoesController {
   lancarLote(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body()
+    @Body(new ZodValidationPipe(coletaLoteSchema))
     body: {
       lancamentos: Array<{
         avaliacaoId: string;
@@ -64,7 +102,7 @@ export class AvaliacoesController {
   atualizar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: Partial<CriarAvaliacaoDto>,
+    @Body(new ZodValidationPipe(atualizarAvaliacaoSchema)) dto: Partial<CriarAvaliacaoDto>,
   ) {
     return this.service.atualizar(id, user, dto);
   }
@@ -83,7 +121,7 @@ export class AvaliacoesController {
   lancar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() body: { dados: LancarDadoDto[] },
+    @Body(new ZodValidationPipe(lancarSchema)) body: { dados: LancarDadoDto[] },
   ) {
     return this.service.lancar(id, user, body.dados);
   }

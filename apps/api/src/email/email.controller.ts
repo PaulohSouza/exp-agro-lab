@@ -1,5 +1,12 @@
+import { z } from "zod";
+import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Body, Controller, Post } from "@nestjs/common";
 import { EmailService } from "./email.service";
+
+const previewSchema = z.object({
+  para: z.string().email().optional(),
+  experimentoTitulo: z.string().optional(),
+});
 
 /** Endpoint de demonstração do modo SIMULATE (Marco 0). */
 @Controller("email")
@@ -7,7 +14,9 @@ export class EmailController {
   constructor(private readonly email: EmailService) {}
 
   @Post("preview-aprovacao")
-  async previewAprovacao(@Body() body: { para?: string; experimentoTitulo?: string }) {
+  async previewAprovacao(
+    @Body(new ZodValidationPipe(previewSchema)) body: { para?: string; experimentoTitulo?: string },
+  ) {
     const r = await this.email.enviarAprovacaoCliente({
       para: body.para ?? "cliente@exemplo.com",
       ordemServicoId: "demo",

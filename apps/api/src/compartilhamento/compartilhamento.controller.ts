@@ -1,7 +1,14 @@
+import { z } from "zod";
+import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { CompartilhamentoService } from "./compartilhamento.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
+
+const compartilharSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  nivel: z.enum(["INPUT", "EDIT"]),
+});
 
 @Controller()
 export class CompartilhamentoController {
@@ -16,7 +23,8 @@ export class CompartilhamentoController {
   compartilhar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: { email: string; nivel: "INPUT" | "EDIT" },
+    @Body(new ZodValidationPipe(compartilharSchema))
+    dto: { email: string; nivel: "INPUT" | "EDIT" },
   ) {
     return this.service.compartilhar(id, user, dto);
   }
