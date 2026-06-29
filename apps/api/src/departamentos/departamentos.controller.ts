@@ -29,7 +29,7 @@ export class DepartamentosController {
   atualizar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: { nome?: string; ativo?: boolean },
+    @Body() dto: { nome?: string; isAtivo?: boolean },
   ) {
     return this.service.atualizar(user, id, dto);
   }

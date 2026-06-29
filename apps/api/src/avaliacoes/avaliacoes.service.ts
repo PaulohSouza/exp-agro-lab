@@ -18,7 +18,7 @@ export interface CriarAvaliacaoDto {
   unidadeSaida?: string;
   formula?: string;
   tipo?: "calendarizada" | "condicional";
-  personalizada?: boolean;
+  isPersonalizada?: boolean;
   escala?: string;
   timingId?: string;
   dataPrevista?: string;
@@ -52,7 +52,7 @@ export class AvaliacoesService {
 
   /**
    * Área útil (m²) do ensaio para o cálculo de produtividade (RN-PROD / C5):
-   * vem da ATIVIDADE de Colheita (modelo `fornecAreaColheita`), com os campos
+   * vem da ATIVIDADE de Colheita (modelo `isFonteAreaColheita`), com os campos
    * `linhas` e `comprimento` × o espaçamento do experimento. Única para todas as
    * parcelas. Retorna undefined se a colheita ainda não foi registrada.
    */
@@ -64,7 +64,7 @@ export class AvaliacoesService {
     const espac = exp?.espacamentoLinhasM ?? undefined;
     if (!espac) return undefined;
     const colheita = await this.prisma.atividadeExperimento.findFirst({
-      where: { experimentoId, modelo: { fornecAreaColheita: true } },
+      where: { experimentoId, modelo: { isFonteAreaColheita: true } },
       include: { valores: true },
     });
     if (!colheita) return undefined;
@@ -221,7 +221,7 @@ export class AvaliacoesService {
         unidadeSaida: dto.unidadeSaida,
         formula: dto.formula,
         tipo: dto.tipo ?? "calendarizada",
-        personalizada: dto.personalizada ?? false,
+        isPersonalizada: dto.isPersonalizada ?? false,
         escala: dto.escala,
         timingId: dto.timingId || null,
         dataPrevista: dto.dataPrevista ? new Date(dto.dataPrevista) : null,
@@ -242,7 +242,7 @@ export class AvaliacoesService {
         unidadeSaida: dto.unidadeSaida,
         formula: dto.formula,
         tipo: dto.tipo,
-        personalizada: dto.personalizada,
+        isPersonalizada: dto.isPersonalizada,
         escala: dto.escala,
         timingId: dto.timingId === undefined ? undefined : dto.timingId || null,
         dataPrevista: dto.dataPrevista ? new Date(dto.dataPrevista) : undefined,

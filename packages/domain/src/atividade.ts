@@ -12,7 +12,7 @@ export type TipoCampo = "numero" | "texto" | "data" | "booleano";
 export interface CampoDef {
   rotulo: string;
   tipo: TipoCampo;
-  obrigatorio?: boolean;
+  isObrigatorio?: boolean;
 }
 
 /** Valor informado para um campo (apenas o slot do tipo do campo é usado). */
@@ -55,7 +55,7 @@ export function validarApontamento(campos: CampoDef[], valores: ValorApontamento
 
   for (const campo of campos) {
     const v = porRotulo.get(campo.rotulo);
-    if (campo.obrigatorio && !preenchido(v, campo.tipo)) {
+    if (campo.isObrigatorio && !preenchido(v, campo.tipo)) {
       erros.push(`Campo obrigatório não preenchido: ${campo.rotulo}`);
       continue;
     }
@@ -86,9 +86,9 @@ export type MarcoTipo = "implantacao" | "inicio" | "fim" | "semeadura" | "colhei
 export type StatusMarco = "confirmado" | "pendente" | "atrasado";
 
 /** Marcos padrão de um ensaio; semeadura/colheita só quando o objeto é cultura. */
-export function marcosPadrao(eCultura: boolean): MarcoTipo[] {
+export function marcosPadrao(isCultura: boolean): MarcoTipo[] {
   const base: MarcoTipo[] = ["implantacao", "inicio"];
-  if (eCultura) base.push("semeadura", "colheita");
+  if (isCultura) base.push("semeadura", "colheita");
   base.push("fim");
   return base;
 }
@@ -99,10 +99,10 @@ export function marcosPadrao(eCultura: boolean): MarcoTipo[] {
  */
 export function statusMarco(input: {
   dataPrevista?: string | null;
-  confirmada: boolean;
+  isConfirmada: boolean;
   hojeISO: string;
 }): StatusMarco {
-  if (input.confirmada) return "confirmado";
+  if (input.isConfirmada) return "confirmado";
   if (input.dataPrevista && input.dataPrevista.slice(0, 10) < input.hojeISO) return "atrasado";
   return "pendente";
 }

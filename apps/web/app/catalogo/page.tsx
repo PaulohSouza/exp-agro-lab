@@ -529,7 +529,7 @@ interface CampoForm {
   rotulo: string;
   tipo: TipoCampo;
   unidade: string;
-  obrigatorio: boolean;
+  isObrigatorio: boolean;
 }
 const ATV_VAZIO: ModeloAtividadeInput & { camposForm: CampoForm[] } = {
   nome: "",
@@ -621,7 +621,7 @@ function CatalogoAtividades() {
         rotulo: c.rotulo,
         tipo: c.tipo,
         unidade: c.unidade ?? "",
-        obrigatorio: c.obrigatorio,
+        isObrigatorio: c.isObrigatorio,
       })),
     });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -773,8 +773,8 @@ function CatalogoAtividades() {
                   <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
                     <input
                       type="checkbox"
-                      checked={c.obrigatorio}
-                      onChange={(e) => setCampo(i, { obrigatorio: e.target.checked })}
+                      checked={c.isObrigatorio}
+                      onChange={(e) => setCampo(i, { isObrigatorio: e.target.checked })}
                     />{" "}
                     obrigatório
                   </label>
@@ -796,7 +796,7 @@ function CatalogoAtividades() {
                     ...form,
                     camposForm: [
                       ...form.camposForm,
-                      { rotulo: "", tipo: "numero", unidade: "", obrigatorio: false },
+                      { rotulo: "", tipo: "numero", unidade: "", isObrigatorio: false },
                     ],
                   })
                 }

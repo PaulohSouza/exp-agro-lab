@@ -241,7 +241,7 @@ function LinhaUsuario({
         </select>
       </td>
       <td style={td}>
-        {u.ativo ? "sim" : "não"}
+        {u.isAtivo ? "sim" : "não"}
         {sujo && (
           <button
             onClick={salvar}

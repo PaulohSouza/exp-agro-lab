@@ -80,7 +80,7 @@ async function main() {
     },
   });
 
-  const catCultura = await prisma.categoria.create({ data: { nome: "Cultura", eCultura: true } });
+  const catCultura = await prisma.categoria.create({ data: { nome: "Cultura", isCultura: true } });
   const subAlgodao = await prisma.subcategoria.create({
     data: { categoriaId: catCultura.id, nome: "Algodão" },
   });
@@ -218,12 +218,12 @@ async function main() {
       nome: "Colheita",
       escopo: "sistema",
       tipo: "apontamento",
-      fornecAreaColheita: true,
+      isFonteAreaColheita: true,
       descricao: "Registra nº de linhas e comprimento colhidos (define a área útil).",
       campos: {
         create: [
-          { rotulo: "linhas", tipo: "numero", obrigatorio: true, ordem: 0 },
-          { rotulo: "comprimento", tipo: "numero", unidade: "m", obrigatorio: true, ordem: 1 },
+          { rotulo: "linhas", tipo: "numero", isObrigatorio: true, ordem: 0 },
+          { rotulo: "comprimento", tipo: "numero", unidade: "m", isObrigatorio: true, ordem: 1 },
         ],
       },
     },

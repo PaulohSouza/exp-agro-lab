@@ -189,15 +189,15 @@ function Wrap({ children }: { children: React.ReactNode }) {
 function Card({ children }: { children: React.ReactNode }) {
   return <div style={{ background: "#fff", borderRadius: 10, padding: 20 }}>{children}</div>;
 }
-function tab(ativo: boolean): React.CSSProperties {
+function tab(isAtivo: boolean): React.CSSProperties {
   return {
     background: "none",
     border: "none",
     cursor: "pointer",
     padding: "10px 14px",
-    color: ativo ? "#1F2940" : "#7987A1",
-    fontWeight: ativo ? 700 : 400,
-    borderBottom: ativo ? "2px solid #6FA830" : "2px solid transparent",
+    color: isAtivo ? "#1F2940" : "#7987A1",
+    fontWeight: isAtivo ? 700 : 400,
+    borderBottom: isAtivo ? "2px solid #6FA830" : "2px solid transparent",
     whiteSpace: "nowrap",
     flex: "0 0 auto",
   };

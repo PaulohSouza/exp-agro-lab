@@ -18,7 +18,7 @@ interface CampoDto {
   rotulo: string;
   tipo?: TipoCampo;
   unidade?: string;
-  obrigatorio?: boolean;
+  isObrigatorio?: boolean;
   ordem?: number;
 }
 interface ModeloAtividadeDto {
@@ -57,7 +57,7 @@ export class ModeloAtividadeService {
             ],
           };
     return this.prisma.modeloAtividade.findMany({
-      where: { ...where, ativo: true },
+      where: { ...where, isAtivo: true },
       orderBy: [{ escopo: "asc" }, { nome: "asc" }],
       include: { campos: { orderBy: { ordem: "asc" } }, _count: { select: { atividades: true } } },
     });
@@ -82,7 +82,7 @@ export class ModeloAtividadeService {
                   rotulo: c.rotulo,
                   tipo: c.tipo ?? "numero",
                   unidade: c.unidade,
-                  obrigatorio: c.obrigatorio ?? false,
+                  isObrigatorio: c.isObrigatorio ?? false,
                   ordem: c.ordem ?? i,
                 })),
               }
@@ -104,7 +104,7 @@ export class ModeloAtividadeService {
               rotulo: c.rotulo,
               tipo: c.tipo ?? "numero",
               unidade: c.unidade,
-              obrigatorio: c.obrigatorio ?? false,
+              isObrigatorio: c.isObrigatorio ?? false,
               ordem: c.ordem ?? i,
             })),
           });
@@ -125,7 +125,7 @@ export class ModeloAtividadeService {
 
   async remover(user: UsuarioAtual, id: string) {
     await this.garantirAcesso(user, id);
-    await this.prisma.modeloAtividade.update({ where: { id }, data: { ativo: false } });
+    await this.prisma.modeloAtividade.update({ where: { id }, data: { isAtivo: false } });
     return { ok: true };
   }
 

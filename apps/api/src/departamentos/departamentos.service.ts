@@ -29,18 +29,18 @@ export class DepartamentosService {
     });
   }
 
-  async atualizar(user: UsuarioAtual, id: string, dto: { nome?: string; ativo?: boolean }) {
+  async atualizar(user: UsuarioAtual, id: string, dto: { nome?: string; isAtivo?: boolean }) {
     await this.garantir(user, id);
     return this.prisma.departamento.update({
       where: { id },
-      data: { nome: dto.nome, ativo: dto.ativo },
+      data: { nome: dto.nome, isAtivo: dto.isAtivo },
     });
   }
 
   /** Desativa (soft) — preserva vínculos de unidades/usuários. */
   async desativar(user: UsuarioAtual, id: string) {
     await this.garantir(user, id);
-    await this.prisma.departamento.update({ where: { id }, data: { ativo: false } });
+    await this.prisma.departamento.update({ where: { id }, data: { isAtivo: false } });
     return { ok: true };
   }
 

@@ -41,7 +41,7 @@ export class GruposColetaService {
             ],
           };
     return this.prisma.grupoColeta.findMany({
-      where: { ...where, ativo: true },
+      where: { ...where, isAtivo: true },
       orderBy: [{ escopo: "asc" }, { nome: "asc" }],
       include: {
         itens: {
@@ -91,7 +91,7 @@ export class GruposColetaService {
 
   async remover(user: UsuarioAtual, id: string) {
     await this.garantirAcesso(user, id);
-    await this.prisma.grupoColeta.update({ where: { id }, data: { ativo: false } });
+    await this.prisma.grupoColeta.update({ where: { id }, data: { isAtivo: false } });
     return { ok: true };
   }
 

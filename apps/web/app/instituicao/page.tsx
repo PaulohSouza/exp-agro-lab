@@ -105,13 +105,13 @@ export default function InstituicaoPage() {
           <h3 style={{ marginTop: 0 }}>Departamentos</h3>
           <ul style={{ paddingLeft: 18 }}>
             {departamentos.map((d) => (
-              <li key={d.id} style={{ marginBottom: 4, opacity: d.ativo ? 1 : 0.5 }}>
+              <li key={d.id} style={{ marginBottom: 4, opacity: d.isAtivo ? 1 : 0.5 }}>
                 {d.nome}{" "}
                 <span style={{ color: "#7987A1", fontSize: 12 }}>
                   ({d._count?.unidades ?? 0} unid. · {d._count?.usuarios ?? 0} usu.)
-                  {d.ativo ? "" : " — inativo"}
+                  {d.isAtivo ? "" : " — inativo"}
                 </span>{" "}
-                {d.ativo && (
+                {d.isAtivo && (
                   <button
                     onClick={async () => {
                       await api.desativarDepartamento(d.id);

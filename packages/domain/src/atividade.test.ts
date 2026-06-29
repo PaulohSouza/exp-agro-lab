@@ -9,9 +9,9 @@ import {
 
 // Ex.: aplicação via CO2 → vento (num), umidade (num), data (data)
 const camposCO2: CampoDef[] = [
-  { rotulo: "vento", tipo: "numero", obrigatorio: true },
-  { rotulo: "umidade", tipo: "numero", obrigatorio: true },
-  { rotulo: "data", tipo: "data", obrigatorio: true },
+  { rotulo: "vento", tipo: "numero", isObrigatorio: true },
+  { rotulo: "umidade", tipo: "numero", isObrigatorio: true },
+  { rotulo: "data", tipo: "data", isObrigatorio: true },
 ];
 
 describe("validarApontamento", () => {
@@ -43,7 +43,7 @@ describe("validarApontamento", () => {
 
   it("acusa tipo divergente (texto onde se espera número)", () => {
     const erros = validarApontamento(
-      [{ rotulo: "vento", tipo: "numero", obrigatorio: true }],
+      [{ rotulo: "vento", tipo: "numero", isObrigatorio: true }],
       [{ rotulo: "vento", valorTexto: "forte" }],
     );
     expect(erros.some((e) => e.includes("vento"))).toBe(true);
@@ -60,7 +60,7 @@ describe("validarApontamento", () => {
   });
 
   it("campo opcional ausente não gera erro", () => {
-    const erros = validarApontamento([{ rotulo: "obs", tipo: "texto", obrigatorio: false }], []);
+    const erros = validarApontamento([{ rotulo: "obs", tipo: "texto", isObrigatorio: false }], []);
     expect(erros).toEqual([]);
   });
 });
@@ -82,21 +82,21 @@ describe("marcos do cronograma", () => {
 
   it("statusMarco: confirmado tem prioridade", () => {
     expect(
-      statusMarco({ dataPrevista: "2020-01-01", confirmada: true, hojeISO: "2026-06-29" }),
+      statusMarco({ dataPrevista: "2020-01-01", isConfirmada: true, hojeISO: "2026-06-29" }),
     ).toBe("confirmado");
   });
   it("statusMarco: previsão no passado e não confirmado → atrasado", () => {
     expect(
-      statusMarco({ dataPrevista: "2026-06-01", confirmada: false, hojeISO: "2026-06-29" }),
+      statusMarco({ dataPrevista: "2026-06-01", isConfirmada: false, hojeISO: "2026-06-29" }),
     ).toBe("atrasado");
   });
   it("statusMarco: previsão futura → pendente", () => {
     expect(
-      statusMarco({ dataPrevista: "2026-12-01", confirmada: false, hojeISO: "2026-06-29" }),
+      statusMarco({ dataPrevista: "2026-12-01", isConfirmada: false, hojeISO: "2026-06-29" }),
     ).toBe("pendente");
   });
   it("statusMarco: sem data → pendente", () => {
-    expect(statusMarco({ dataPrevista: null, confirmada: false, hojeISO: "2026-06-29" })).toBe(
+    expect(statusMarco({ dataPrevista: null, isConfirmada: false, hojeISO: "2026-06-29" })).toBe(
       "pendente",
     );
   });

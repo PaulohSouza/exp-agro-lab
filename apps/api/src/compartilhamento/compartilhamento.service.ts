@@ -69,7 +69,7 @@ export class CompartilhamentoService {
         });
       }
       return this.prisma.experimentoCompartilhamento.create({
-        data: { experimentoId, userId: alvo.id, nivel, aceito: true },
+        data: { experimentoId, userId: alvo.id, nivel, isAceito: true },
         include: { user: { select: { id: true, nome: true, email: true } } },
       });
     }
@@ -77,7 +77,7 @@ export class CompartilhamentoService {
     // usuário não cadastrado → convite por e-mail (modo simulado)
     const token = randomUUID();
     const share = await this.prisma.experimentoCompartilhamento.create({
-      data: { experimentoId, convidadoEmail: dto.email, nivel, token, aceito: false },
+      data: { experimentoId, convidadoEmail: dto.email, nivel, token, isAceito: false },
     });
     const base = process.env.EMAIL_BASE_URL ?? "http://localhost:3000";
     await this.email.enviar({

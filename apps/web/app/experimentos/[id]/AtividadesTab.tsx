@@ -166,19 +166,19 @@ export function AtividadesTab({ exp }: { exp: Experimento }) {
 
 function MarcoRow({ marco, onChange }: { marco: AtividadeExperimento; onChange: () => void }) {
   const [prevista, setPrevista] = useState((marco.dataPrevista ?? "").slice(0, 10));
-  const [confirmada, setConfirmada] = useState(!!marco.confirmada);
+  const [isConfirmada, setConfirmada] = useState(!!marco.isConfirmada);
   const [data, setData] = useState((marco.data ?? "").slice(0, 10));
 
   async function salvar(patch: {
     dataPrevista?: string | null;
-    confirmada?: boolean;
+    isConfirmada?: boolean;
     data?: string | null;
   }) {
     await api.atualizarAtividadeExp(marco.id, patch);
     onChange();
   }
 
-  const atrasado = !confirmada && prevista && prevista < new Date().toISOString().slice(0, 10);
+  const atrasado = !isConfirmada && prevista && prevista < new Date().toISOString().slice(0, 10);
   const campos = marco.tipo === "apontamento" ? (marco.modelo?.campos ?? []) : [];
   return (
     <>
@@ -199,7 +199,7 @@ function MarcoRow({ marco, onChange }: { marco: AtividadeExperimento; onChange: 
               atrasado
             </span>
           )}
-          {confirmada && (
+          {isConfirmada && (
             <span
               style={{
                 marginLeft: 8,
@@ -228,10 +228,10 @@ function MarcoRow({ marco, onChange }: { marco: AtividadeExperimento; onChange: 
         <td style={{ padding: "8px 12px" }}>
           <input
             type="checkbox"
-            checked={confirmada}
+            checked={isConfirmada}
             onChange={(e) => {
               setConfirmada(e.target.checked);
-              salvar({ confirmada: e.target.checked });
+              salvar({ isConfirmada: e.target.checked });
             }}
           />
         </td>
@@ -430,7 +430,7 @@ function AtividadeCard({
                 <div style={{ color: "#7987A1", fontSize: 12, marginBottom: 4 }}>
                   {c.rotulo}
                   {c.unidade ? ` (${c.unidade})` : ""}
-                  {c.obrigatorio ? " *" : ""}
+                  {c.isObrigatorio ? " *" : ""}
                 </div>
                 {c.tipo === "booleano" ? (
                   <input

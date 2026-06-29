@@ -139,7 +139,7 @@ function ObjetoEstudoCadastro() {
                 title="Marcar como cultura (habilita marcos de semeadura/colheita)"
                 onClick={async (e) => {
                   e.stopPropagation();
-                  await api.atualizarCategoria(c.id, { eCultura: !c.eCultura });
+                  await api.atualizarCategoria(c.id, { isCultura: !c.isCultura });
                   recCategorias();
                 }}
                 style={{
@@ -148,11 +148,11 @@ function ObjetoEstudoCadastro() {
                   padding: "1px 7px",
                   fontSize: 11,
                   cursor: "pointer",
-                  background: c.eCultura ? "#9BD2F5" : "#e1e1ef",
+                  background: c.isCultura ? "#9BD2F5" : "#e1e1ef",
                   color: "#1F2940",
                 }}
               >
-                {c.eCultura ? "🌱 cultura" : "cultura?"}
+                {c.isCultura ? "🌱 cultura" : "cultura?"}
               </button>
             </div>
           ))}
@@ -263,13 +263,13 @@ const lbl: React.CSSProperties = {
   fontSize: 12,
   marginBottom: 6,
 };
-function item(ativo: boolean): React.CSSProperties {
+function item(isAtivo: boolean): React.CSSProperties {
   return {
     padding: "5px 8px",
     borderRadius: 6,
     cursor: "pointer",
     fontSize: 13,
-    background: ativo ? "#eaf3e6" : "transparent",
+    background: isAtivo ? "#eaf3e6" : "transparent",
     color: "#1F2940",
   };
 }

@@ -41,7 +41,7 @@ export class UsuariosController {
       papel?: Papel;
       departamentoId?: string | null;
       unidadeId?: string | null;
-      ativo?: boolean;
+      isAtivo?: boolean;
     },
   ) {
     return this.service.atualizar(user, id, dto);
