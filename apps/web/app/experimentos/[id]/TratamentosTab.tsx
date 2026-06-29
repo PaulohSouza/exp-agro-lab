@@ -89,7 +89,7 @@ function TratamentoCard({
         </thead>
         <tbody>
           {(t.produtos ?? []).map((p) => (
-            <tr key={p.id} style={{ background: "#f6fbf2", borderTop: "1px solid #eaf3e6" }}>
+            <tr key={p.id} style={{ background: "#f2f8fd", borderTop: "1px solid #e3eef7" }}>
               <td style={cell}>{p.seq}</td>
               <td style={cell}>{p.produto?.nome}</td>
               <td style={cell}>{p.modoAplicacao ?? "—"}</td>
@@ -146,5 +146,5 @@ function TratamentoCard({
 
 const cell: React.CSSProperties = { padding: "6px 10px", verticalAlign: "middle" };
 const inp: React.CSSProperties = { padding: 5, borderRadius: 6, border: "1px solid #d6d6e6", fontSize: 13, maxWidth: 130 };
-const addBtn: React.CSSProperties = { background: "#6FA830", color: "#fff", border: "none", borderRadius: 6, padding: "5px 10px", cursor: "pointer" };
+const addBtn: React.CSSProperties = { background: "#4EC2F0", color: "#1F2940", fontWeight: 600, border: "none", borderRadius: 6, padding: "5px 10px", cursor: "pointer" };
 const lixo: React.CSSProperties = { background: "none", border: "none", color: "#F34343", cursor: "pointer", fontSize: 12 };

@@ -30,12 +30,12 @@ export class RelatorioService {
     const pptx = new pptxgen();
     pptx.defineLayout({ name: "WIDE", width: 13.33, height: 7.5 });
     pptx.layout = "WIDE";
-    pptx.author = "EXP-AGROLAB";
+    pptx.author = "EXP-AgroLab";
 
     // ---- Capa ----
     const capa = pptx.addSlide();
     capa.background = { color: NAVY };
-    capa.addText("SAGRE · EXP-AGROLAB", { x: 0.7, y: 2.0, fontSize: 14, color: SKY, charSpacing: 2 });
+    capa.addText("SAGRE · EXP-AgroLab", { x: 0.7, y: 2.0, fontSize: 14, color: SKY, charSpacing: 2 });
     capa.addText(`${exp.codigo ? exp.codigo + " — " : ""}${exp.titulo}`, { x: 0.7, y: 2.5, w: 12, fontSize: 32, bold: true, color: "FFFFFF" });
     if (exp.objetivo) capa.addText(exp.objetivo, { x: 0.7, y: 3.9, w: 11.5, fontSize: 14, color: "9BD2F5" });
     capa.addText(

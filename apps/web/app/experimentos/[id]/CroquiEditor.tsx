@@ -65,7 +65,7 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
     return (
       <div>
         <p style={{ color: "#7987A1" }}>Sem croqui ainda. Gere a partir do delineamento e tratamentos.</p>
-        <button onClick={regenerar} style={btn("#6FA830")}>Gerar croqui</button>
+        <button onClick={regenerar} style={btn("#1F2940")}>Gerar croqui</button>
         {msg && <span style={{ marginLeft: 12 }}>{msg}</span>}
       </div>
     );
@@ -74,14 +74,15 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
   return (
     <div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-        <button onClick={salvar} disabled={!dirty} style={btn(dirty ? "#6FA830" : "#a9abbd")}>Salvar layout</button>
+        <button onClick={salvar} disabled={!dirty} style={btn(dirty ? "#1F2940" : "#a9abbd")}>Salvar layout</button>
         <button onClick={regenerar} style={btn("#4EC2F0")}>Recasualizar</button>
         <span style={{ color: "#7987A1", fontSize: 13 }}>
           Arraste um tratamento sobre outro para trocá-los. {dirty ? "• alterações não salvas" : ""}
         </span>
-        {msg && <span style={{ color: "#6FA830", fontSize: 13 }}>{msg}</span>}
+        {msg && <span style={{ color: "#1F2940", fontSize: 13 }}>{msg}</span>}
       </div>
 
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
       <div className="scroll-x">
       <div style={{ display: "inline-grid", gridTemplateColumns: `repeat(${numColunas}, 84px)`, gap: 6 }}>
         {grade.flatMap((linha, li) =>
@@ -115,6 +116,31 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
           }),
         )}
       </div>
+      </div>
+
+      <aside style={{ minWidth: 200, border: "1px solid #e1e1ef", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ background: "#1F2940", color: "#fff", padding: "8px 12px", fontWeight: 600, fontSize: 13 }}>
+          Tratamentos
+        </div>
+        <ul style={{ listStyle: "none", margin: 0, padding: 8 }}>
+          {[...(exp.tratamentos ?? [])].sort((a, b) => a.numeroRef - b.numeroRef).map((t) => (
+            <li key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 6px" }}>
+              <span style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, marginTop: 2, background: corTratamento(t.numeroRef), border: "1px solid rgba(0,0,0,.12)" }} />
+              <span style={{ fontSize: 13, color: "#1F2940" }}>
+                <strong>{t.tag ?? `T${t.numeroRef}`}</strong>{t.nome ? ` — ${t.nome}` : ""}
+                {(t.produtos ?? []).length > 0 && (
+                  <span style={{ display: "block", fontSize: 11, color: "#7987A1" }}>
+                    {(t.produtos ?? [])
+                      .map((p) => [p.produto?.nome, p.dose != null ? `${p.dose}${p.unidadeDose ? ` ${p.unidadeDose}` : ""}` : null].filter(Boolean).join(" "))
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </aside>
       </div>
       <p style={{ color: "#7987A1", fontSize: 12, marginTop: 10 }}>
         Colunas = blocos (A, B, C…). ★ = ponto de início. Cores por tratamento.

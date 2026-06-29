@@ -21,7 +21,7 @@ export function Protected({ children }: { children: React.ReactNode }) {
   return (
     <>
       <header style={{ background: "#141B2D", color: "#fff", padding: "10px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <strong style={{ color: "#fff" }}>EXP-AGROLAB</strong>
+        <strong style={{ color: "#fff" }}>EXP-AgroLab</strong>
         <nav className="scroll-x" style={{ display: "flex", gap: 14, fontSize: 14 }}>
           <Link href="/dashboard" style={navlink}>Painel</Link>
           <Link href="/experimentos" style={navlink}>Protocolos</Link>

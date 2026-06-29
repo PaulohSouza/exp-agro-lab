@@ -12,7 +12,7 @@ export default async function Home() {
   return (
     <main style={{ maxWidth: 720, margin: "48px auto", padding: 24 }}>
       <div style={{ background: "#1F2940", color: "#fff", padding: "20px 24px", borderRadius: 10 }}>
-        <h1 style={{ margin: 0 }}>EXP-AGROLAB</h1>
+        <h1 style={{ margin: 0 }}>EXP-AgroLab</h1>
         <p style={{ margin: "8px 0 0", color: "#4EC2F0" }}>
           Gestão de experimentos agronômicos e laboratoriais
         </p>

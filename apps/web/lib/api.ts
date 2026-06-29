@@ -348,6 +348,6 @@ export async function decisaoCliente(token: string, decisao: "aprovado" | "recus
 
 /** Cores suaves por índice de tratamento (espelha o sistema-base). */
 export function corTratamento(numeroRef: number): string {
-  const cores = ["#F6A6A6", "#F8C99B", "#F5E69B", "#A8E0B0", "#9BD2F5", "#C9B3F0", "#F0B3D6", "#B3E6E0"];
+  const cores = ["#F6A6A6", "#F8C99B", "#F5E69B", "#CBD2DE", "#9BD2F5", "#C9B3F0", "#F0B3D6", "#E2D7A6"];
   return cores[(numeroRef - 1) % cores.length];
 }
