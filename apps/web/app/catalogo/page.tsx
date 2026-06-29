@@ -11,6 +11,41 @@ const ESCOPOS: { value: EscopoModelo; label: string; cor: string }[] = [
   { value: "departamento", label: "Departamento", cor: "#C9B3F0" },
 ];
 
+function siglaEscopo(escopo: EscopoModelo): string {
+  return ESCOPOS.find((e) => e.value === escopo)!.label.slice(0, 4);
+}
+
+/** Seletor múltiplo amigável: adiciona via dropdown, remove via chip "×". */
+function MultiPicker({ label, opcoes, selecionados, onChange, testid }: {
+  label: string;
+  opcoes: { id: string; rotulo: string }[];
+  selecionados: string[];
+  onChange: (ids: string[]) => void;
+  testid?: string;
+}) {
+  const rotuloDe = new Map(opcoes.map((o) => [o.id, o.rotulo]));
+  const disponiveis = opcoes.filter((o) => !selecionados.includes(o.id));
+  return (
+    <div>
+      <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>{label}</div>
+      <select data-testid={testid} value="" onChange={(e) => { if (e.target.value) onChange([...selecionados, e.target.value]); }} style={{ ...inp, width: "100%" }}>
+        <option value="">+ adicionar…</option>
+        {disponiveis.map((o) => <option key={o.id} value={o.id}>{o.rotulo}</option>)}
+      </select>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+        {selecionados.length === 0 && <span style={{ fontSize: 12, color: "#a9abbd" }}>nenhum</span>}
+        {selecionados.map((id) => (
+          <span key={id} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#e3eef7", border: "1px solid #cfe0ef", borderRadius: 14, padding: "2px 6px 2px 10px", fontSize: 12, color: "#1F2940" }}>
+            {rotuloDe.get(id) ?? id}
+            <button type="button" aria-label={`Remover ${rotuloDe.get(id) ?? id}`} onClick={() => onChange(selecionados.filter((x) => x !== id))}
+              style={{ background: "#1F2940", color: "#fff", border: "none", borderRadius: "50%", width: 16, height: 16, lineHeight: "16px", cursor: "pointer", fontSize: 11, padding: 0 }}>×</button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Espelho da regra do domínio `podeGerenciarEscopo` (UI só; API valida de fato). */
 function podeGerenciar(papel: Papel | undefined, escopo: EscopoModelo): boolean {
   if (papel === "admin_sistema") return true;
@@ -158,30 +193,24 @@ function Catalogo() {
           <textarea placeholder="Descrição da coleta (como será feita)" value={form.descricaoColeta} onChange={(e) => setForm({ ...form, descricaoColeta: e.target.value })} style={{ ...inp, width: "100%", marginTop: 10, minHeight: 48 }} />
           <textarea placeholder="Metodologia p/ relatório (base para a IA redigir)" value={form.metodologiaRelatorio} onChange={(e) => setForm({ ...form, metodologiaRelatorio: e.target.value })} style={{ ...inp, width: "100%", marginTop: 10, minHeight: 48 }} />
 
-          {/* pré-requisitos: dois multi-selects (avaliações + atividades) */}
+          {/* pré-requisitos: dois pickers (avaliações + atividades) — adicionar via dropdown, remover via chip */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginTop: 12 }}>
-            <div>
-              <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>Pré-requisitos — avaliações (coletadas junto):</div>
-              <select multiple data-testid="prereq-aval" value={form.prerequisitoIds ?? []}
-                onChange={(e) => setForm({ ...form, prerequisitoIds: Array.from(e.target.selectedOptions, (o) => o.value) })}
-                style={{ ...inp, width: "100%", minHeight: 96 }}>
-                {modelos.filter((m) => m.id !== editId).map((m) => (
-                  <option key={m.id} value={m.id}>[{ESCOPOS.find((e) => e.value === m.escopo)!.label.slice(0, 4)}] {m.nome}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>Pré-requisitos — atividades (ex.: Colheita):</div>
-              <select multiple data-testid="prereq-atv" value={form.prerequisitoAtividadeIds ?? []}
-                onChange={(e) => setForm({ ...form, prerequisitoAtividadeIds: Array.from(e.target.selectedOptions, (o) => o.value) })}
-                style={{ ...inp, width: "100%", minHeight: 96 }}>
-                {modelosAtividade.map((m) => (
-                  <option key={m.id} value={m.id}>[{ESCOPOS.find((e) => e.value === m.escopo)!.label.slice(0, 4)}] {m.nome}{m.tipo === "apontamento" ? " (apont.)" : ""}</option>
-                ))}
-              </select>
-            </div>
+            <MultiPicker
+              testid="prereq-aval"
+              label="Pré-requisitos — avaliações (coletadas junto):"
+              opcoes={modelos.filter((m) => m.id !== editId).map((m) => ({ id: m.id, rotulo: `[${siglaEscopo(m.escopo)}] ${m.nome}` }))}
+              selecionados={form.prerequisitoIds ?? []}
+              onChange={(ids) => setForm({ ...form, prerequisitoIds: ids })}
+            />
+            <MultiPicker
+              testid="prereq-atv"
+              label="Pré-requisitos — atividades (ex.: Colheita):"
+              opcoes={modelosAtividade.map((m) => ({ id: m.id, rotulo: `[${siglaEscopo(m.escopo)}] ${m.nome}${m.tipo === "apontamento" ? " (apont.)" : ""}` }))}
+              selecionados={form.prerequisitoAtividadeIds ?? []}
+              onChange={(ids) => setForm({ ...form, prerequisitoAtividadeIds: ids })}
+            />
           </div>
-          <div style={{ fontSize: 11, color: "#a9abbd", marginTop: 4 }}>Segure Ctrl/Cmd para selecionar vários. Ao adicionar a avaliação a um experimento, os pré-requisitos faltantes (avaliações e atividades) são incluídos automaticamente.</div>
+          <div style={{ fontSize: 11, color: "#a9abbd", marginTop: 4 }}>Ao adicionar a avaliação a um experimento, os pré-requisitos faltantes (avaliações e atividades) são incluídos automaticamente.</div>
 
           <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
             <button type="submit" data-testid="modelo-salvar" style={btn("#1F2940")}>{editId ? "Salvar" : "Criar modelo"}</button>

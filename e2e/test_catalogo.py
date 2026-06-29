@@ -43,7 +43,18 @@ def run() -> int:
         assert any("Instituição" in o for o in opcoes), f"faltou escopo instituição: {opcoes}"
         print(f"✓ gating de escopo OK (opções: {opcoes})")
 
-        # 4) criar modelo (escopo instituição)
+        # 4) picker de pré-requisitos: adicionar vira chip; remover some (MultiPicker)
+        prereq = page.locator('[data-testid="prereq-aval"]')
+        opt = prereq.locator("option").nth(1)  # primeira opção real (após "+ adicionar…")
+        nome_prereq = opt.inner_text()
+        prereq.select_option(opt.get_attribute("value"))
+        chip = page.get_by_role("button", name=f"Remover {nome_prereq}")
+        expect(chip).to_be_visible()
+        chip.click()
+        expect(page.get_by_role("button", name=f"Remover {nome_prereq}")).to_have_count(0)
+        print("✓ picker de pré-requisitos: adicionar/remover OK")
+
+        # 5) criar modelo (escopo instituição)
         page.locator('[data-testid="modelo-nome"]').fill(NOME)
         page.locator('[data-testid="modelo-escopo"]').select_option("instituicao")
         page.locator('[data-testid="modelo-salvar"]').click()
