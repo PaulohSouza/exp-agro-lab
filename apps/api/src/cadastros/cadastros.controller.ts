@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { CadastrosService } from "./cadastros.service";
 
 @Controller("cadastros")
@@ -12,7 +12,8 @@ export class CadastrosController {
   @Post("atividades") criarAtividade(@Body() d: { nome: string; valorVenda?: number }) { return this.service.criarAtividade(d); }
 
   @Get("categorias") categorias() { return this.service.listarCategorias(); }
-  @Post("categorias") criarCategoria(@Body() d: { nome: string }) { return this.service.criarCategoria(d); }
+  @Post("categorias") criarCategoria(@Body() d: { nome: string; eCultura?: boolean }) { return this.service.criarCategoria(d); }
+  @Put("categorias/:id") atualizarCategoria(@Param("id") id: string, @Body() d: { nome?: string; eCultura?: boolean }) { return this.service.atualizarCategoria(id, d); }
 
   @Get("subcategorias") subcategorias(@Query("categoriaId") categoriaId?: string) { return this.service.listarSubcategorias(categoriaId); }
   @Post("subcategorias") criarSubcategoria(@Body() d: { categoriaId: string; nome: string }) { return this.service.criarSubcategoria(d); }

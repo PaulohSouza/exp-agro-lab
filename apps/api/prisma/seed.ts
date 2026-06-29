@@ -76,7 +76,7 @@ async function main() {
     },
   });
 
-  const catCultura = await prisma.categoria.create({ data: { nome: "Cultura" } });
+  const catCultura = await prisma.categoria.create({ data: { nome: "Cultura", eCultura: true } });
   const subAlgodao = await prisma.subcategoria.create({
     data: { categoriaId: catCultura.id, nome: "Algodão" },
   });

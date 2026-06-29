@@ -81,3 +81,24 @@ export function validarApontamento(campos: CampoDef[], valores: ValorApontamento
 export function apontamentoEsperado(tipo: TipoAtividade): boolean {
   return tipo === "apontamento";
 }
+
+export type MarcoTipo = "implantacao" | "inicio" | "fim" | "semeadura" | "colheita";
+export type StatusMarco = "confirmado" | "pendente" | "atrasado";
+
+/** Marcos padrão de um ensaio; semeadura/colheita só quando o objeto é cultura. */
+export function marcosPadrao(eCultura: boolean): MarcoTipo[] {
+  const base: MarcoTipo[] = ["implantacao", "inicio"];
+  if (eCultura) base.push("semeadura", "colheita");
+  base.push("fim");
+  return base;
+}
+
+/**
+ * Status de um marco do cronograma. Datas em ISO (yyyy-mm-dd) — comparação
+ * lexicográfica. `hojeISO` é injetado (domínio puro, sem relógio).
+ */
+export function statusMarco(input: { dataPrevista?: string | null; confirmada: boolean; hojeISO: string }): StatusMarco {
+  if (input.confirmada) return "confirmado";
+  if (input.dataPrevista && input.dataPrevista.slice(0, 10) < input.hojeISO) return "atrasado";
+  return "pendente";
+}

@@ -1,6 +1,7 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3001";
 
 export interface Ref { id: string; nome: string }
+export interface Categoria extends Ref { eCultura?: boolean; ativo?: boolean }
 export interface Compartilhamento {
   id: string;
   nivel: "input" | "edit";
@@ -144,6 +145,9 @@ export interface AtividadeExperimento {
   id: string;
   nome: string;
   tipo: TipoAtividade;
+  marco?: string | null;
+  dataPrevista?: string | null;
+  confirmada?: boolean;
   data: string | null;
   responsavel: string | null;
   obs: string | null;
@@ -208,6 +212,8 @@ export interface Experimento {
   metodologia?: string | null;
   justificativa?: string | null;
   observacoes?: string | null;
+  tipoPeriodo?: "safra" | "ano_semestre" | null;
+  anoSemestre?: string | null;
   objetoEstudoId?: string | null;
   localId?: string | null;
   safraId?: string | null;
@@ -361,7 +367,10 @@ export const api = {
     req<AtividadeExperimento>(`/experimentos/${expId}/atividades`, { method: "POST", body: JSON.stringify(body) }),
   registrarApontamento: (atividadeId: string, valores: ValorApontamentoInput[]) =>
     req<AtividadeExperimento>(`/atividades/${atividadeId}/apontamento`, { method: "POST", body: JSON.stringify({ valores }) }),
+  atualizarAtividadeExp: (atividadeId: string, body: { dataPrevista?: string | null; confirmada?: boolean; data?: string | null; responsavel?: string; obs?: string }) =>
+    req<AtividadeExperimento>(`/atividades/${atividadeId}`, { method: "PUT", body: JSON.stringify(body) }),
   removerAtividadeExp: (atividadeId: string) => req<{ ok: boolean }>(`/atividades/${atividadeId}`, { method: "DELETE" }),
+  gerarMarcos: (expId: string) => req<{ criados: string[]; eCultura: boolean }>(`/experimentos/${expId}/marcos/gerar`, { method: "POST" }),
   analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
     req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
 
@@ -370,7 +379,9 @@ export const api = {
   safras: () => req<Ref[]>("/cadastros/safras"),
   areas: () => req<Ref[]>("/cadastros/areas"),
   delineamentos: () => req<Ref[]>("/cadastros/delineamentos"),
-  categorias: () => req<Ref[]>("/cadastros/categorias"),
+  categorias: () => req<Categoria[]>("/cadastros/categorias"),
+  atualizarCategoria: (id: string, body: { nome?: string; eCultura?: boolean }) =>
+    req<Categoria>(`/cadastros/categorias/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   subcategorias: (categoriaId: string) => req<Ref[]>(`/cadastros/subcategorias?categoriaId=${categoriaId}`),
   objetos: (subcategoriaId: string) => req<ObjetoEstudo[]>(`/cadastros/objetos?subcategoriaId=${subcategoriaId}`),
   criarCadastro: (tipo: "locais" | "safras" | "areas" | "delineamentos" | "categorias", nome: string) =>

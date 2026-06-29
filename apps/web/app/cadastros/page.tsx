@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api, type ObjetoEstudo, type Ref } from "../../lib/api";
+import { api, type Categoria, type ObjetoEstudo, type Ref } from "../../lib/api";
 import { Protected } from "../../components/Protected";
 
 export default function CadastrosPage() {
@@ -52,7 +52,7 @@ function ListaSimples({ titulo, tipo, carregar }: { titulo: string; tipo: "locai
 }
 
 function ObjetoEstudoCadastro() {
-  const [categorias, setCategorias] = useState<Ref[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [cat, setCat] = useState("");
   const [subs, setSubs] = useState<Ref[]>([]);
   const [sub, setSub] = useState("");
@@ -72,7 +72,15 @@ function ObjetoEstudoCadastro() {
         <div>
           <strong style={lbl}>Categorias</strong>
           {categorias.map((c) => (
-            <div key={c.id} onClick={() => setCat(c.id)} style={item(c.id === cat)}>{c.nome}</div>
+            <div key={c.id} onClick={() => setCat(c.id)} style={{ ...item(c.id === cat), display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ flex: 1 }}>{c.nome}</span>
+              <button
+                title="Marcar como cultura (habilita marcos de semeadura/colheita)"
+                onClick={async (e) => { e.stopPropagation(); await api.atualizarCategoria(c.id, { eCultura: !c.eCultura }); recCategorias(); }}
+                style={{ border: "none", borderRadius: 6, padding: "1px 7px", fontSize: 11, cursor: "pointer", background: c.eCultura ? "#9BD2F5" : "#e1e1ef", color: "#1F2940" }}>
+                {c.eCultura ? "🌱 cultura" : "cultura?"}
+              </button>
+            </div>
           ))}
           <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
             <input style={inp} value={nCat} onChange={(e) => setNCat(e.target.value)} placeholder="nova categoria" />

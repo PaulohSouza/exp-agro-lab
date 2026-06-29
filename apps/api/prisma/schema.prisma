@@ -113,6 +113,8 @@ model Categoria {
   id    String @id @default(cuid())
   nome  String
   ativo Boolean @default(true)
+  // Quando true, ensaios com objeto desta categoria ganham marcos de Semeadura/Colheita.
+  eCultura Boolean @default(false)
   subcategorias Subcategoria[]
 }
 
@@ -177,6 +179,10 @@ model Experimento {
   safraId          String?
   areaPesquisaId   String?
   delineamentoId   String?
+
+  // Período do ensaio: safra (campo) OU ano.semestre (laboratório).
+  tipoPeriodo      TipoPeriodo @default(safra)
+  anoSemestre      String?  // ex.: "2026.1" quando tipoPeriodo = ano_semestre
 
   cultivar         String?
   tipoExecucao     String?
@@ -520,6 +526,20 @@ enum TipoAtividade {
   apontamento
 }
 
+enum TipoPeriodo {
+  safra
+  ano_semestre
+}
+
+// Marcos do cronograma do ensaio.
+enum MarcoTipo {
+  implantacao
+  inicio
+  fim
+  semeadura
+  colheita
+}
+
 // Campo parametrizado de uma atividade com apontamento (ex.: CO2 → vento, umidade, data).
 model ModeloAtividadeCampo {
   id          String @id @default(cuid())
@@ -548,7 +568,10 @@ model AtividadeExperimento {
   modeloId      String?
   nome          String
   tipo          TipoAtividade @default(acao)
-  data          DateTime?
+  marco         MarcoTipo?         // quando preenchido, é um marco do cronograma
+  dataPrevista  DateTime?          // previsão (marco)
+  confirmada    Boolean @default(false) // marco confirmado pelo usuário
+  data          DateTime?          // data realizada/confirmada
   responsavel   String?
   obs           String? @db.Text
   status        String?

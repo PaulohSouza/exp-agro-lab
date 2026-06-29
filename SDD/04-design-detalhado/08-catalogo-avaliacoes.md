@@ -64,6 +64,16 @@ Uma avaliação pode **depender de uma atividade** (ex.: Massa de parcela depend
 
 > Nota: o `Atividade` atual no schema é um **cadastro simples** (nome+valorVenda) usado como rótulo em `TratamentoProduto` — não confundir com `ModeloAtividade`/`AtividadeExperimento` desta demanda.
 
+## Demanda D — Período e Cronograma de marcos
+
+### Período: Safra ou Ano.semestre
+Ensaios de laboratório não usam "safra". `Experimento.tipoPeriodo` (`safra` | `ano_semestre`): quando `safra`, usa o cadastro Safra (ex.: "25/26"); quando `ano_semestre`, usa `Experimento.anoSemestre` (ex.: "2026.1"). Toggle na aba Geral.
+
+### Marcos do cronograma (como atividades + checklist)
+Datas de marco (implantação, início, fim; e **semeadura/colheita** se cultura) são **atividades** (`AtividadeExperimento` com `marco: MarcoTipo`), com `dataPrevista`, checkbox `confirmada` e `data` (realizada). Reaproveita a aba Atividades, o catálogo e a futura sincronização offline (tablet). Botão **"Gerar marcos"** cria os faltantes via domínio `marcosPadrao(eCultura)`. Status (pendente/atrasado/confirmado) via `statusMarco`.
+
+**É cultura?** `Categoria.eCultura` (flag na categoria do objeto de estudo). Objeto de categoria-cultura → semeadura/colheita entram no checklist automaticamente. (Seed marca "Cultura" como `eCultura`.) Os campos legados `previsaoSemeadura`/`dataSemeadura` do Experimento ficam obsoletos em favor dos marcos.
+
 ## Modelo de dados (Prisma)
 `ModeloAvaliacao` (+ enum `EscopoModelo`), `ModeloAvaliacaoPrereq`, `GrupoColeta`, `GrupoColetaItem`; `Avaliacao` ganha `modeloId?`, `grupoColetaId?`, `numeroPontos`, `descricaoColeta`. Migration `20260629124049_catalogo_avaliacoes_grupos_coleta`.
 

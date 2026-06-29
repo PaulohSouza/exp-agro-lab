@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
 import { AtividadeExperimentoService } from "./atividade-experimento.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -25,6 +25,16 @@ export class AtividadeExperimentoController {
   @Post("experimentos/:id/atividades")
   criar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: CriarAtividadeBody) {
     return this.service.criar(id, user, dto);
+  }
+
+  @Post("experimentos/:id/marcos/gerar")
+  gerarMarcos(@CurrentUser() user: UsuarioAtual, @Param("id") id: string) {
+    return this.service.gerarMarcos(id, user);
+  }
+
+  @Put("atividades/:id")
+  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: { dataPrevista?: string | null; confirmada?: boolean; data?: string | null; responsavel?: string; obs?: string }) {
+    return this.service.atualizar(id, user, dto);
   }
 
   @Post("atividades/:id/apontamento")

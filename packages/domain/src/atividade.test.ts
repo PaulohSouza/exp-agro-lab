@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validarApontamento, apontamentoEsperado, type CampoDef } from "./atividade.js";
+import { validarApontamento, apontamentoEsperado, marcosPadrao, statusMarco, type CampoDef } from "./atividade.js";
 
 // Ex.: aplicação via CO2 → vento (num), umidade (num), data (data)
 const camposCO2: CampoDef[] = [
@@ -66,5 +66,27 @@ describe("apontamentoEsperado", () => {
   it("ação não tem apontamento; apontamento tem", () => {
     expect(apontamentoEsperado("acao")).toBe(false);
     expect(apontamentoEsperado("apontamento")).toBe(true);
+  });
+});
+
+describe("marcos do cronograma", () => {
+  it("não-cultura: implantação, início, fim", () => {
+    expect(marcosPadrao(false)).toEqual(["implantacao", "inicio", "fim"]);
+  });
+  it("cultura: inclui semeadura e colheita antes do fim", () => {
+    expect(marcosPadrao(true)).toEqual(["implantacao", "inicio", "semeadura", "colheita", "fim"]);
+  });
+
+  it("statusMarco: confirmado tem prioridade", () => {
+    expect(statusMarco({ dataPrevista: "2020-01-01", confirmada: true, hojeISO: "2026-06-29" })).toBe("confirmado");
+  });
+  it("statusMarco: previsão no passado e não confirmado → atrasado", () => {
+    expect(statusMarco({ dataPrevista: "2026-06-01", confirmada: false, hojeISO: "2026-06-29" })).toBe("atrasado");
+  });
+  it("statusMarco: previsão futura → pendente", () => {
+    expect(statusMarco({ dataPrevista: "2026-12-01", confirmada: false, hojeISO: "2026-06-29" })).toBe("pendente");
+  });
+  it("statusMarco: sem data → pendente", () => {
+    expect(statusMarco({ dataPrevista: null, confirmada: false, hojeISO: "2026-06-29" })).toBe("pendente");
   });
 });

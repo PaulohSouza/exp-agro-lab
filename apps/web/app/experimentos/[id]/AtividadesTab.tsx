@@ -24,9 +24,37 @@ export function AtividadesTab({ exp }: { exp: Experimento }) {
     catch (e) { setErro(e instanceof Error ? e.message : "Falha ao adicionar"); }
   }
 
+  async function gerarMarcos() {
+    setErro(null);
+    try { await api.gerarMarcos(exp.id); recarregar(); }
+    catch (e) { setErro(e instanceof Error ? e.message : "Falha ao gerar marcos"); }
+  }
+
+  const marcos = atividades.filter((a) => a.marco);
+  const comuns = atividades.filter((a) => !a.marco);
+
   return (
     <div>
       {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
+
+      {/* Cronograma — marcos */}
+      <div style={{ border: "1px solid #e1e1ef", borderRadius: 10, marginBottom: 16, overflow: "hidden" }}>
+        <div style={{ background: "#1F2940", color: "#fff", padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          <strong>Cronograma (marcos)</strong>
+          <button onClick={gerarMarcos} style={{ ...btn("#4EC2F0"), marginLeft: "auto", color: "#1F2940" }}>Gerar marcos</button>
+        </div>
+        <div className="tabela-scroll">
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead><tr style={{ color: "#7987A1", textAlign: "left" }}>
+              {["Marco", "Previsão", "Confirmado", "Data realizada", ""].map((h) => <th key={h} style={{ padding: "8px 12px" }}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {marcos.length === 0 && <tr><td colSpan={4} style={{ padding: "8px 12px", color: "#a9abbd" }}>Nenhum marco. Clique em “Gerar marcos” (semeadura/colheita aparecem se o objeto for cultura).</td></tr>}
+              {marcos.map((m) => <MarcoRow key={m.id} marco={m} onChange={recarregar} />)}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#eef6fc", padding: 12, borderRadius: 8, marginBottom: 14 }}>
         <span style={{ fontSize: 13, color: "#1F2940", fontWeight: 600 }}>Adicionar do catálogo:</span>
@@ -38,11 +66,45 @@ export function AtividadesTab({ exp }: { exp: Experimento }) {
         {modelos.length === 0 && <span style={{ fontSize: 12, color: "#7987A1" }}>nenhum modelo no catálogo — cadastre em /catalogo</span>}
       </div>
 
-      {atividades.length === 0 && <p style={{ color: "#a9abbd" }}>Nenhuma atividade registrada.</p>}
-      {atividades.map((a) => (
+      {comuns.length === 0 && <p style={{ color: "#a9abbd" }}>Nenhuma atividade (não-marco) registrada.</p>}
+      {comuns.map((a) => (
         <AtividadeCard key={a.id} atividade={a} onChange={recarregar} />
       ))}
     </div>
+  );
+}
+
+function MarcoRow({ marco, onChange }: { marco: AtividadeExperimento; onChange: () => void }) {
+  const [prevista, setPrevista] = useState((marco.dataPrevista ?? "").slice(0, 10));
+  const [confirmada, setConfirmada] = useState(!!marco.confirmada);
+  const [data, setData] = useState((marco.data ?? "").slice(0, 10));
+
+  async function salvar(patch: { dataPrevista?: string | null; confirmada?: boolean; data?: string | null }) {
+    await api.atualizarAtividadeExp(marco.id, patch);
+    onChange();
+  }
+
+  const atrasado = !confirmada && prevista && prevista < new Date().toISOString().slice(0, 10);
+  return (
+    <tr style={{ borderTop: "1px solid #eef0f5" }}>
+      <td style={{ padding: "8px 12px" }}>
+        <strong>{marco.nome}</strong>
+        {atrasado && <span style={{ marginLeft: 8, background: "#F34343", color: "#fff", borderRadius: 6, padding: "1px 6px", fontSize: 11 }}>atrasado</span>}
+        {confirmada && <span style={{ marginLeft: 8, background: "#4EC2F0", color: "#1F2940", borderRadius: 6, padding: "1px 6px", fontSize: 11 }}>confirmado</span>}
+      </td>
+      <td style={{ padding: "8px 12px" }}>
+        <input type="date" value={prevista} onChange={(e) => { setPrevista(e.target.value); salvar({ dataPrevista: e.target.value || null }); }} style={inp} />
+      </td>
+      <td style={{ padding: "8px 12px" }}>
+        <input type="checkbox" checked={confirmada} onChange={(e) => { setConfirmada(e.target.checked); salvar({ confirmada: e.target.checked }); }} />
+      </td>
+      <td style={{ padding: "8px 12px" }}>
+        <input type="date" value={data} onChange={(e) => { setData(e.target.value); salvar({ data: e.target.value || null }); }} style={inp} />
+      </td>
+      <td style={{ padding: "8px 12px" }}>
+        <button aria-label={`Remover ${marco.nome}`} onClick={async () => { if (confirm(`Remover o marco "${marco.nome}"?`)) { await api.removerAtividadeExp(marco.id); onChange(); } }} style={mini("#F34343")}>×</button>
+      </td>
+    </tr>
   );
 }
 

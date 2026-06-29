@@ -11,7 +11,9 @@ export function GeralTab({ exp, onChange }: { exp: Experimento; onChange: (e: Ex
     objetivo: exp.objetivo ?? "",
     cultivar: exp.cultivar ?? "",
     localId: exp.localId ?? "",
+    tipoPeriodo: exp.tipoPeriodo ?? "safra",
     safraId: exp.safraId ?? "",
+    anoSemestre: exp.anoSemestre ?? "",
     areaPesquisaId: exp.areaPesquisaId ?? "",
     delineamentoId: exp.delineamentoId ?? "",
     numRepeticoes: exp.numRepeticoes?.toString() ?? "",
@@ -44,7 +46,10 @@ export function GeralTab({ exp, onChange }: { exp: Experimento; onChange: (e: Ex
     const num = (s: string) => (s === "" ? undefined : Number(s));
     const atualizado = await api.atualizar(exp.id, {
       titulo: f.titulo, codigo: f.codigo, ensaio: f.ensaio, objetivo: f.objetivo, cultivar: f.cultivar,
-      localId: f.localId, safraId: f.safraId, areaPesquisaId: f.areaPesquisaId, delineamentoId: f.delineamentoId,
+      localId: f.localId, areaPesquisaId: f.areaPesquisaId, delineamentoId: f.delineamentoId,
+      tipoPeriodo: f.tipoPeriodo as "safra" | "ano_semestre",
+      safraId: f.tipoPeriodo === "safra" ? f.safraId : "",
+      anoSemestre: f.tipoPeriodo === "ano_semestre" ? f.anoSemestre : "",
       numRepeticoes: num(f.numRepeticoes), parcelaLarguraM: num(f.parcelaLarguraM), parcelaComprimentoM: num(f.parcelaComprimentoM),
       parcelaNumLinhas: num(f.parcelaNumLinhas), espacamentoLinhasM: num(f.espacamentoLinhasM),
       metodologia: f.metodologia, observacoes: f.observacoes, justificativa: f.justificativa,
@@ -76,7 +81,17 @@ export function GeralTab({ exp, onChange }: { exp: Experimento; onChange: (e: Ex
 
         <Campo label="Área de pesquisa"><Select v={f.areaPesquisaId} set={(v) => up("areaPesquisaId", v)} opts={refs.areas} /></Campo>
         <Campo label="Local"><Select v={f.localId} set={(v) => up("localId", v)} opts={refs.locais} /></Campo>
-        <Campo label="Safra"><Select v={f.safraId} set={(v) => up("safraId", v)} opts={refs.safras} /></Campo>
+        <Campo label="Período">
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <select value={f.tipoPeriodo} onChange={(e) => up("tipoPeriodo", e.target.value)} style={{ padding: 8, borderRadius: 6, border: "1px solid #d6d6e6", fontSize: 13 }}>
+              <option value="safra">Safra</option>
+              <option value="ano_semestre">Ano.semestre</option>
+            </select>
+            {f.tipoPeriodo === "safra"
+              ? <Select v={f.safraId} set={(v) => up("safraId", v)} opts={refs.safras} />
+              : <input placeholder="ex.: 2026.1" value={f.anoSemestre} onChange={(e) => up("anoSemestre", e.target.value)} style={{ padding: 8, borderRadius: 6, border: "1px solid #d6d6e6", fontSize: 13, width: 110 }} />}
+          </div>
+        </Campo>
 
         <Campo label="Delineamento"><Select v={f.delineamentoId} set={(v) => up("delineamentoId", v)} opts={refs.delineamentos} /></Campo>
         <Campo label="Repetições/blocos"><input style={inp} value={f.numRepeticoes} onChange={(e) => up("numRepeticoes", e.target.value)} /></Campo>
