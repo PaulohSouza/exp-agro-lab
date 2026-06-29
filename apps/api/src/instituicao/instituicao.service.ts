@@ -38,7 +38,7 @@ export class InstituicaoService {
 
   async adicionarAprovador(user: UsuarioAtual, dto: { userId: string }) {
     this.exigirAdmin(user);
-    const alvo = await this.prisma.user.findFirst({
+    const alvo = await this.prisma.usuario.findFirst({
       where: { id: dto.userId, instituicaoId: user.instituicaoId },
     });
     if (!alvo) throw new BadRequestException("Usuário não pertence à instituição.");

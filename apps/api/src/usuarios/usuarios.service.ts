@@ -17,7 +17,7 @@ export class UsuariosService {
   constructor(private readonly prisma: PrismaService) {}
 
   listar(user: UsuarioAtual) {
-    return this.prisma.user.findMany({
+    return this.prisma.usuario.findMany({
       where: { instituicaoId: user.instituicaoId },
       orderBy: { nome: "asc" },
       select: {
@@ -46,11 +46,11 @@ export class UsuariosService {
     if (!user.isAdminInstituicao) {
       throw new ForbiddenException("Apenas o admin da instituição pode cadastrar usuários.");
     }
-    const existe = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existe = await this.prisma.usuario.findUnique({ where: { email: dto.email } });
     if (existe) throw new ConflictException("E-mail já cadastrado.");
     // papel é a fonte da verdade; isAdminInstituicao é mantido em sincronia (retrocompat).
     const papel: Papel = dto.papel ?? (dto.isAdminInstituicao ? "GESTAO_INSTITUICAO" : "ANALISTA");
-    const novo = await this.prisma.user.create({
+    const novo = await this.prisma.usuario.create({
       data: {
         instituicaoId: user.instituicaoId,
         unidadeId: dto.unidadeId || null,
@@ -86,7 +86,7 @@ export class UsuariosService {
     if (!user.isAdminInstituicao) {
       throw new ForbiddenException("Apenas o admin da instituição pode editar usuários.");
     }
-    const alvo = await this.prisma.user.findUnique({
+    const alvo = await this.prisma.usuario.findUnique({
       where: { id },
       select: { instituicaoId: true },
     });
@@ -94,7 +94,7 @@ export class UsuariosService {
     if (alvo.instituicaoId !== user.instituicaoId && user.papel !== "ADMIN_SISTEMA") {
       throw new ForbiddenException("Usuário de outra instituição.");
     }
-    return this.prisma.user.update({
+    return this.prisma.usuario.update({
       where: { id },
       data: {
         papel: dto.papel,

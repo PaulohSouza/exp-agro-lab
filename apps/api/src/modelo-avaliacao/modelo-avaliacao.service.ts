@@ -36,7 +36,7 @@ export class ModeloAvaliacaoService {
 
   /** Departamento do usuário logado (não vem no JWT). */
   private async departamentoDoUsuario(user: UsuarioAtual): Promise<string | null> {
-    const u = await this.prisma.user.findUnique({
+    const u = await this.prisma.usuario.findUnique({
       where: { id: user.userId },
       select: { departamentoId: true },
     });

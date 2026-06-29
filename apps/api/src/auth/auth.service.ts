@@ -24,7 +24,7 @@ export class AuthService {
   }
 
   async validar(email: string, senha: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.usuario.findUnique({ where: { email } });
     if (!user || !user.isAtivo) return null;
     if (!bcrypt.compareSync(senha, user.senhaHash)) return null;
     return user;
@@ -42,11 +42,11 @@ export class AuthService {
     adminEmail: string;
     adminSenha: string;
   }) {
-    const existe = await this.prisma.user.findUnique({ where: { email: dto.adminEmail } });
+    const existe = await this.prisma.usuario.findUnique({ where: { email: dto.adminEmail } });
     if (existe) throw new ConflictException("E-mail já cadastrado.");
 
     const inst = await this.prisma.instituicao.create({ data: { nome: dto.instituicaoNome } });
-    const admin = await this.prisma.user.create({
+    const admin = await this.prisma.usuario.create({
       data: {
         instituicaoId: inst.id,
         nome: dto.adminNome,
