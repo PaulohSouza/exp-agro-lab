@@ -56,7 +56,7 @@ def run() -> int:
 
         # 5) criar modelo (escopo instituição)
         page.locator('[data-testid="modelo-nome"]').fill(NOME)
-        page.locator('[data-testid="modelo-escopo"]').select_option("instituicao")
+        page.locator('[data-testid="modelo-escopo"]').select_option("INSTITUICAO")
         page.locator('[data-testid="modelo-salvar"]').click()
 
         # 5) aparece na tabela

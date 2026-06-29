@@ -21,7 +21,7 @@ export class PapelGuard implements CanActivate {
 
     const user = context.switchToHttp().getRequest().user as UsuarioAtual | undefined;
     if (!user) throw new ForbiddenException("Não autenticado.");
-    if (user.papel === "admin_sistema" || papeis.includes(user.papel)) return true;
+    if (user.papel === "ADMIN_SISTEMA" || papeis.includes(user.papel)) return true;
     throw new ForbiddenException("Seu papel não tem permissão para esta ação.");
   }
 }

@@ -14,7 +14,7 @@ export function CompartilharTab({ exp }: { exp: Experimento }) {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [selResp, setSelResp] = useState("");
   const [email, setEmail] = useState("");
-  const [nivel, setNivel] = useState<"input" | "edit">("input");
+  const [nivel, setNivel] = useState<"INPUT" | "EDIT">("INPUT");
   const [msg, setMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -92,11 +92,11 @@ export function CompartilharTab({ exp }: { exp: Experimento }) {
         />
         <select
           value={nivel}
-          onChange={(e) => setNivel(e.target.value as "input" | "edit")}
+          onChange={(e) => setNivel(e.target.value as "INPUT" | "EDIT")}
           style={inp}
         >
-          <option value="input">input (lançar dados)</option>
-          <option value="edit">edit (editar)</option>
+          <option value="INPUT">input (lançar dados)</option>
+          <option value="EDIT">edit (editar)</option>
         </select>
         <button type="submit" style={btn}>
           Compartilhar
@@ -124,7 +124,7 @@ export function CompartilharTab({ exp }: { exp: Experimento }) {
                 <td style={td}>
                   <span
                     style={{
-                      background: s.nivel === "edit" ? "#A8E0B0" : "#9BD2F5",
+                      background: s.nivel === "EDIT" ? "#A8E0B0" : "#9BD2F5",
                       padding: "2px 8px",
                       borderRadius: 6,
                       fontSize: 12,

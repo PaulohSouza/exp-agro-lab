@@ -5,7 +5,7 @@
  * @see SDD/04-design-detalhado/08-catalogo-avaliacoes.md
  */
 
-export type EscopoModelo = "sistema" | "instituicao" | "departamento";
+export type EscopoModelo = "SISTEMA" | "INSTITUICAO" | "DEPARTAMENTO";
 
 /** Dado mínimo de um modelo para decidir visibilidade/gestão. */
 export interface ModeloEscopoRef {
@@ -26,19 +26,19 @@ export interface ContextoEscopo {
 
 /**
  * Um modelo é visível quando:
- * - escopo `sistema`: sempre (padrão geral);
- * - escopo `instituicao`: mesma instituição do usuário;
- * - escopo `departamento`: mesmo departamento do usuário.
+ * - escopo `SISTEMA`: sempre (padrão geral);
+ * - escopo `INSTITUICAO`: mesma instituição do usuário;
+ * - escopo `DEPARTAMENTO`: mesmo DEPARTAMENTO do usuário.
  * Super-admin vê tudo.
  */
 export function modeloVisivel(modelo: ModeloEscopoRef, ctx: ContextoEscopo): boolean {
   if (ctx.isSuperAdmin) return true;
   switch (modelo.escopo) {
-    case "sistema":
+    case "SISTEMA":
       return true;
-    case "instituicao":
+    case "INSTITUICAO":
       return !!ctx.instituicaoId && modelo.instituicaoId === ctx.instituicaoId;
-    case "departamento":
+    case "DEPARTAMENTO":
       return !!ctx.departamentoId && modelo.departamentoId === ctx.departamentoId;
   }
 }
@@ -49,27 +49,27 @@ export function modelosVisiveis<T extends ModeloEscopoRef>(modelos: T[], ctx: Co
 }
 
 export type PapelGestao =
-  | "admin_sistema"
-  | "gestao_instituicao"
-  | "gestao_departamento"
-  | "coordenador_area"
-  | "pesquisador"
-  | "analista"
-  | "assistente";
+  | "ADMIN_SISTEMA"
+  | "GESTAO_INSTITUICAO"
+  | "GESTAO_DEPARTAMENTO"
+  | "COORDENADOR_AREA"
+  | "PESQUISADOR"
+  | "ANALISTA"
+  | "ASSISTENTE";
 
 /**
  * Capacidade de **gerir** (criar/editar/remover) modelos de um escopo, por papel.
- * A posse (mesma instituição/departamento) é validada na API; aqui é só o papel.
- * - `admin_sistema`: qualquer escopo (super-admin).
- * - `gestao_instituicao`: escopo `instituicao` e `departamento`.
- * - `gestao_departamento`/`coordenador_area`: escopo `departamento`.
+ * A posse (mesma instituição/DEPARTAMENTO) é validada na API; aqui é só o papel.
+ * - `ADMIN_SISTEMA`: qualquer escopo (super-admin).
+ * - `GESTAO_INSTITUICAO`: escopo `INSTITUICAO` e `DEPARTAMENTO`.
+ * - `GESTAO_DEPARTAMENTO`/`COORDENADOR_AREA`: escopo `DEPARTAMENTO`.
  * - demais: somente leitura.
  */
 export function podeGerenciarEscopo(papel: PapelGestao, escopo: EscopoModelo): boolean {
-  if (papel === "admin_sistema") return true;
-  if (papel === "gestao_instituicao") return escopo === "instituicao" || escopo === "departamento";
-  if (papel === "gestao_departamento" || papel === "coordenador_area")
-    return escopo === "departamento";
+  if (papel === "ADMIN_SISTEMA") return true;
+  if (papel === "GESTAO_INSTITUICAO") return escopo === "INSTITUICAO" || escopo === "DEPARTAMENTO";
+  if (papel === "GESTAO_DEPARTAMENTO" || papel === "COORDENADOR_AREA")
+    return escopo === "DEPARTAMENTO";
   return false;
 }
 

@@ -10,7 +10,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 /** Papéis que conferem administração da instituição (RN-RBAC). */
-const PAPEIS_ADMIN: Papel[] = ["admin_sistema", "gestao_instituicao"];
+const PAPEIS_ADMIN: Papel[] = ["ADMIN_SISTEMA", "GESTAO_INSTITUICAO"];
 
 @Injectable()
 export class UsuariosService {
@@ -49,7 +49,7 @@ export class UsuariosService {
     const existe = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existe) throw new ConflictException("E-mail já cadastrado.");
     // papel é a fonte da verdade; isAdminInstituicao é mantido em sincronia (retrocompat).
-    const papel: Papel = dto.papel ?? (dto.isAdminInstituicao ? "gestao_instituicao" : "analista");
+    const papel: Papel = dto.papel ?? (dto.isAdminInstituicao ? "GESTAO_INSTITUICAO" : "ANALISTA");
     const novo = await this.prisma.user.create({
       data: {
         instituicaoId: user.instituicaoId,
@@ -91,7 +91,7 @@ export class UsuariosService {
       select: { instituicaoId: true },
     });
     if (!alvo) throw new NotFoundException("Usuário não encontrado.");
-    if (alvo.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+    if (alvo.instituicaoId !== user.instituicaoId && user.papel !== "ADMIN_SISTEMA") {
       throw new ForbiddenException("Usuário de outra instituição.");
     }
     return this.prisma.user.update({

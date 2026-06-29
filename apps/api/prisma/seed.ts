@@ -42,7 +42,7 @@ async function main() {
 
   const inst = await prisma.instituicao.create({ data: { nome: "Instituição Demo" } });
   const unidade = await prisma.unidade.create({
-    data: { instituicaoId: inst.id, nome: "CAD Primavera", tipo: "unidade" },
+    data: { instituicaoId: inst.id, nome: "CAD Primavera", tipo: "UNIDADE" },
   });
   const admin = await prisma.user.create({
     data: {
@@ -51,7 +51,7 @@ async function main() {
       nome: "Admin Demo",
       email: "admin@demo.com",
       senhaHash: hash("admin123"),
-      papel: "gestao_instituicao",
+      papel: "GESTAO_INSTITUICAO",
       isAdminInstituicao: true,
     },
   });
@@ -63,7 +63,7 @@ async function main() {
       nome: "Analista Demo",
       email: "analista@demo.com",
       senhaHash: hash("analista123"),
-      papel: "analista",
+      papel: "ANALISTA",
       isAdminInstituicao: false,
     },
   });
@@ -75,7 +75,7 @@ async function main() {
       nome: "Root Sistema",
       email: "root@sistema.com",
       senhaHash: hash("root123"),
-      papel: "admin_sistema",
+      papel: "ADMIN_SISTEMA",
       isAdminInstituicao: true,
     },
   });
@@ -99,8 +99,8 @@ async function main() {
       titulo: "Tidil Desfolhante",
       objetivo:
         "Avaliar a eficácia de Thiadizuron 480SC isolado e em mistura com diuron na desfolha do algodão",
-      ensaio: "interno",
-      status: "Inserindo",
+      ensaio: "INTERNO",
+      status: "INSERINDO",
       instituicaoId: inst.id,
       unidadeId: unidade.id,
       ownerId: admin.id,
@@ -123,7 +123,7 @@ async function main() {
 
   // Fator 1 com 5 níveis → 5 tratamentos
   const fator = await prisma.fator.create({
-    data: { experimentoId: exp.id, ordem: 1, nome: "Produto", tipo: "qualitativo" },
+    data: { experimentoId: exp.id, ordem: 1, nome: "Produto", tipo: "QUALITATIVO" },
   });
   const niveis = ["Testemunha", "Punto", "Agefix", "TIDIL/WakeUp", "Mistura"];
   for (const v of niveis) {
@@ -194,7 +194,7 @@ async function main() {
       unidadeColeta: "kg/parcela",
       unidadeSaida: "kg/ha",
       formula: "(valor / areaUtil) * 10000",
-      tipo: "condicional",
+      tipo: "CONDICIONAL",
       timingId: timing1.id,
       ordem: 1,
     },
@@ -216,14 +216,14 @@ async function main() {
   const modeloColheita = await prisma.modeloAtividade.create({
     data: {
       nome: "Colheita",
-      escopo: "sistema",
-      tipo: "apontamento",
+      escopo: "SISTEMA",
+      tipo: "APONTAMENTO",
       isFonteAreaColheita: true,
       descricao: "Registra nº de linhas e comprimento colhidos (define a área útil).",
       campos: {
         create: [
-          { rotulo: "linhas", tipo: "numero", isObrigatorio: true, ordem: 0 },
-          { rotulo: "comprimento", tipo: "numero", unidade: "m", isObrigatorio: true, ordem: 1 },
+          { rotulo: "linhas", tipo: "NUMERO", isObrigatorio: true, ordem: 0 },
+          { rotulo: "comprimento", tipo: "NUMERO", unidade: "m", isObrigatorio: true, ordem: 1 },
         ],
       },
     },
@@ -233,8 +233,8 @@ async function main() {
       experimentoId: exp.id,
       modeloId: modeloColheita.id,
       nome: "Colheita",
-      marco: "colheita",
-      tipo: "apontamento",
+      marco: "COLHEITA",
+      tipo: "APONTAMENTO",
       ordem: 1,
       valores: {
         create: [
@@ -249,7 +249,7 @@ async function main() {
   const mUmidade = await prisma.modeloAvaliacao.create({
     data: {
       nome: "Umidade",
-      escopo: "sistema",
+      escopo: "SISTEMA",
       unidadeColeta: "%",
       unidadeSaida: "%",
       numeroPontos: 1,
@@ -259,7 +259,7 @@ async function main() {
   const mProd = await prisma.modeloAvaliacao.create({
     data: {
       nome: "Produtividade",
-      escopo: "sistema",
+      escopo: "SISTEMA",
       unidadeColeta: "kg",
       unidadeSaida: "sacas/ha",
       calculoRelatorio: "(valor / areaUtil) * 10000",
@@ -273,7 +273,7 @@ async function main() {
   await prisma.grupoColeta.create({
     data: {
       nome: "Colheita (Umidade + Produtividade)",
-      escopo: "sistema",
+      escopo: "SISTEMA",
       descricao: "Avaliações coletadas juntas no momento da colheita.",
       itens: {
         create: [
@@ -291,7 +291,7 @@ async function main() {
     const wiggle = ((p.numero % 5) - 2) * 0.06;
     const valor = Math.round((base + efeitoBloco + wiggle) * 100) / 100;
     await prisma.avaliacaoDado.create({
-      data: { avaliacaoId: aval.id, parcelaId: p.id, valorColetado: valor, origem: "web" },
+      data: { avaliacaoId: aval.id, parcelaId: p.id, valorColetado: valor, origem: "WEB" },
     });
   }
   const exemplo = calcularProdutividadeKgHa({ valorKgParcela: baseKg[3], areaUtilM2 });
@@ -303,7 +303,7 @@ async function main() {
   await prisma.experimento.create({
     data: {
       titulo: "SIM 2-Fatores — Cultivar x Dose (desfolha)",
-      ensaio: "interno",
+      ensaio: "INTERNO",
       espacamentoLinhasM: 0.45,
       numRepeticoes: 4,
       instituicaoId: inst.id,

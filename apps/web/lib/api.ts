@@ -10,7 +10,7 @@ export interface Categoria extends Ref {
 }
 export interface Compartilhamento {
   id: string;
-  nivel: "input" | "edit";
+  nivel: "INPUT" | "EDIT";
   isAceito: boolean;
   convidadoEmail: string | null;
   user?: { id: string; nome: string; email: string } | null;
@@ -81,7 +81,7 @@ export interface Avaliacao {
   timing?: Timing | null;
   _count?: { dados: number };
 }
-export type EscopoModelo = "sistema" | "instituicao" | "departamento";
+export type EscopoModelo = "SISTEMA" | "INSTITUICAO" | "DEPARTAMENTO";
 export interface ModeloAvaliacao {
   id: string;
   nome: string;
@@ -119,8 +119,8 @@ export interface ModeloAvaliacaoInput {
 }
 
 // ---- Atividades (Macro C) ----
-export type TipoAtividade = "acao" | "apontamento";
-export type TipoCampo = "numero" | "texto" | "data" | "booleano";
+export type TipoAtividade = "ACAO" | "APONTAMENTO";
+export type TipoCampo = "NUMERO" | "TEXTO" | "DATA" | "BOOLEANO";
 export interface ModeloAtividadeCampo {
   id?: string;
   rotulo: string;
@@ -303,7 +303,7 @@ export interface Experimento {
   metodologia?: string | null;
   justificativa?: string | null;
   observacoes?: string | null;
-  tipoPeriodo?: "safra" | "ano_semestre" | null;
+  tipoPeriodo?: "SAFRA" | "ANO_SEMESTRE" | null;
   anoSemestre?: string | null;
   objetoEstudoId?: string | null;
   localId?: string | null;
@@ -385,22 +385,22 @@ export interface Unidade {
 }
 
 export type Papel =
-  | "admin_sistema"
-  | "gestao_instituicao"
-  | "gestao_departamento"
-  | "coordenador_area"
-  | "pesquisador"
-  | "analista"
-  | "assistente";
+  | "ADMIN_SISTEMA"
+  | "GESTAO_INSTITUICAO"
+  | "GESTAO_DEPARTAMENTO"
+  | "COORDENADOR_AREA"
+  | "PESQUISADOR"
+  | "ANALISTA"
+  | "ASSISTENTE";
 
 /** Papéis selecionáveis na gestão da instituição (admin_sistema é global, fora daqui). */
 export const PAPEIS: { value: Papel; label: string }[] = [
-  { value: "gestao_instituicao", label: "Gestão da instituição" },
-  { value: "gestao_departamento", label: "Gestão de departamento" },
-  { value: "coordenador_area", label: "Coordenador de área/laboratório" },
-  { value: "pesquisador", label: "Pesquisador" },
-  { value: "analista", label: "Analista" },
-  { value: "assistente", label: "Assistente" },
+  { value: "GESTAO_INSTITUICAO", label: "Gestão da instituição" },
+  { value: "GESTAO_DEPARTAMENTO", label: "Gestão de departamento" },
+  { value: "COORDENADOR_AREA", label: "Coordenador de área/laboratório" },
+  { value: "PESQUISADOR", label: "Pesquisador" },
+  { value: "ANALISTA", label: "Analista" },
+  { value: "ASSISTENTE", label: "Assistente" },
 ];
 
 export interface Contagem {
@@ -653,7 +653,7 @@ export const api = {
   // compartilhamento
   listarCompartilhamentos: (expId: string) =>
     req<Compartilhamento[]>(`/experimentos/${expId}/compartilhamentos`),
-  compartilhar: (expId: string, body: { email: string; nivel: "input" | "edit" }) =>
+  compartilhar: (expId: string, body: { email: string; nivel: "INPUT" | "EDIT" }) =>
     req<Compartilhamento>(`/experimentos/${expId}/compartilhar`, {
       method: "POST",
       body: JSON.stringify(body),
@@ -683,7 +683,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ clienteEmail }),
     }),
-  aprovarInternoOS: (osId: string, decisao: "aprovado" | "recusado", motivo?: string) =>
+  aprovarInternoOS: (osId: string, decisao: "APROVADO" | "RECUSADO", motivo?: string) =>
     req<OrdemServico>(`/ordens-servico/${osId}/aprovar-interno`, {
       method: "POST",
       body: JSON.stringify({ decisao, motivo }),
@@ -725,7 +725,7 @@ export async function baixarRelatorioPptx(expId: string, nomeArquivo: string) {
 /** Decisão pública do cliente (sem auth) — usada na página /aprovacao/[token]. */
 export async function decisaoCliente(
   token: string,
-  decisao: "aprovado" | "recusado",
+  decisao: "APROVADO" | "RECUSADO",
   motivo?: string,
 ) {
   const r = await fetch(`${API_BASE}/aprovacao-cliente/${token}`, {

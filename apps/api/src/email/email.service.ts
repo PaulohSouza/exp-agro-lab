@@ -15,7 +15,7 @@ export interface EmailInput {
 
 export interface EmailResultado {
   ok: boolean;
-  status: "simulado" | "enviado" | "erro";
+  status: "SIMULADO" | "ENVIADO" | "ERRO";
   htmlPath?: string;
   erro?: string;
 }
@@ -41,7 +41,7 @@ export class EmailService {
 
   async enviar(input: EmailInput): Promise<EmailResultado> {
     if (!this.habilitado) {
-      return { ok: true, status: "simulado", erro: "EMAIL_ENABLED=false" };
+      return { ok: true, status: "SIMULADO", erro: "EMAIL_ENABLED=false" };
     }
 
     if (this.simular) {
@@ -53,8 +53,8 @@ export class EmailService {
       this.logger.log(
         `[SIMULATE] e-mail "${input.assunto}" → ${input.para} renderizado em ${file}`,
       );
-      await this.log({ ...input, status: "simulado", htmlPath: file });
-      return { ok: true, status: "simulado", htmlPath: file };
+      await this.log({ ...input, status: "SIMULADO", htmlPath: file });
+      return { ok: true, status: "SIMULADO", htmlPath: file };
     }
 
     try {
@@ -70,13 +70,13 @@ export class EmailService {
         subject: input.assunto,
         html: this.envelopeHtml(input),
       });
-      await this.log({ ...input, status: "enviado" });
-      return { ok: true, status: "enviado" };
+      await this.log({ ...input, status: "ENVIADO" });
+      return { ok: true, status: "ENVIADO" };
     } catch (e) {
       const erro = e instanceof Error ? e.message : String(e);
       this.logger.error(`Falha ao enviar e-mail: ${erro}`);
-      await this.log({ ...input, status: "erro", erro });
-      return { ok: false, status: "erro", erro };
+      await this.log({ ...input, status: "ERRO", erro });
+      return { ok: false, status: "ERRO", erro };
     }
   }
 
@@ -121,7 +121,7 @@ export class EmailService {
   }
 
   private async log(
-    d: EmailInput & { status: "simulado" | "enviado" | "erro"; htmlPath?: string; erro?: string },
+    d: EmailInput & { status: "SIMULADO" | "ENVIADO" | "ERRO"; htmlPath?: string; erro?: string },
   ) {
     try {
       await this.prisma.emailLog.create({

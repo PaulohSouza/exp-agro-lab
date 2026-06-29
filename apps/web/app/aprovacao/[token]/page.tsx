@@ -8,7 +8,7 @@ export default function AprovacaoPage({ params }: { params: { token: string } })
   const [motivo, setMotivo] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function decidir(decisao: "aprovado" | "recusado") {
+  async function decidir(decisao: "APROVADO" | "RECUSADO") {
     setBusy(true);
     setErro(null);
     try {
@@ -43,7 +43,7 @@ export default function AprovacaoPage({ params }: { params: { token: string } })
             </p>
             <p
               style={{
-                color: resultado.decisao === "aprovado" ? "#6FA830" : "#F34343",
+                color: resultado.decisao === "APROVADO" ? "#6FA830" : "#F34343",
                 fontWeight: 600,
               }}
             >
@@ -73,7 +73,7 @@ export default function AprovacaoPage({ params }: { params: { token: string } })
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 disabled={busy}
-                onClick={() => decidir("aprovado")}
+                onClick={() => decidir("APROVADO")}
                 style={{
                   flex: 1,
                   background: "#6FA830",
@@ -88,7 +88,7 @@ export default function AprovacaoPage({ params }: { params: { token: string } })
               </button>
               <button
                 disabled={busy}
-                onClick={() => decidir("recusado")}
+                onClick={() => decidir("RECUSADO")}
                 style={{
                   flex: 1,
                   background: "#F34343",

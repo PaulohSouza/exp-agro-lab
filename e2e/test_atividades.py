@@ -45,7 +45,7 @@ def run() -> int:
         page.goto(f"{BASE}/catalogo")
         page.get_by_role("button", name="Atividades").first.click()
         page.locator('[data-testid="atv-nome"]').fill(NOME)
-        page.locator('[data-testid="atv-tipo"]').select_option("apontamento")
+        page.locator('[data-testid="atv-tipo"]').select_option("APONTAMENTO")
         page.get_by_role("button", name="+ campo").click()
         page.locator('input[placeholder="rótulo"]').fill("vento")
         page.get_by_text("obrigatório").locator("input[type=checkbox]").check()

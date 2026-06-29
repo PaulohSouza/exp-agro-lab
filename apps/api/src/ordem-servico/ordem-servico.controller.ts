@@ -31,7 +31,7 @@ export class OrdemServicoController {
   aprovarInterno(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: { decisao: "aprovado" | "recusado"; motivo?: string },
+    @Body() dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string },
   ) {
     return this.service.aprovarInterno(id, user, dto);
   }
@@ -40,7 +40,7 @@ export class OrdemServicoController {
   @Post("aprovacao-cliente/:token")
   decisaoCliente(
     @Param("token") token: string,
-    @Body() dto: { decisao: "aprovado" | "recusado"; motivo?: string },
+    @Body() dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string },
     @Req() req: { ip?: string },
   ) {
     return this.service.decisaoCliente(token, { ...dto, ip: req.ip });

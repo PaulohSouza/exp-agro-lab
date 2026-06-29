@@ -15,7 +15,7 @@ export class UsuariosController {
   }
 
   @Post()
-  @RequirePapel("gestao_instituicao")
+  @RequirePapel("GESTAO_INSTITUICAO")
   criar(
     @CurrentUser() user: UsuarioAtual,
     @Body()
@@ -32,7 +32,7 @@ export class UsuariosController {
   }
 
   @Put(":id")
-  @RequirePapel("gestao_instituicao")
+  @RequirePapel("GESTAO_INSTITUICAO")
   atualizar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,

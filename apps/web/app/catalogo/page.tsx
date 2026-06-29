@@ -18,9 +18,9 @@ import { Protected } from "../../components/Protected";
 import { getUser } from "../../lib/auth";
 
 const ESCOPOS: { value: EscopoModelo; label: string; cor: string }[] = [
-  { value: "sistema", label: "Geral (sistema)", cor: "#1F2940" },
-  { value: "instituicao", label: "Instituição", cor: "#4EC2F0" },
-  { value: "departamento", label: "Departamento", cor: "#C9B3F0" },
+  { value: "SISTEMA", label: "Geral (sistema)", cor: "#1F2940" },
+  { value: "INSTITUICAO", label: "Instituição", cor: "#4EC2F0" },
+  { value: "DEPARTAMENTO", label: "Departamento", cor: "#C9B3F0" },
 ];
 
 function siglaEscopo(escopo: EscopoModelo): string {
@@ -109,10 +109,10 @@ function MultiPicker({
 
 /** Espelho da regra do domínio `podeGerenciarEscopo` (UI só; API valida de fato). */
 function podeGerenciar(papel: Papel | undefined, escopo: EscopoModelo): boolean {
-  if (papel === "admin_sistema") return true;
-  if (papel === "gestao_instituicao") return escopo === "instituicao" || escopo === "departamento";
-  if (papel === "gestao_departamento" || papel === "coordenador_area")
-    return escopo === "departamento";
+  if (papel === "ADMIN_SISTEMA") return true;
+  if (papel === "GESTAO_INSTITUICAO") return escopo === "INSTITUICAO" || escopo === "DEPARTAMENTO";
+  if (papel === "GESTAO_DEPARTAMENTO" || papel === "COORDENADOR_AREA")
+    return escopo === "DEPARTAMENTO";
   return false;
 }
 
@@ -124,7 +124,7 @@ const VAZIO: ModeloAvaliacaoInput = {
   unidadeColeta: "",
   unidadeSaida: "",
   calculoRelatorio: "",
-  escopo: "instituicao",
+  escopo: "INSTITUICAO",
   departamentoId: "",
   prerequisitoIds: [],
   prerequisitoAtividadeIds: [],
@@ -206,13 +206,13 @@ function Catalogo() {
       .listarModelosAtividade()
       .then(setModelosAtividade)
       .catch(() => {});
-    if (podeGerenciar(papel, "departamento"))
+    if (podeGerenciar(papel, "DEPARTAMENTO"))
       api
         .departamentos()
         .then(setDepartamentos)
         .catch(() => {});
     // ajusta o escopo default do form para um que o usuário possa gerir
-    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }));
+    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "INSTITUICAO" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -231,12 +231,12 @@ function Catalogo() {
         ...form,
         numeroPontos: Number(form.numeroPontos) || 1,
         departamentoId:
-          form.escopo === "departamento" ? form.departamentoId || undefined : undefined,
+          form.escopo === "DEPARTAMENTO" ? form.departamentoId || undefined : undefined,
       };
       if (editId) await api.atualizarModelo(editId, body);
       else await api.criarModelo(body);
       setMsg(editId ? "Modelo atualizado." : "Modelo criado.");
-      setForm({ ...VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" });
+      setForm({ ...VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "INSTITUICAO" });
       setEditId(null);
       recarregar();
     } catch (err) {
@@ -276,7 +276,7 @@ function Catalogo() {
     <div>
       {/* filtros por escopo */}
       <div style={{ display: "flex", gap: 8, margin: "20px 0 12px", flexWrap: "wrap" }}>
-        {(["todos", "sistema", "instituicao", "departamento"] as const).map((f) => (
+        {(["todos", "SISTEMA", "INSTITUICAO", "DEPARTAMENTO"] as const).map((f) => (
           <button key={f} onClick={() => setFiltro(f)} style={chip(filtro === f)}>
             {f === "todos" ? "Todos" : ESCOPOS.find((e) => e.value === f)!.label}
           </button>
@@ -347,7 +347,7 @@ function Catalogo() {
                 </option>
               ))}
             </select>
-            {form.escopo === "departamento" && (
+            {form.escopo === "DEPARTAMENTO" && (
               <select
                 value={form.departamentoId}
                 onChange={(e) => setForm({ ...form, departamentoId: e.target.value })}
@@ -398,7 +398,7 @@ function Catalogo() {
               label="Pré-requisitos — atividades (ex.: Colheita):"
               opcoes={modelosAtividade.map((m) => ({
                 id: m.id,
-                rotulo: `[${siglaEscopo(m.escopo)}] ${m.nome}${m.tipo === "apontamento" ? " (apont.)" : ""}`,
+                rotulo: `[${siglaEscopo(m.escopo)}] ${m.nome}${m.tipo === "APONTAMENTO" ? " (apont.)" : ""}`,
               }))}
               selecionados={form.prerequisitoAtividadeIds ?? []}
               onChange={(ids) => setForm({ ...form, prerequisitoAtividadeIds: ids })}
@@ -418,7 +418,7 @@ function Catalogo() {
                 type="button"
                 onClick={() => {
                   setEditId(null);
-                  setForm({ ...VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" });
+                  setForm({ ...VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "INSTITUICAO" });
                 }}
                 style={btn("#a9abbd")}
               >
@@ -465,7 +465,7 @@ function Catalogo() {
                     <span
                       style={{
                         background: esc.cor,
-                        color: esc.value === "departamento" ? "#1F2940" : "#fff",
+                        color: esc.value === "DEPARTAMENTO" ? "#1F2940" : "#fff",
                         borderRadius: 6,
                         padding: "2px 8px",
                         fontSize: 11,
@@ -534,9 +534,9 @@ interface CampoForm {
 const ATV_VAZIO: ModeloAtividadeInput & { camposForm: CampoForm[] } = {
   nome: "",
   descricao: "",
-  tipo: "acao",
+  tipo: "ACAO",
   metodologiaRelatorio: "",
-  escopo: "instituicao",
+  escopo: "INSTITUICAO",
   departamentoId: "",
   camposForm: [],
 };
@@ -558,12 +558,12 @@ function CatalogoAtividades() {
   }
   useEffect(() => {
     recarregar().catch((e) => setErro(e instanceof Error ? e.message : "Falha ao carregar"));
-    if (podeGerenciar(papel, "departamento"))
+    if (podeGerenciar(papel, "DEPARTAMENTO"))
       api
         .departamentos()
         .then(setDepartamentos)
         .catch(() => {});
-    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }));
+    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "INSTITUICAO" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -573,7 +573,7 @@ function CatalogoAtividades() {
   );
 
   function reset() {
-    setForm({ ...ATV_VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" });
+    setForm({ ...ATV_VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "INSTITUICAO" });
     setEditId(null);
   }
 
@@ -590,9 +590,9 @@ function CatalogoAtividades() {
         metodologiaRelatorio: form.metodologiaRelatorio,
         escopo: form.escopo,
         departamentoId:
-          form.escopo === "departamento" ? form.departamentoId || undefined : undefined,
+          form.escopo === "DEPARTAMENTO" ? form.departamentoId || undefined : undefined,
         campos:
-          form.tipo === "apontamento"
+          form.tipo === "APONTAMENTO"
             ? form.camposForm
                 .filter((c) => c.rotulo.trim())
                 .map((c, i) => ({ ...c, unidade: c.unidade || undefined, ordem: i }))
@@ -647,7 +647,7 @@ function CatalogoAtividades() {
   return (
     <div>
       <div style={{ display: "flex", gap: 8, margin: "20px 0 12px", flexWrap: "wrap" }}>
-        {(["todos", "sistema", "instituicao", "departamento"] as const).map((f) => (
+        {(["todos", "SISTEMA", "INSTITUICAO", "DEPARTAMENTO"] as const).map((f) => (
           <button key={f} onClick={() => setFiltro(f)} style={chip(filtro === f)}>
             {f === "todos" ? "Todos" : ESCOPOS.find((e) => e.value === f)!.label}
           </button>
@@ -688,8 +688,8 @@ function CatalogoAtividades() {
               }
               style={inp}
             >
-              <option value="acao">ação (sem coleta)</option>
-              <option value="apontamento">com apontamento</option>
+              <option value="ACAO">ação (sem coleta)</option>
+              <option value="APONTAMENTO">com apontamento</option>
             </select>
             <select
               data-testid="atv-escopo"
@@ -704,7 +704,7 @@ function CatalogoAtividades() {
                 </option>
               ))}
             </select>
-            {form.escopo === "departamento" && (
+            {form.escopo === "DEPARTAMENTO" && (
               <select
                 value={form.departamentoId}
                 onChange={(e) => setForm({ ...form, departamentoId: e.target.value })}
@@ -732,7 +732,7 @@ function CatalogoAtividades() {
             style={{ ...inp, width: "100%", marginTop: 10, minHeight: 40 }}
           />
 
-          {form.tipo === "apontamento" && (
+          {form.tipo === "APONTAMENTO" && (
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 6 }}>
                 Campos do apontamento (parametrizados):
@@ -759,13 +759,13 @@ function CatalogoAtividades() {
                     onChange={(e) => setCampo(i, { tipo: e.target.value as TipoCampo })}
                     style={inp}
                   >
-                    <option value="numero">número</option>
-                    <option value="texto">texto</option>
-                    <option value="data">data</option>
-                    <option value="booleano">sim/não</option>
+                    <option value="NUMERO">número</option>
+                    <option value="TEXTO">texto</option>
+                    <option value="DATA">data</option>
+                    <option value="BOOLEANO">sim/não</option>
                   </select>
                   <input
-                    placeholder="unidade"
+                    placeholder="UNIDADE"
                     value={c.unidade}
                     onChange={(e) => setCampo(i, { unidade: e.target.value })}
                     style={{ ...inp, width: 90 }}
@@ -796,7 +796,7 @@ function CatalogoAtividades() {
                     ...form,
                     camposForm: [
                       ...form.camposForm,
-                      { rotulo: "", tipo: "numero", unidade: "", isObrigatorio: false },
+                      { rotulo: "", tipo: "NUMERO", unidade: "", isObrigatorio: false },
                     ],
                   })
                 }
@@ -847,7 +847,7 @@ function CatalogoAtividades() {
                     <span
                       style={{
                         background: esc.cor,
-                        color: esc.value === "departamento" ? "#1F2940" : "#fff",
+                        color: esc.value === "DEPARTAMENTO" ? "#1F2940" : "#fff",
                         borderRadius: 6,
                         padding: "2px 8px",
                         fontSize: 11,
@@ -856,9 +856,9 @@ function CatalogoAtividades() {
                       {esc.label}
                     </span>
                   </td>
-                  <td style={td}>{m.tipo === "apontamento" ? "apontamento" : "ação"}</td>
+                  <td style={td}>{m.tipo === "APONTAMENTO" ? "APONTAMENTO" : "ação"}</td>
                   <td style={td}>
-                    {m.tipo === "apontamento"
+                    {m.tipo === "APONTAMENTO"
                       ? (m.campos ?? []).map((c) => c.rotulo).join(", ") || "—"
                       : "—"}
                   </td>
@@ -905,7 +905,7 @@ function CatalogoGrupos() {
   const [form, setForm] = useState<GrupoColetaInput>({
     nome: "",
     descricao: "",
-    escopo: "instituicao",
+    escopo: "INSTITUICAO",
     departamentoId: "",
     modeloIds: [],
   });
@@ -922,12 +922,12 @@ function CatalogoGrupos() {
       .listarModelos()
       .then(setModelos)
       .catch(() => {});
-    if (podeGerenciar(papel, "departamento"))
+    if (podeGerenciar(papel, "DEPARTAMENTO"))
       api
         .departamentos()
         .then(setDepartamentos)
         .catch(() => {});
-    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }));
+    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "INSTITUICAO" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -935,7 +935,7 @@ function CatalogoGrupos() {
     setForm({
       nome: "",
       descricao: "",
-      escopo: escoposGerenciaveis[0]?.value ?? "instituicao",
+      escopo: escoposGerenciaveis[0]?.value ?? "INSTITUICAO",
       departamentoId: "",
       modeloIds: [],
     });
@@ -951,7 +951,7 @@ function CatalogoGrupos() {
       const body: GrupoColetaInput = {
         ...form,
         departamentoId:
-          form.escopo === "departamento" ? form.departamentoId || undefined : undefined,
+          form.escopo === "DEPARTAMENTO" ? form.departamentoId || undefined : undefined,
       };
       if (editId) await api.atualizarGrupo(editId, body);
       else await api.criarGrupo(body);
@@ -1034,7 +1034,7 @@ function CatalogoGrupos() {
                 </option>
               ))}
             </select>
-            {form.escopo === "departamento" && (
+            {form.escopo === "DEPARTAMENTO" && (
               <select
                 value={form.departamentoId}
                 onChange={(e) => setForm({ ...form, departamentoId: e.target.value })}
@@ -1101,7 +1101,7 @@ function CatalogoGrupos() {
                     <span
                       style={{
                         background: esc.cor,
-                        color: g.escopo === "departamento" ? "#1F2940" : "#fff",
+                        color: g.escopo === "DEPARTAMENTO" ? "#1F2940" : "#fff",
                         borderRadius: 6,
                         padding: "2px 8px",
                         fontSize: 11,

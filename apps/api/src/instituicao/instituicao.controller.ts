@@ -3,7 +3,7 @@ import { InstituicaoService } from "./instituicao.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 
-@Controller("instituicao")
+@Controller("INSTITUICAO")
 export class InstituicaoController {
   constructor(private readonly service: InstituicaoService) {}
 
@@ -15,7 +15,7 @@ export class InstituicaoController {
   @Put()
   atualizar(
     @CurrentUser() user: UsuarioAtual,
-    @Body() dto: { politicaAprovacao?: "todos" | "n_de_m"; nAprovadores?: number },
+    @Body() dto: { politicaAprovacao?: "TODOS" | "N_DE_M"; nAprovadores?: number },
   ) {
     return this.service.atualizar(user, dto);
   }

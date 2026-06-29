@@ -41,7 +41,7 @@ export class TratamentosService {
   }
 
   async atualizar(id: string, user: UsuarioAtual, dto: { nome?: string; descricao?: string }) {
-    await this.experimentos.garantirAcesso(await this.expIdDoTratamento(id), user, "edit");
+    await this.experimentos.garantirAcesso(await this.expIdDoTratamento(id), user, "EDIT");
     return this.prisma.tratamento.update({
       where: { id },
       data: { nome: dto.nome, descricao: dto.descricao },
@@ -52,7 +52,7 @@ export class TratamentosService {
     await this.experimentos.garantirAcesso(
       await this.expIdDoTratamento(tratamentoId),
       user,
-      "edit",
+      "EDIT",
     );
     const seq =
       dto.seq ?? (await this.prisma.tratamentoProduto.count({ where: { tratamentoId } })) + 1;
@@ -63,7 +63,7 @@ export class TratamentosService {
   }
 
   async atualizarProduto(id: string, user: UsuarioAtual, dto: Partial<ProdutoLinhaDto>) {
-    await this.experimentos.garantirAcesso(await this.expIdDoProduto(id), user, "edit");
+    await this.experimentos.garantirAcesso(await this.expIdDoProduto(id), user, "EDIT");
     return this.prisma.tratamentoProduto.update({
       where: { id },
       data: { ...(dto.produtoId ? { produtoId: dto.produtoId } : {}), ...this.normalizar(dto) },
@@ -72,7 +72,7 @@ export class TratamentosService {
   }
 
   async removerProduto(id: string, user: UsuarioAtual) {
-    await this.experimentos.garantirAcesso(await this.expIdDoProduto(id), user, "edit");
+    await this.experimentos.garantirAcesso(await this.expIdDoProduto(id), user, "EDIT");
     await this.prisma.tratamentoProduto.delete({ where: { id } });
     return { ok: true };
   }
@@ -86,7 +86,7 @@ export class TratamentosService {
     user: UsuarioAtual,
     dto: { nome: string; ordem?: number },
   ) {
-    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(experimentoId, user, "EDIT");
     return this.prisma.timing.create({
       data: { experimentoId, nome: dto.nome, ordem: dto.ordem ?? 0 },
     });

@@ -37,11 +37,11 @@ export class DashboardService {
   ): Prisma.ExperimentoWhereInput {
     const base: Prisma.ExperimentoWhereInput = { deletedAt: null };
     switch (user.papel) {
-      case "admin_sistema":
+      case "ADMIN_SISTEMA":
         return base;
-      case "gestao_instituicao":
+      case "GESTAO_INSTITUICAO":
         return { ...base, instituicaoId: user.instituicaoId };
-      case "gestao_departamento":
+      case "GESTAO_DEPARTAMENTO":
         // sem departamento configurado → cai para a instituição (não quebra)
         return me.departamentoId
           ? {
@@ -50,7 +50,7 @@ export class DashboardService {
               unidade: { departamentoId: me.departamentoId },
             }
           : { ...base, instituicaoId: user.instituicaoId };
-      case "coordenador_area":
+      case "COORDENADOR_AREA":
         return me.unidadeId
           ? { ...base, instituicaoId: user.instituicaoId, unidadeId: me.unidadeId }
           : { ...base, instituicaoId: user.instituicaoId };
@@ -132,7 +132,7 @@ export class DashboardService {
       escopo: user.papel,
       totais: {
         experimentos: exps.length,
-        emConducao: exps.filter((e) => e.status === "EmConducao").length,
+        emConducao: exps.filter((e) => e.status === "EM_CONDUCAO").length,
       },
       porStatus: contar(exps, (e) => e.status),
       porEnsaio: contar(exps, (e) => e.ensaio),

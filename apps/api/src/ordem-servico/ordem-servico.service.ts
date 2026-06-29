@@ -28,8 +28,8 @@ export class OrdemServicoService {
   }
 
   async criar(experimentoId: string, user: UsuarioAtual) {
-    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
-    return this.prisma.ordemServico.create({ data: { experimentoId, status: "rascunho" } });
+    await this.experimentos.garantirAcesso(experimentoId, user, "EDIT");
+    return this.prisma.ordemServico.create({ data: { experimentoId, status: "RASCUNHO" } });
   }
 
   private async carregarOS(id: string) {
@@ -48,8 +48,8 @@ export class OrdemServicoService {
   /** Submete a OS: cria a aprovação do cliente (token) e roteia para aprovação interna ou cliente. */
   async submeter(id: string, user: UsuarioAtual, dto: { clienteEmail: string }) {
     const os = await this.carregarOS(id);
-    await this.experimentos.garantirAcesso(os.experimento.id, user, "edit");
-    if (os.status !== "rascunho" && os.status !== "recusada") {
+    await this.experimentos.garantirAcesso(os.experimento.id, user, "EDIT");
+    if (os.status !== "RASCUNHO" && os.status !== "RECUSADA") {
       throw new BadRequestException("OS já submetida.");
     }
     if (!dto.clienteEmail) throw new BadRequestException("Informe o e-mail do cliente.");
@@ -60,7 +60,7 @@ export class OrdemServicoService {
           ordemServicoId: id,
           clienteEmail: dto.clienteEmail,
           token: randomUUID(),
-          decisao: "pendente",
+          decisao: "PENDENTE",
         },
       });
     } else {
@@ -68,7 +68,7 @@ export class OrdemServicoService {
         where: { ordemServicoId: id },
         data: {
           clienteEmail: dto.clienteEmail,
-          decisao: "pendente",
+          decisao: "PENDENTE",
           motivo: null,
           decididoEm: null,
         },
@@ -84,12 +84,12 @@ export class OrdemServicoService {
     if (aprovadores > 0) {
       await this.prisma.ordemServico.update({
         where: { id },
-        data: { status: "aguardando_aprovacao_interna" },
+        data: { status: "AGUARDANDO_APROVACAO_INTERNA" },
       });
     } else {
       await this.prisma.ordemServico.update({
         where: { id },
-        data: { status: "aguardando_aprovacao_cliente" },
+        data: { status: "AGUARDANDO_APROVACAO_CLIENTE" },
       });
       await this.enviarEmailCliente(id);
     }
@@ -99,10 +99,10 @@ export class OrdemServicoService {
   async aprovarInterno(
     id: string,
     user: UsuarioAtual,
-    dto: { decisao: "aprovado" | "recusado"; motivo?: string },
+    dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string },
   ) {
     const os = await this.carregarOS(id);
-    if (os.status !== "aguardando_aprovacao_interna") {
+    if (os.status !== "AGUARDANDO_APROVACAO_INTERNA") {
       throw new BadRequestException("OS não está em aprovação interna.");
     }
     const aprovador = await this.prisma.aprovadorInstituicao.findFirst({
@@ -127,8 +127,8 @@ export class OrdemServicoService {
       });
     }
 
-    if (dto.decisao === "recusado") {
-      await this.prisma.ordemServico.update({ where: { id }, data: { status: "recusada" } });
+    if (dto.decisao === "RECUSADO") {
+      await this.prisma.ordemServico.update({ where: { id }, data: { status: "RECUSADA" } });
       return this.carregarOS(id);
     }
 
@@ -142,21 +142,21 @@ export class OrdemServicoService {
     });
     const ativosIds = new Set(ativos.map((a) => a.userId));
     const aprovacoes = await this.prisma.aprovacaoOSInterna.findMany({
-      where: { ordemServicoId: id, decisao: "aprovado" },
+      where: { ordemServicoId: id, decisao: "APROVADO" },
     });
     const aprovados = new Set(
       aprovacoes.map((a) => a.aprovadorUserId).filter((u) => ativosIds.has(u)),
     );
 
     const satisfeito =
-      inst?.politicaAprovacao === "n_de_m"
+      inst?.politicaAprovacao === "N_DE_M"
         ? aprovados.size >= (inst?.nAprovadores ?? 1)
         : ativosIds.size > 0 && aprovados.size >= ativosIds.size;
 
     if (satisfeito) {
       await this.prisma.ordemServico.update({
         where: { id },
-        data: { status: "aguardando_aprovacao_cliente" },
+        data: { status: "AGUARDANDO_APROVACAO_CLIENTE" },
       });
       await this.enviarEmailCliente(id);
     }
@@ -166,14 +166,14 @@ export class OrdemServicoService {
   /** Endpoint público: cliente decide via token do e-mail. */
   async decisaoCliente(
     token: string,
-    dto: { decisao: "aprovado" | "recusado"; motivo?: string; ip?: string },
+    dto: { decisao: "APROVADO" | "RECUSADO"; motivo?: string; ip?: string },
   ) {
     const ap = await this.prisma.aprovacaoCliente.findUnique({
       where: { token },
       include: { ordemServico: { include: { experimento: { select: { titulo: true } } } } },
     });
     if (!ap) throw new NotFoundException("Convite de aprovação inválido.");
-    if (ap.ordemServico.status !== "aguardando_aprovacao_cliente") {
+    if (ap.ordemServico.status !== "AGUARDANDO_APROVACAO_CLIENTE") {
       throw new BadRequestException("Esta OS não está aguardando aprovação do cliente.");
     }
     await this.prisma.aprovacaoCliente.update({
@@ -182,7 +182,7 @@ export class OrdemServicoService {
     });
     await this.prisma.ordemServico.update({
       where: { id: ap.ordemServicoId },
-      data: { status: dto.decisao === "aprovado" ? "aprovada" : "recusada" },
+      data: { status: dto.decisao === "APROVADO" ? "APROVADA" : "RECUSADA" },
     });
     return {
       ok: true,

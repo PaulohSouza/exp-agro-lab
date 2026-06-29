@@ -10,17 +10,17 @@ import { ExperimentosService } from "../experimentos/experimentos.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 const ROTULO_MARCO: Record<MarcoTipo, string> = {
-  implantacao: "Implantação (previsão)",
-  inicio: "Início do ensaio",
-  semeadura: "Semeadura",
-  colheita: "Colheita",
-  fim: "Encerramento",
+  IMPLANTACAO: "Implantação (previsão)",
+  INICIO: "Início do ensaio",
+  SEMEADURA: "Semeadura",
+  COLHEITA: "Colheita",
+  FIM: "Encerramento",
 };
 
 interface CriarAtividadeDto {
   modeloId?: string; // do catálogo (herda nome/tipo/campos) — ou ad-hoc
   nome?: string;
-  tipo?: "acao" | "apontamento";
+  tipo?: "ACAO" | "APONTAMENTO";
   data?: string;
   responsavel?: string;
   obs?: string;
@@ -45,10 +45,10 @@ export class AtividadeExperimentoService {
   /** Cria uma atividade no experimento. Se vier `modeloId`, herda nome/tipo e
    *  pré-cria os valores (vazios) a partir dos campos do modelo. */
   async criar(experimentoId: string, user: UsuarioAtual, dto: CriarAtividadeDto) {
-    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(experimentoId, user, "EDIT");
 
     let nome = dto.nome;
-    let tipo = dto.tipo ?? "acao";
+    let tipo = dto.tipo ?? "ACAO";
     let camposSnapshot: { rotulo: string }[] = [];
 
     if (dto.modeloId) {
@@ -87,7 +87,7 @@ export class AtividadeExperimentoService {
       include: { modelo: { include: { campos: true } } },
     });
     if (!atv) throw new NotFoundException("Atividade não encontrada.");
-    await this.experimentos.garantirAcesso(atv.experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(atv.experimentoId, user, "EDIT");
 
     const campos = (atv.modelo?.campos ?? []).map((c) => ({
       rotulo: c.rotulo,
@@ -122,7 +122,7 @@ export class AtividadeExperimentoService {
 
   /** Cria os marcos do cronograma faltantes (implantação/início/fim + semeadura/colheita se cultura). */
   async gerarMarcos(experimentoId: string, user: UsuarioAtual) {
-    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(experimentoId, user, "EDIT");
     const exp = await this.prisma.experimento.findUnique({
       where: { id: experimentoId },
       select: {
@@ -145,7 +145,7 @@ export class AtividadeExperimentoService {
     const faltantes = desejados.filter((m) => !existentes.has(m));
     let ordem = await this.prisma.atividadeExperimento.count({ where: { experimentoId } });
     // Modelo de Colheita (apontamento linhas/comprimento) que fornece a área útil (RN-PROD / C5).
-    const modeloColheita = faltantes.includes("colheita")
+    const modeloColheita = faltantes.includes("COLHEITA")
       ? await this.prisma.modeloAtividade.findFirst({
           where: { isFonteAreaColheita: true, isAtivo: true },
           include: { campos: { orderBy: { ordem: "asc" } } },
@@ -153,7 +153,7 @@ export class AtividadeExperimentoService {
       : null;
     for (const m of faltantes) {
       ordem += 1;
-      if (m === "colheita" && modeloColheita) {
+      if (m === "COLHEITA" && modeloColheita) {
         await this.prisma.atividadeExperimento.create({
           data: {
             experimentoId,
@@ -169,7 +169,7 @@ export class AtividadeExperimentoService {
         });
       } else {
         await this.prisma.atividadeExperimento.create({
-          data: { experimentoId, nome: ROTULO_MARCO[m], marco: m, tipo: "acao", ordem },
+          data: { experimentoId, nome: ROTULO_MARCO[m], marco: m, tipo: "ACAO", ordem },
         });
       }
     }
@@ -193,7 +193,7 @@ export class AtividadeExperimentoService {
       select: { experimentoId: true },
     });
     if (!atv) throw new NotFoundException("Atividade não encontrada.");
-    await this.experimentos.garantirAcesso(atv.experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(atv.experimentoId, user, "EDIT");
     return this.prisma.atividadeExperimento.update({
       where: { id: atividadeId },
       data: {
@@ -218,7 +218,7 @@ export class AtividadeExperimentoService {
       select: { experimentoId: true },
     });
     if (!atv) throw new NotFoundException("Atividade não encontrada.");
-    await this.experimentos.garantirAcesso(atv.experimentoId, user, "edit");
+    await this.experimentos.garantirAcesso(atv.experimentoId, user, "EDIT");
     await this.prisma.atividadeExperimento.delete({ where: { id: atividadeId } });
     return { ok: true };
   }

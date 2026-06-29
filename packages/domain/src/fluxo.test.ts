@@ -2,19 +2,19 @@ import { describe, it, expect } from "vitest";
 import { podeTransicionar, transicoesPermitidas } from "./fluxo.js";
 
 describe("RN-FLUXO (transições de status)", () => {
-  it("comercial passa por aprovação CAD antes de conduzir", () => {
-    expect(podeTransicionar("comercial", "Inserindo", "AprovadoCAD")).toBe(true);
-    expect(podeTransicionar("comercial", "AprovadoCAD", "EmConducao")).toBe(true);
+  it("COMERCIAL passa por aprovação CAD antes de conduzir", () => {
+    expect(podeTransicionar("COMERCIAL", "INSERINDO", "APROVADO_CAD")).toBe(true);
+    expect(podeTransicionar("COMERCIAL", "APROVADO_CAD", "EM_CONDUCAO")).toBe(true);
     // não pode pular a aprovação
-    expect(podeTransicionar("comercial", "Inserindo", "EmConducao")).toBe(false);
+    expect(podeTransicionar("COMERCIAL", "INSERINDO", "EM_CONDUCAO")).toBe(false);
   });
 
-  it("interno vai direto de Inserindo para EmConducao", () => {
-    expect(podeTransicionar("interno", "Inserindo", "EmConducao")).toBe(true);
+  it("INTERNO vai direto de INSERINDO para EM_CONDUCAO", () => {
+    expect(podeTransicionar("INTERNO", "INSERINDO", "EM_CONDUCAO")).toBe(true);
   });
 
-  it("Concluido é terminal", () => {
-    expect(transicoesPermitidas("interno", "Concluido")).toEqual([]);
-    expect(transicoesPermitidas("comercial", "Concluido")).toEqual([]);
+  it("CONCLUIDO é terminal", () => {
+    expect(transicoesPermitidas("INTERNO", "CONCLUIDO")).toEqual([]);
+    expect(transicoesPermitidas("COMERCIAL", "CONCLUIDO")).toEqual([]);
   });
 });

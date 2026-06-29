@@ -50,7 +50,7 @@ export class DepartamentosService {
       select: { instituicaoId: true },
     });
     if (!d) throw new NotFoundException("Departamento não encontrado.");
-    if (d.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+    if (d.instituicaoId !== user.instituicaoId && user.papel !== "ADMIN_SISTEMA") {
       throw new ForbiddenException("Departamento de outra instituição.");
     }
   }

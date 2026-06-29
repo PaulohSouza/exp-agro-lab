@@ -5,13 +5,13 @@ import { api, type Dashboard, type Contagem } from "../../lib/api";
 import { Protected } from "../../components/Protected";
 
 const PAPEL_ROTULO: Record<string, string> = {
-  admin_sistema: "Administrador do sistema",
-  gestao_instituicao: "Gestão da instituição",
-  gestao_departamento: "Gestão de departamento",
-  coordenador_area: "Coordenador de área/laboratório",
-  pesquisador: "Pesquisador",
-  analista: "Analista",
-  assistente: "Assistente",
+  ADMIN_SISTEMA: "Administrador do sistema",
+  GESTAO_INSTITUICAO: "Gestão da instituição",
+  GESTAO_DEPARTAMENTO: "Gestão de departamento",
+  COORDENADOR_AREA: "Coordenador de área/laboratório",
+  PESQUISADOR: "Pesquisador",
+  ANALISTA: "Analista",
+  ASSISTENTE: "Assistente",
 };
 
 export default function DashboardPage() {

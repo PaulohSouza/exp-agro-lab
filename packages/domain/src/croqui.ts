@@ -19,7 +19,7 @@ export interface GerarCroquiOpts {
  * Gera o croqui a partir do delineamento e dos tratamentos.
  *
  * Layout: cada **bloco/repetição** é uma coluna; cada linha é um "slot" de
- * tratamento. Numeração column-major (desce a coluna), espelhando o sistema-base.
+ * tratamento. Numeração column-major (desce a coluna), espelhando o SISTEMA-base.
  * - DBC: casualização **dentro de cada bloco** (cada bloco contém todos os
  *   tratamentos exatamente uma vez).
  * - DIC/FATORIAL: casualização **global** sobre o conjunto tratamentos×blocos.
@@ -66,7 +66,7 @@ export function gerarCroqui(
         tratamentoNumeroRef: t.numeroRef,
         posLinha: l,
         posColuna: c,
-        // ponto de início no canto inferior-esquerdo (como no sistema-base).
+        // ponto de início no canto inferior-esquerdo (como no SISTEMA-base).
         isInicio: c === 0 && l === numLinhas - 1,
       });
     }

@@ -17,7 +17,7 @@ export class InstituicaoService {
 
   async atualizar(
     user: UsuarioAtual,
-    dto: { politicaAprovacao?: "todos" | "n_de_m"; nAprovadores?: number },
+    dto: { politicaAprovacao?: "TODOS" | "N_DE_M"; nAprovadores?: number },
   ) {
     this.exigirAdmin(user);
     return this.prisma.instituicao.update({

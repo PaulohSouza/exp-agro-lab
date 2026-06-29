@@ -138,7 +138,7 @@ export class SyncService {
           numAmostra: c.numAmostra,
           valorColetado: c.valorColetado,
           obs: c.obs,
-          origem: "mobile",
+          origem: "MOBILE",
           dispositivoId: c.dispositivoId,
           syncedAt: new Date(),
         },

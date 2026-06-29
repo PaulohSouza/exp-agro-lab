@@ -28,7 +28,7 @@ export default function ExperimentosPage() {
     e.preventDefault();
     if (!titulo.trim()) return;
     try {
-      await api.criar({ titulo, ensaio: "interno", espacamentoLinhasM: 0.45, numRepeticoes: 4 });
+      await api.criar({ titulo, ensaio: "INTERNO", espacamentoLinhasM: 0.45, numRepeticoes: 4 });
       setTitulo("");
       await recarregar();
     } catch (e) {

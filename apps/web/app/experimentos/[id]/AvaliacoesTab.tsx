@@ -14,9 +14,9 @@ import {
 } from "../../../lib/api";
 
 const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: string }> = {
-  sistema: { sigla: "GER", label: "Geral (sistema)", cor: "#1F2940" },
-  instituicao: { sigla: "INST", label: "Instituição", cor: "#4EC2F0" },
-  departamento: { sigla: "DEP", label: "Departamento", cor: "#C9B3F0" },
+  SISTEMA: { sigla: "GER", label: "Geral (sistema)", cor: "#1F2940" },
+  INSTITUICAO: { sigla: "INST", label: "Instituição", cor: "#4EC2F0" },
+  DEPARTAMENTO: { sigla: "DEP", label: "Departamento", cor: "#C9B3F0" },
 };
 
 export function AvaliacoesTab({
@@ -227,9 +227,9 @@ function AdicionarDoCatalogo({ exp, onAdicionou }: { exp: Experimento; onAdicion
         style={inp}
       >
         <option value="todos">Todos os escopos</option>
-        <option value="sistema">Geral (sistema)</option>
-        <option value="instituicao">Instituição</option>
-        <option value="departamento">Departamento</option>
+        <option value="SISTEMA">Geral (sistema)</option>
+        <option value="INSTITUICAO">Instituição</option>
+        <option value="DEPARTAMENTO">Departamento</option>
       </select>
       <select
         data-testid="add-catalogo-select"
@@ -313,7 +313,7 @@ function ModeloInfoModal({ modelo, onClose }: { modelo: ModeloAvaliacao; onClose
           <span
             style={{
               background: esc.cor,
-              color: modelo.escopo === "departamento" ? "#1F2940" : "#fff",
+              color: modelo.escopo === "DEPARTAMENTO" ? "#1F2940" : "#fff",
               borderRadius: 6,
               padding: "2px 8px",
               fontSize: 11,
@@ -618,7 +618,7 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
     unidadeColeta: "",
     unidadeSaida: "",
     formula: "",
-    tipo: "calendarizada",
+    tipo: "CALENDARIZADA",
     timingId: "",
   });
   async function criar(e: React.FormEvent) {
@@ -637,7 +637,7 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
       unidadeColeta: "",
       unidadeSaida: "",
       formula: "",
-      tipo: "calendarizada",
+      tipo: "CALENDARIZADA",
       timingId: "",
     });
     onCriou();
@@ -680,8 +680,8 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
         style={{ ...inp, minWidth: 200 }}
       />
       <select value={f.tipo} onChange={(e) => setF({ ...f, tipo: e.target.value })} style={inp}>
-        <option value="calendarizada">calendarizada</option>
-        <option value="condicional">condicional</option>
+        <option value="CALENDARIZADA">calendarizada</option>
+        <option value="CONDICIONAL">condicional</option>
       </select>
       <select
         value={f.timingId}

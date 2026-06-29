@@ -41,8 +41,8 @@ def run() -> int:
 
         # Geral: período → Ano.semestre 2026.1
         page.get_by_role("button", name="Geral", exact=True).click()
-        periodo = page.locator("select").filter(has=page.locator('option[value="ano_semestre"]'))
-        periodo.select_option("ano_semestre")
+        periodo = page.locator("select").filter(has=page.locator('option[value="ANO_SEMESTRE"]'))
+        periodo.select_option("ANO_SEMESTRE")
         page.get_by_placeholder("ex.: 2026.1").fill("2026.1")
         page.get_by_role("button", name="Salvar Geral").click()
         expect(page.get_by_text("Geral salvo.")).to_be_visible()
@@ -67,8 +67,8 @@ def run() -> int:
         page.wait_for_load_state("networkidle")
         drena(page, "×")
         page.get_by_role("button", name="Geral", exact=True).click()
-        periodo = page.locator("select").filter(has=page.locator('option[value="ano_semestre"]'))
-        periodo.select_option("safra")
+        periodo = page.locator("select").filter(has=page.locator('option[value="ANO_SEMESTRE"]'))
+        periodo.select_option("SAFRA")
         page.get_by_role("button", name="Salvar Geral").click()
         expect(page.get_by_text("Geral salvo.")).to_be_visible()
         print("✓ limpeza (marcos removidos, período restaurado)")

@@ -50,13 +50,13 @@ export class ModeloAvaliacaoService {
   async listar(user: UsuarioAtual) {
     const departamentoId = await this.departamentoDoUsuario(user);
     const where =
-      user.papel === "admin_sistema"
+      user.papel === "ADMIN_SISTEMA"
         ? {}
         : {
             OR: [
-              { escopo: "sistema" as const },
-              { escopo: "instituicao" as const, instituicaoId: user.instituicaoId },
-              ...(departamentoId ? [{ escopo: "departamento" as const, departamentoId }] : []),
+              { escopo: "SISTEMA" as const },
+              { escopo: "INSTITUICAO" as const, instituicaoId: user.instituicaoId },
+              ...(departamentoId ? [{ escopo: "DEPARTAMENTO" as const, departamentoId }] : []),
             ],
           };
     return this.prisma.modeloAvaliacao.findMany({
@@ -160,8 +160,8 @@ export class ModeloAvaliacaoService {
 
   /** Resolve e valida os donos (instituição/departamento) conforme o escopo. */
   private async donoDoEscopo(user: UsuarioAtual, dto: ModeloDto) {
-    if (dto.escopo === "sistema") return { instituicaoId: null, departamentoId: null };
-    if (dto.escopo === "instituicao")
+    if (dto.escopo === "SISTEMA") return { instituicaoId: null, departamentoId: null };
+    if (dto.escopo === "INSTITUICAO")
       return { instituicaoId: user.instituicaoId, departamentoId: null };
     // departamento
     if (!dto.departamentoId)
@@ -171,7 +171,7 @@ export class ModeloAvaliacaoService {
       select: { instituicaoId: true },
     });
     if (!depto) throw new NotFoundException("Departamento não encontrado.");
-    if (depto.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+    if (depto.instituicaoId !== user.instituicaoId && user.papel !== "ADMIN_SISTEMA") {
       throw new ForbiddenException("Departamento de outra instituição.");
     }
     return { instituicaoId: depto.instituicaoId, departamentoId: dto.departamentoId };
@@ -201,9 +201,9 @@ export class ModeloAvaliacaoService {
     if (!m) throw new NotFoundException("Modelo não encontrado.");
     this.exigirGestao(user.papel, m.escopo);
     if (
-      m.escopo !== "sistema" &&
+      m.escopo !== "SISTEMA" &&
       m.instituicaoId !== user.instituicaoId &&
-      user.papel !== "admin_sistema"
+      user.papel !== "ADMIN_SISTEMA"
     ) {
       throw new ForbiddenException("Modelo de outra instituição.");
     }

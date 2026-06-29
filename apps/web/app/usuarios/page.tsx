@@ -11,7 +11,7 @@ import {
 import { Protected } from "../../components/Protected";
 
 const LABEL: Record<string, string> = Object.fromEntries(PAPEIS.map((p) => [p.value, p.label]));
-LABEL["admin_sistema"] = "Administrador do sistema";
+LABEL["ADMIN_SISTEMA"] = "Administrador do sistema";
 
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -21,7 +21,7 @@ export default function UsuariosPage() {
     nome: "",
     email: "",
     senha: "",
-    papel: "analista",
+    papel: "ANALISTA",
   });
   const [erro, setErro] = useState<string | null>(null);
 
@@ -48,7 +48,7 @@ export default function UsuariosPage() {
     setErro(null);
     try {
       await api.criarUsuario(f);
-      setF({ nome: "", email: "", senha: "", papel: "analista" });
+      setF({ nome: "", email: "", senha: "", papel: "ANALISTA" });
       recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "falha ao criar");
@@ -171,14 +171,14 @@ function LinhaUsuario({
   onSave: () => void;
   onErro: (s: string) => void;
 }) {
-  const [papel, setPapel] = useState<Papel>((u.papel ?? "analista") as Papel);
+  const [papel, setPapel] = useState<Papel>((u.papel ?? "ANALISTA") as Papel);
   const [departamentoId, setDepartamentoId] = useState(u.departamentoId ?? "");
   const [unidadeId, setUnidadeId] = useState(u.unidadeId ?? "");
   const sujo =
-    papel !== (u.papel ?? "analista") ||
+    papel !== (u.papel ?? "ANALISTA") ||
     (departamentoId || "") !== (u.departamentoId ?? "") ||
     (unidadeId || "") !== (u.unidadeId ?? "");
-  const ehAdminGlobal = u.papel === "admin_sistema";
+  const ehAdminGlobal = u.papel === "ADMIN_SISTEMA";
 
   async function salvar() {
     try {
@@ -199,7 +199,7 @@ function LinhaUsuario({
       <td style={td}>{u.email}</td>
       <td style={td}>
         {ehAdminGlobal ? (
-          LABEL["admin_sistema"]
+          LABEL["ADMIN_SISTEMA"]
         ) : (
           <select value={papel} onChange={(e) => setPapel(e.target.value as Papel)} style={selp}>
             {PAPEIS.map((p) => (
