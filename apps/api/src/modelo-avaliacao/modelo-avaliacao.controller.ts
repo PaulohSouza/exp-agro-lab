@@ -36,7 +36,11 @@ export class ModeloAvaliacaoController {
   }
 
   @Put(":id")
-  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: Partial<ModeloBody>) {
+  atualizar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: Partial<ModeloBody>,
+  ) {
     return this.service.atualizar(user, id, dto);
   }
 

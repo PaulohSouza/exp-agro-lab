@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { podeGerenciarEscopo, type EscopoModelo, type PapelGestao } from "@exp/domain";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -16,7 +21,10 @@ export class GruposColetaService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async departamentoDoUsuario(user: UsuarioAtual): Promise<string | null> {
-    const u = await this.prisma.user.findUnique({ where: { id: user.userId }, select: { departamentoId: true } });
+    const u = await this.prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { departamentoId: true },
+    });
     return u?.departamentoId ?? null;
   }
 
@@ -35,7 +43,12 @@ export class GruposColetaService {
     return this.prisma.grupoColeta.findMany({
       where: { ...where, ativo: true },
       orderBy: [{ escopo: "asc" }, { nome: "asc" }],
-      include: { itens: { include: { modelo: { select: { id: true, nome: true } } }, orderBy: { ordem: "asc" } } },
+      include: {
+        itens: {
+          include: { modelo: { select: { id: true, nome: true } } },
+          orderBy: { ordem: "asc" },
+        },
+      },
     });
   }
 
@@ -49,7 +62,9 @@ export class GruposColetaService {
         escopo: dto.escopo,
         instituicaoId,
         departamentoId,
-        itens: dto.modeloIds?.length ? { create: dto.modeloIds.map((modeloId, i) => ({ modeloId, ordem: i })) } : undefined,
+        itens: dto.modeloIds?.length
+          ? { create: dto.modeloIds.map((modeloId, i) => ({ modeloId, ordem: i })) }
+          : undefined,
       },
       include: { itens: { include: { modelo: { select: { id: true, nome: true } } } } },
     });
@@ -61,7 +76,9 @@ export class GruposColetaService {
       if (dto.modeloIds) {
         await tx.grupoColetaItem.deleteMany({ where: { grupoId: id } });
         if (dto.modeloIds.length) {
-          await tx.grupoColetaItem.createMany({ data: dto.modeloIds.map((modeloId, i) => ({ grupoId: id, modeloId, ordem: i })) });
+          await tx.grupoColetaItem.createMany({
+            data: dto.modeloIds.map((modeloId, i) => ({ grupoId: id, modeloId, ordem: i })),
+          });
         }
       }
       return tx.grupoColeta.update({
@@ -86,19 +103,32 @@ export class GruposColetaService {
 
   private async donoDoEscopo(user: UsuarioAtual, dto: GrupoDto) {
     if (dto.escopo === "sistema") return { instituicaoId: null, departamentoId: null };
-    if (dto.escopo === "instituicao") return { instituicaoId: user.instituicaoId, departamentoId: null };
-    if (!dto.departamentoId) throw new BadRequestException("departamentoId é obrigatório no escopo de departamento.");
-    const depto = await this.prisma.departamento.findUnique({ where: { id: dto.departamentoId }, select: { instituicaoId: true } });
+    if (dto.escopo === "instituicao")
+      return { instituicaoId: user.instituicaoId, departamentoId: null };
+    if (!dto.departamentoId)
+      throw new BadRequestException("departamentoId é obrigatório no escopo de departamento.");
+    const depto = await this.prisma.departamento.findUnique({
+      where: { id: dto.departamentoId },
+      select: { instituicaoId: true },
+    });
     if (!depto) throw new NotFoundException("Departamento não encontrado.");
-    if (depto.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") throw new ForbiddenException("Departamento de outra instituição.");
+    if (depto.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema")
+      throw new ForbiddenException("Departamento de outra instituição.");
     return { instituicaoId: depto.instituicaoId, departamentoId: dto.departamentoId };
   }
 
   private async garantirAcesso(user: UsuarioAtual, id: string) {
-    const g = await this.prisma.grupoColeta.findUnique({ where: { id }, select: { escopo: true, instituicaoId: true } });
+    const g = await this.prisma.grupoColeta.findUnique({
+      where: { id },
+      select: { escopo: true, instituicaoId: true },
+    });
     if (!g) throw new NotFoundException("Grupo não encontrado.");
     this.exigirGestao(user.papel, g.escopo);
-    if (g.escopo !== "sistema" && g.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
+    if (
+      g.escopo !== "sistema" &&
+      g.instituicaoId !== user.instituicaoId &&
+      user.papel !== "admin_sistema"
+    ) {
       throw new ForbiddenException("Grupo de outra instituição.");
     }
   }

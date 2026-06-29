@@ -28,12 +28,20 @@ export class ExperimentosController {
   }
 
   @Put(":id")
-  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: AtualizarExperimentoDto) {
+  atualizar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: AtualizarExperimentoDto,
+  ) {
     return this.service.atualizar(id, user, dto);
   }
 
   @Post(":id/fatores")
-  definirFatores(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: DefinirFatoresDto) {
+  definirFatores(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: DefinirFatoresDto,
+  ) {
     return this.service.definirFatores(id, user, dto);
   }
 
@@ -41,7 +49,13 @@ export class ExperimentosController {
   gerarCroqui(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() body: { delineamento?: "DIC" | "DBC" | "FATORIAL"; blocos?: number; seed?: number; numeroInicial?: number },
+    @Body()
+    body: {
+      delineamento?: "DIC" | "DBC" | "FATORIAL";
+      blocos?: number;
+      seed?: number;
+      numeroInicial?: number;
+    },
   ) {
     return this.service.gerarCroqui(id, user, body ?? {});
   }
@@ -50,7 +64,18 @@ export class ExperimentosController {
   salvarCroqui(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() body: { parcelas: Array<{ id: string; tratamentoId: string; bloco: number; posLinha: number; posColuna: number; numero: number; isInicio?: boolean }> },
+    @Body()
+    body: {
+      parcelas: Array<{
+        id: string;
+        tratamentoId: string;
+        bloco: number;
+        posLinha: number;
+        posColuna: number;
+        numero: number;
+        isInicio?: boolean;
+      }>;
+    },
   ) {
     return this.service.salvarCroqui(id, user, body.parcelas);
   }
@@ -61,12 +86,20 @@ export class ExperimentosController {
   }
 
   @Post(":id/responsaveis")
-  adicionarResponsavel(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() body: { userId: string }) {
+  adicionarResponsavel(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() body: { userId: string },
+  ) {
     return this.service.adicionarResponsavel(id, user, body.userId);
   }
 
   @Delete(":id/responsaveis/:userId")
-  removerResponsavel(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Param("userId") userId: string) {
+  removerResponsavel(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Param("userId") userId: string,
+  ) {
     return this.service.removerResponsavel(id, user, userId);
   }
 }

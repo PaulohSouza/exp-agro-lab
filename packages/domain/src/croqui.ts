@@ -159,14 +159,21 @@ export function gerarParcelaSubdividida(
     }
   }
 
-  return { parcelas, numLinhas: blocos * a, numColunas: b, delineamento: "DBC", esquema: "parcela_subdividida" };
+  return {
+    parcelas,
+    numLinhas: blocos * a,
+    numColunas: b,
+    delineamento: "DBC",
+    esquema: "parcela_subdividida",
+  };
 }
 
 /** As subparcelas ocupam um retângulo cheio (sem buracos nem espalhamento)? */
 function ehRetanguloContiguo(sub: readonly Parcela[]): boolean {
   const linhas = sub.map((p) => p.posLinha);
   const cols = sub.map((p) => p.posColuna);
-  const area = (Math.max(...linhas) - Math.min(...linhas) + 1) * (Math.max(...cols) - Math.min(...cols) + 1);
+  const area =
+    (Math.max(...linhas) - Math.min(...linhas) + 1) * (Math.max(...cols) - Math.min(...cols) + 1);
   if (area !== sub.length) return false;
   return new Set(sub.map((p) => `${p.posLinha}:${p.posColuna}`)).size === sub.length;
 }
@@ -180,7 +187,11 @@ export function validarParcelaSubdividida(croqui: Croqui): ResultadoValidacao {
   const erros: string[] = [];
   const grupos = new Map<number, Parcela[]>();
   for (const p of croqui.parcelas) {
-    if (p.grupoPrincipal === undefined || p.nivelPrincipal === undefined || p.nivelSub === undefined) {
+    if (
+      p.grupoPrincipal === undefined ||
+      p.nivelPrincipal === undefined ||
+      p.nivelSub === undefined
+    ) {
       erros.push(`Parcela ${p.numero}: faltam metadados de split-plot (grupoPrincipal/nível).`);
       continue;
     }
@@ -192,14 +203,18 @@ export function validarParcelaSubdividida(croqui: Croqui): ResultadoValidacao {
 
   for (const [gid, sub] of grupos) {
     if (new Set(sub.map((p) => p.nivelPrincipal)).size !== 1) {
-      erros.push(`Parcela principal ${gid}: níveis do fator principal divergentes — a parcela foi separada.`);
+      erros.push(
+        `Parcela principal ${gid}: níveis do fator principal divergentes — a parcela foi separada.`,
+      );
     }
     const niveisB = sub.map((p) => p.nivelSub);
     if (new Set(niveisB).size !== niveisB.length) {
       erros.push(`Parcela principal ${gid}: nível do subfator repetido.`);
     }
     if (!ehRetanguloContiguo(sub)) {
-      erros.push(`Parcela principal ${gid}: subparcelas não são contíguas — não é permitido separar a parcela.`);
+      erros.push(
+        `Parcela principal ${gid}: subparcelas não são contíguas — não é permitido separar a parcela.`,
+      );
     }
   }
 
@@ -235,11 +250,25 @@ export function trocarSubparcela(croqui: Croqui, numeroA: number, numeroB: numbe
   const b = croqui.parcelas.find((p) => p.numero === numeroB);
   if (!a || !b) throw new Error("Subparcela não encontrada.");
   if (a.grupoPrincipal === undefined || a.grupoPrincipal !== b.grupoPrincipal) {
-    throw new Error("Subparcelas de parcelas principais diferentes não podem ser trocadas — isso separaria a parcela.");
+    throw new Error(
+      "Subparcelas de parcelas principais diferentes não podem ser trocadas — isso separaria a parcela.",
+    );
   }
   const parcelas = croqui.parcelas.map((p) => {
-    if (p.numero === numeroA) return { ...p, tratamentoId: b.tratamentoId, tratamentoNumeroRef: b.tratamentoNumeroRef, nivelSub: b.nivelSub };
-    if (p.numero === numeroB) return { ...p, tratamentoId: a.tratamentoId, tratamentoNumeroRef: a.tratamentoNumeroRef, nivelSub: a.nivelSub };
+    if (p.numero === numeroA)
+      return {
+        ...p,
+        tratamentoId: b.tratamentoId,
+        tratamentoNumeroRef: b.tratamentoNumeroRef,
+        nivelSub: b.nivelSub,
+      };
+    if (p.numero === numeroB)
+      return {
+        ...p,
+        tratamentoId: a.tratamentoId,
+        tratamentoNumeroRef: a.tratamentoNumeroRef,
+        nivelSub: a.nivelSub,
+      };
     return p;
   });
   return { ...croqui, parcelas };
@@ -256,16 +285,25 @@ export function trocarParcelaPrincipal(croqui: Croqui, grupoA: number, grupoB: n
   const subB = croqui.parcelas.filter((p) => p.grupoPrincipal === grupoB);
   if (!subA.length || !subB.length) throw new Error("Parcela principal não encontrada.");
   if (subA[0].bloco !== subB[0].bloco) {
-    throw new Error("Parcelas principais de blocos diferentes não podem ser trocadas (mantém o DBC do fator principal).");
+    throw new Error(
+      "Parcelas principais de blocos diferentes não podem ser trocadas (mantém o DBC do fator principal).",
+    );
   }
-  if (subA.length !== subB.length) throw new Error("Parcelas principais com número de subparcelas diferente.");
+  if (subA.length !== subB.length)
+    throw new Error("Parcelas principais com número de subparcelas diferente.");
 
   const aByCol = new Map(subA.map((p) => [p.posColuna, p]));
   const bByCol = new Map(subB.map((p) => [p.posColuna, p]));
   const mover = (origem: Map<number, Parcela>, p: Parcela): Parcela => {
     const c = origem.get(p.posColuna);
     if (!c) throw new Error("Subparcelas das parcelas principais não alinham por coluna.");
-    return { ...p, tratamentoId: c.tratamentoId, tratamentoNumeroRef: c.tratamentoNumeroRef, nivelPrincipal: c.nivelPrincipal, nivelSub: c.nivelSub };
+    return {
+      ...p,
+      tratamentoId: c.tratamentoId,
+      tratamentoNumeroRef: c.tratamentoNumeroRef,
+      nivelPrincipal: c.nivelPrincipal,
+      nivelSub: c.nivelSub,
+    };
   };
   const parcelas = croqui.parcelas.map((p) => {
     if (p.grupoPrincipal === grupoA) return mover(bByCol, p);

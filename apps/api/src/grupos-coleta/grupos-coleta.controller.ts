@@ -27,7 +27,11 @@ export class GruposColetaController {
   }
 
   @Put(":id")
-  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: Partial<GrupoBody>) {
+  atualizar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: Partial<GrupoBody>,
+  ) {
     return this.service.atualizar(user, id, dto);
   }
 

@@ -24,7 +24,27 @@ import { AtividadesModule } from "./atividades/atividades.module";
 import { GruposColetaModule } from "./grupos-coleta/grupos-coleta.module";
 
 @Module({
-  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule, InstituicaoModule, OrdemServicoModule, ExportModule, SyncModule, RelatorioModule, DashboardModule, DepartamentosModule, ModeloAvaliacaoModule, AtividadesModule, GruposColetaModule],
+  imports: [
+    AuthModule,
+    PrismaModule,
+    EmailModule,
+    ExperimentosModule,
+    CadastrosModule,
+    TratamentosModule,
+    AvaliacoesModule,
+    UsuariosModule,
+    CompartilhamentoModule,
+    InstituicaoModule,
+    OrdemServicoModule,
+    ExportModule,
+    SyncModule,
+    RelatorioModule,
+    DashboardModule,
+    DepartamentosModule,
+    ModeloAvaliacaoModule,
+    AtividadesModule,
+    GruposColetaModule,
+  ],
   controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

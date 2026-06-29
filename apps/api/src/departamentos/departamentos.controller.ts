@@ -26,7 +26,11 @@ export class DepartamentosController {
 
   @Put(":id")
   @RequirePapel("gestao_instituicao")
-  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: { nome?: string; ativo?: boolean }) {
+  atualizar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: { nome?: string; ativo?: boolean },
+  ) {
     return this.service.atualizar(user, id, dto);
   }
 

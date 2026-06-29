@@ -36,7 +36,11 @@ describe("Scott-Knott", () => {
   });
 
   it("dois blocos (alto vs baixo) → letras a,a,b,b e grupos disjuntos", () => {
-    const rs = compararMediasScottKnott([m("A", 30), m("B", 29.7), m("C", 10.2), m("D", 10)], 0.4, 12);
+    const rs = compararMediasScottKnott(
+      [m("A", 30), m("B", 29.7), m("C", 10.2), m("D", 10)],
+      0.4,
+      12,
+    );
     expect(letraDe(rs, "A")).toBe(letraDe(rs, "B"));
     expect(letraDe(rs, "C")).toBe(letraDe(rs, "D"));
     expect(letraDe(rs, "A")).not.toBe(letraDe(rs, "C"));

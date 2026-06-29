@@ -5,8 +5,12 @@ import type { Observacao } from "./types.js";
 describe("ANOVA 1 fator DIC (cálculo conhecido)", () => {
   // A=[1,2,3], B=[4,5,6] -> SQtotal=17.5, SQtrat=13.5, SQres=4, F=13.5
   const obs: Observacao[] = [
-    { tratamento: "A", valor: 1 }, { tratamento: "A", valor: 2 }, { tratamento: "A", valor: 3 },
-    { tratamento: "B", valor: 4 }, { tratamento: "B", valor: 5 }, { tratamento: "B", valor: 6 },
+    { tratamento: "A", valor: 1 },
+    { tratamento: "A", valor: 2 },
+    { tratamento: "A", valor: 3 },
+    { tratamento: "B", valor: 4 },
+    { tratamento: "B", valor: 5 },
+    { tratamento: "B", valor: 6 },
   ];
   const r = anovaUmFator(obs, "DIC");
 
@@ -37,9 +41,15 @@ describe("ANOVA 1 fator DIC (cálculo conhecido)", () => {
 
 describe("LSD: agrupamento de letras", () => {
   const obs: Observacao[] = [
-    { tratamento: "A", valor: 30 }, { tratamento: "A", valor: 30.5 }, { tratamento: "A", valor: 29.5 },
-    { tratamento: "B", valor: 20 }, { tratamento: "B", valor: 20.5 }, { tratamento: "B", valor: 19.5 },
-    { tratamento: "C", valor: 20.5 }, { tratamento: "C", valor: 21 }, { tratamento: "C", valor: 20 },
+    { tratamento: "A", valor: 30 },
+    { tratamento: "A", valor: 30.5 },
+    { tratamento: "A", valor: 29.5 },
+    { tratamento: "B", valor: 20 },
+    { tratamento: "B", valor: 20.5 },
+    { tratamento: "B", valor: 19.5 },
+    { tratamento: "C", valor: 20.5 },
+    { tratamento: "C", valor: 21 },
+    { tratamento: "C", valor: 20 },
   ];
   const r = anovaUmFator(obs, "DIC");
 
@@ -55,8 +65,13 @@ describe("LSD: agrupamento de letras", () => {
 
 describe("ANOVA DBC (decomposição com bloco)", () => {
   const obs: Observacao[] = [];
-  const valores: Record<string, number[]> = { T1: [10, 12, 11, 13], T2: [15, 16, 14, 17], T3: [20, 19, 21, 22] };
-  for (const t of Object.keys(valores)) valores[t].forEach((v, b) => obs.push({ tratamento: t, bloco: b + 1, valor: v }));
+  const valores: Record<string, number[]> = {
+    T1: [10, 12, 11, 13],
+    T2: [15, 16, 14, 17],
+    T3: [20, 19, 21, 22],
+  };
+  for (const t of Object.keys(valores))
+    valores[t].forEach((v, b) => obs.push({ tratamento: t, bloco: b + 1, valor: v }));
   const r = anovaUmFator(obs, "DBC");
 
   it("SQtrat + SQbloco + SQres = SQtotal", () => {

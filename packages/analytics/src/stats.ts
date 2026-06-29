@@ -5,8 +5,8 @@
 
 export function gammaln(x: number): number {
   const c = [
-    76.18009172947146, -86.50532032941677, 24.01409824083091,
-    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5,
+    76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155,
+    0.1208650973866179e-2, -0.5395239384953e-5,
   ];
   let y = x;
   let tmp = x + 5.5;
@@ -19,7 +19,9 @@ export function gammaln(x: number): number {
 /** Fração contínua para a beta incompleta. */
 function betacf(a: number, b: number, x: number): number {
   const FPMIN = 1e-300;
-  const qab = a + b, qap = a + 1, qam = a - 1;
+  const qab = a + b,
+    qap = a + 1,
+    qam = a - 1;
   let c = 1;
   let d = 1 - (qab * x) / qap;
   if (Math.abs(d) < FPMIN) d = FPMIN;
@@ -51,7 +53,9 @@ function betacf(a: number, b: number, x: number): number {
 export function betai(a: number, b: number, x: number): number {
   if (x <= 0) return 0;
   if (x >= 1) return 1;
-  const bt = Math.exp(gammaln(a + b) - gammaln(a) - gammaln(b) + a * Math.log(x) + b * Math.log(1 - x));
+  const bt = Math.exp(
+    gammaln(a + b) - gammaln(a) - gammaln(b) + a * Math.log(x) + b * Math.log(1 - x),
+  );
   if (x < (a + 1) / (a + b + 2)) return (bt * betacf(a, b, x)) / a;
   return 1 - (bt * betacf(b, a, 1 - x)) / b;
 }
@@ -76,7 +80,8 @@ export function tCdf(t: number, df: number): number {
 
 /** Quantil da t (inversa) por bissecção. Ex.: tInv(0.975, df) p/ LSD bilateral. */
 export function tInv(p: number, df: number): number {
-  let lo = -1000, hi = 1000;
+  let lo = -1000,
+    hi = 1000;
   for (let i = 0; i < 200; i++) {
     const mid = (lo + hi) / 2;
     if (tCdf(mid, df) < p) lo = mid;
@@ -135,7 +140,8 @@ export function chiSqSf(x: number, k: number): number {
 
 /** Quantil da qui-quadrado (inversa) por bissecção. */
 export function chiSqInv(p: number, k: number): number {
-  let lo = 0, hi = 1e6;
+  let lo = 0,
+    hi = 1e6;
   for (let i = 0; i < 200; i++) {
     const mid = (lo + hi) / 2;
     if (chiSqCdf(mid, k) < p) lo = mid;
@@ -147,7 +153,11 @@ export function chiSqInv(p: number, k: number): number {
 /** Função erro (Abramowitz-Stegun 7.1.26, |erro| ≤ 1.5e-7). */
 function erf(x: number): number {
   const t = 1 / (1 + 0.3275911 * Math.abs(x));
-  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  const y =
+    1 -
+    ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) *
+      t *
+      Math.exp(-x * x);
   return x >= 0 ? y : -y;
 }
 

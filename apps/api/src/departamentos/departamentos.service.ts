@@ -45,7 +45,10 @@ export class DepartamentosService {
   }
 
   private async garantir(user: UsuarioAtual, id: string) {
-    const d = await this.prisma.departamento.findUnique({ where: { id }, select: { instituicaoId: true } });
+    const d = await this.prisma.departamento.findUnique({
+      where: { id },
+      select: { instituicaoId: true },
+    });
     if (!d) throw new NotFoundException("Departamento não encontrado.");
     if (d.instituicaoId !== user.instituicaoId && user.papel !== "admin_sistema") {
       throw new ForbiddenException("Departamento de outra instituição.");

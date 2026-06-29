@@ -24,7 +24,10 @@ export class TratamentosService {
   ) {}
 
   private async expIdDoTratamento(tratamentoId: string): Promise<string> {
-    const t = await this.prisma.tratamento.findUnique({ where: { id: tratamentoId }, select: { experimentoId: true } });
+    const t = await this.prisma.tratamento.findUnique({
+      where: { id: tratamentoId },
+      select: { experimentoId: true },
+    });
     if (!t) throw new NotFoundException("Tratamento não encontrado.");
     return t.experimentoId;
   }
@@ -39,12 +42,20 @@ export class TratamentosService {
 
   async atualizar(id: string, user: UsuarioAtual, dto: { nome?: string; descricao?: string }) {
     await this.experimentos.garantirAcesso(await this.expIdDoTratamento(id), user, "edit");
-    return this.prisma.tratamento.update({ where: { id }, data: { nome: dto.nome, descricao: dto.descricao } });
+    return this.prisma.tratamento.update({
+      where: { id },
+      data: { nome: dto.nome, descricao: dto.descricao },
+    });
   }
 
   async adicionarProduto(tratamentoId: string, user: UsuarioAtual, dto: ProdutoLinhaDto) {
-    await this.experimentos.garantirAcesso(await this.expIdDoTratamento(tratamentoId), user, "edit");
-    const seq = dto.seq ?? (await this.prisma.tratamentoProduto.count({ where: { tratamentoId } })) + 1;
+    await this.experimentos.garantirAcesso(
+      await this.expIdDoTratamento(tratamentoId),
+      user,
+      "edit",
+    );
+    const seq =
+      dto.seq ?? (await this.prisma.tratamentoProduto.count({ where: { tratamentoId } })) + 1;
     return this.prisma.tratamentoProduto.create({
       data: { tratamentoId, seq, produtoId: dto.produtoId, ...this.normalizar(dto) },
       include: { produto: true, timing: true, atividade: true },
@@ -70,9 +81,15 @@ export class TratamentosService {
     await this.experimentos.garantirAcesso(experimentoId, user);
     return this.prisma.timing.findMany({ where: { experimentoId }, orderBy: { ordem: "asc" } });
   }
-  async criarTiming(experimentoId: string, user: UsuarioAtual, dto: { nome: string; ordem?: number }) {
+  async criarTiming(
+    experimentoId: string,
+    user: UsuarioAtual,
+    dto: { nome: string; ordem?: number },
+  ) {
     await this.experimentos.garantirAcesso(experimentoId, user, "edit");
-    return this.prisma.timing.create({ data: { experimentoId, nome: dto.nome, ordem: dto.ordem ?? 0 } });
+    return this.prisma.timing.create({
+      data: { experimentoId, nome: dto.nome, ordem: dto.ordem ?? 0 },
+    });
   }
 
   private normalizar(dto: Partial<ProdutoLinhaDto>) {

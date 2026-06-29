@@ -14,7 +14,14 @@ export const viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-br">
-      <body style={{ margin: 0, fontFamily: "Inter, Arial, sans-serif", background: "#F9F9FB", color: "#1F2940" }}>
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "Inter, Arial, sans-serif",
+          background: "#F9F9FB",
+          color: "#1F2940",
+        }}
+      >
         {children}
       </body>
     </html>

@@ -17,7 +17,11 @@ export class ExportService {
     const exp = await this.prisma.experimento.findUniqueOrThrow({
       where: { id },
       include: {
-        objetoEstudo: true, local: true, safra: true, areaPesquisa: true, delineamento: true,
+        objetoEstudo: true,
+        local: true,
+        safra: true,
+        areaPesquisa: true,
+        delineamento: true,
         tratamentos: { orderBy: { numeroRef: "asc" } },
         parcelas: { orderBy: { numero: "asc" }, include: { tratamento: true } },
         avaliacoes: { orderBy: { ordem: "asc" } },
@@ -32,38 +36,70 @@ export class ExportService {
     wb.creator = "EXP-AGROLAB";
 
     const geral = wb.addWorksheet("Geral");
-    geral.columns = [{ header: "Campo", width: 24 }, { header: "Valor", width: 50 }];
+    geral.columns = [
+      { header: "Campo", width: 24 },
+      { header: "Valor", width: 50 },
+    ];
     const linhasGeral: [string, string | number | null][] = [
-      ["Código", exp.codigo], ["Título", exp.titulo], ["Ensaio", exp.ensaio], ["Status", exp.status],
-      ["Objeto de estudo", exp.objetoEstudo?.nome ?? ""], ["Cultivar", exp.cultivar ?? ""],
-      ["Área de pesquisa", exp.areaPesquisa?.nome ?? ""], ["Local", exp.local?.nome ?? ""],
-      ["Safra", exp.safra?.nome ?? ""], ["Delineamento", exp.delineamento?.nome ?? ""],
-      ["Repetições", exp.numRepeticoes], ["Tratamentos", exp.numTratamentos],
-      ["Total parcelas", exp.totalParcelas], ["Espaçamento linhas (m)", exp.espacamentoLinhasM],
+      ["Código", exp.codigo],
+      ["Título", exp.titulo],
+      ["Ensaio", exp.ensaio],
+      ["Status", exp.status],
+      ["Objeto de estudo", exp.objetoEstudo?.nome ?? ""],
+      ["Cultivar", exp.cultivar ?? ""],
+      ["Área de pesquisa", exp.areaPesquisa?.nome ?? ""],
+      ["Local", exp.local?.nome ?? ""],
+      ["Safra", exp.safra?.nome ?? ""],
+      ["Delineamento", exp.delineamento?.nome ?? ""],
+      ["Repetições", exp.numRepeticoes],
+      ["Tratamentos", exp.numTratamentos],
+      ["Total parcelas", exp.totalParcelas],
+      ["Espaçamento linhas (m)", exp.espacamentoLinhasM],
       ["Objetivo", exp.objetivo ?? ""],
     ];
     linhasGeral.forEach((l) => geral.addRow(l));
     geral.getRow(1).font = { bold: true };
 
     const trat = wb.addWorksheet("Tratamentos");
-    trat.columns = [{ header: "Trat.", width: 8 }, { header: "Tag", width: 8 }, { header: "Nome", width: 40 }];
+    trat.columns = [
+      { header: "Trat.", width: 8 },
+      { header: "Tag", width: 8 },
+      { header: "Nome", width: 40 },
+    ];
     exp.tratamentos.forEach((t) => trat.addRow([t.numeroRef, t.tag, t.nome]));
     trat.getRow(1).font = { bold: true };
 
     const croqui = wb.addWorksheet("Croqui");
     croqui.columns = [
-      { header: "Parcela", width: 10 }, { header: "Bloco", width: 8 },
-      { header: "Linha", width: 8 }, { header: "Coluna", width: 8 },
-      { header: "Tratamento", width: 12 }, { header: "Início", width: 8 },
+      { header: "Parcela", width: 10 },
+      { header: "Bloco", width: 8 },
+      { header: "Linha", width: 8 },
+      { header: "Coluna", width: 8 },
+      { header: "Tratamento", width: 12 },
+      { header: "Início", width: 8 },
     ];
-    exp.parcelas.forEach((p) => croqui.addRow([p.numero, p.bloco, p.posLinha, p.posColuna, p.tratamento?.tag ?? "", p.isInicio ? "sim" : ""]));
+    exp.parcelas.forEach((p) =>
+      croqui.addRow([
+        p.numero,
+        p.bloco,
+        p.posLinha,
+        p.posColuna,
+        p.tratamento?.tag ?? "",
+        p.isInicio ? "sim" : "",
+      ]),
+    );
     croqui.getRow(1).font = { bold: true };
 
     const ws = wb.addWorksheet("Dados");
     ws.columns = [
-      { header: "Avaliação", width: 22 }, { header: "Parcela", width: 10 }, { header: "Bloco", width: 8 },
-      { header: "Tratamento", width: 12 }, { header: "Valor coletado", width: 14 },
-      { header: "Área útil (m²)", width: 14 }, { header: "Valor saída", width: 14 }, { header: "Unid. saída", width: 12 },
+      { header: "Avaliação", width: 22 },
+      { header: "Parcela", width: 10 },
+      { header: "Bloco", width: 8 },
+      { header: "Tratamento", width: 12 },
+      { header: "Valor coletado", width: 14 },
+      { header: "Área útil (m²)", width: 14 },
+      { header: "Valor saída", width: 14 },
+      { header: "Unid. saída", width: 12 },
     ];
     // Área útil única do ensaio: vem da atividade de Colheita (RN-PROD / C5).
     const espac = exp.espacamentoLinhasM ?? undefined;
@@ -77,11 +113,25 @@ export class ExportService {
     for (const d of dados) {
       let saida: number | null = null;
       if (d.avaliacao.formula && d.valorColetado != null) {
-        try { saida = calcularSaida({ valorColetado: d.valorColetado, formula: d.avaliacao.formula, params: areaUtil ? { areaUtil } : {} }); } catch { saida = null; }
+        try {
+          saida = calcularSaida({
+            valorColetado: d.valorColetado,
+            formula: d.avaliacao.formula,
+            params: areaUtil ? { areaUtil } : {},
+          });
+        } catch {
+          saida = null;
+        }
       }
       ws.addRow([
-        d.avaliacao.nome, d.parcela.numero, d.parcela.bloco, d.parcela.tratamento?.tag ?? "",
-        d.valorColetado, areaUtil ?? null, saida != null ? Number(saida.toFixed(2)) : null, d.avaliacao.unidadeSaida ?? "",
+        d.avaliacao.nome,
+        d.parcela.numero,
+        d.parcela.bloco,
+        d.parcela.tratamento?.tag ?? "",
+        d.valorColetado,
+        areaUtil ?? null,
+        saida != null ? Number(saida.toFixed(2)) : null,
+        d.avaliacao.unidadeSaida ?? "",
       ]);
     }
     ws.getRow(1).font = { bold: true };

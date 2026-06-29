@@ -1,4 +1,9 @@
-import { Injectable, ForbiddenException, BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  ForbiddenException,
+  BadRequestException,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 
@@ -10,7 +15,10 @@ export class InstituicaoService {
     return this.prisma.instituicao.findUnique({ where: { id: user.instituicaoId } });
   }
 
-  async atualizar(user: UsuarioAtual, dto: { politicaAprovacao?: "todos" | "n_de_m"; nAprovadores?: number }) {
+  async atualizar(
+    user: UsuarioAtual,
+    dto: { politicaAprovacao?: "todos" | "n_de_m"; nAprovadores?: number },
+  ) {
     this.exigirAdmin(user);
     return this.prisma.instituicao.update({
       where: { id: user.instituicaoId },
@@ -38,7 +46,10 @@ export class InstituicaoService {
       where: { instituicaoId: user.instituicaoId, userId: dto.userId },
     });
     if (existe) {
-      return this.prisma.aprovadorInstituicao.update({ where: { id: existe.id }, data: { ativo: true } });
+      return this.prisma.aprovadorInstituicao.update({
+        where: { id: existe.id },
+        data: { ativo: true },
+      });
     }
     return this.prisma.aprovadorInstituicao.create({
       data: { instituicaoId: user.instituicaoId, userId: dto.userId },
@@ -48,7 +59,8 @@ export class InstituicaoService {
   async removerAprovador(user: UsuarioAtual, id: string) {
     this.exigirAdmin(user);
     const ap = await this.prisma.aprovadorInstituicao.findUnique({ where: { id } });
-    if (!ap || ap.instituicaoId !== user.instituicaoId) throw new NotFoundException("Aprovador não encontrado.");
+    if (!ap || ap.instituicaoId !== user.instituicaoId)
+      throw new NotFoundException("Aprovador não encontrado.");
     await this.prisma.aprovadorInstituicao.delete({ where: { id } });
     return { ok: true };
   }

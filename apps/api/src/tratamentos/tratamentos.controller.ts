@@ -8,17 +8,29 @@ export class TratamentosController {
   constructor(private readonly service: TratamentosService) {}
 
   @Put("tratamentos/:id")
-  atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: { nome?: string; descricao?: string }) {
+  atualizar(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: { nome?: string; descricao?: string },
+  ) {
     return this.service.atualizar(id, user, dto);
   }
 
   @Post("tratamentos/:id/produtos")
-  adicionarProduto(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: ProdutoLinhaDto) {
+  adicionarProduto(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: ProdutoLinhaDto,
+  ) {
     return this.service.adicionarProduto(id, user, dto);
   }
 
   @Put("tratamento-produtos/:id")
-  atualizarProduto(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: Partial<ProdutoLinhaDto>) {
+  atualizarProduto(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: Partial<ProdutoLinhaDto>,
+  ) {
     return this.service.atualizarProduto(id, user, dto);
   }
 
@@ -33,7 +45,11 @@ export class TratamentosController {
   }
 
   @Post("experimentos/:id/timings")
-  criarTiming(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: { nome: string; ordem?: number }) {
+  criarTiming(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: { nome: string; ordem?: number },
+  ) {
     return this.service.criarTiming(id, user, dto);
   }
 }

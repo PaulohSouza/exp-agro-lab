@@ -1,8 +1,20 @@
 "use client";
 import { useMemo, useState } from "react";
-import { api, corTratamento, type Experimento, type Parcela, type Tratamento } from "../../../lib/api";
+import {
+  api,
+  corTratamento,
+  type Experimento,
+  type Parcela,
+  type Tratamento,
+} from "../../../lib/api";
 
-export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e: Experimento) => void }) {
+export function CroquiEditor({
+  exp,
+  onChange,
+}: {
+  exp: Experimento;
+  onChange: (e: Experimento) => void;
+}) {
   const [parcelas, setParcelas] = useState<Parcela[]>(exp.parcelas ?? []);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -64,8 +76,12 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
   if (!parcelas.length) {
     return (
       <div>
-        <p style={{ color: "#7987A1" }}>Sem croqui ainda. Gere a partir do delineamento e tratamentos.</p>
-        <button onClick={regenerar} style={btn("#1F2940")}>Gerar croqui</button>
+        <p style={{ color: "#7987A1" }}>
+          Sem croqui ainda. Gere a partir do delineamento e tratamentos.
+        </p>
+        <button onClick={regenerar} style={btn("#1F2940")}>
+          Gerar croqui
+        </button>
         {msg && <span style={{ marginLeft: 12 }}>{msg}</span>}
       </div>
     );
@@ -74,8 +90,12 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
   return (
     <div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-        <button onClick={salvar} disabled={!dirty} style={btn(dirty ? "#1F2940" : "#a9abbd")}>Salvar layout</button>
-        <button onClick={regenerar} style={btn("#4EC2F0")}>Recasualizar</button>
+        <button onClick={salvar} disabled={!dirty} style={btn(dirty ? "#1F2940" : "#a9abbd")}>
+          Salvar layout
+        </button>
+        <button onClick={regenerar} style={btn("#4EC2F0")}>
+          Recasualizar
+        </button>
         <span style={{ color: "#7987A1", fontSize: 13 }}>
           Arraste um tratamento sobre outro para trocá-los. {dirty ? "• alterações não salvas" : ""}
         </span>
@@ -83,64 +103,115 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
       </div>
 
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
-      <div className="scroll-x">
-      <div style={{ display: "inline-grid", gridTemplateColumns: `repeat(${numColunas}, 84px)`, gap: 6 }}>
-        {grade.flatMap((linha, li) =>
-          linha.map((p, ci) => {
-            if (!p) return <div key={`${li}-${ci}`} />;
-            const t = tratById.get(p.tratamentoId);
-            return (
-              <div
-                key={p.id}
-                draggable
-                onDragStart={() => setDragId(p.id)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => soltar(p.id)}
-                title={`Parcela ${p.numero} • Bloco ${p.bloco}`}
-                style={{
-                  background: t ? corTratamento(t.numeroRef) : "#eee",
-                  border: p.isInicio ? "2px solid #1F2940" : "1px solid rgba(0,0,0,.08)",
-                  borderRadius: 8,
-                  padding: "8px 6px",
-                  textAlign: "center",
-                  cursor: "grab",
-                  userSelect: "none",
-                  minHeight: 56,
-                }}
-              >
-                <div style={{ fontSize: 11, color: "#5a5a6e" }}>{p.numero}{p.isInicio ? " ★" : ""}</div>
-                <div style={{ fontWeight: 700, color: "#1F2940" }}>{t?.tag ?? "?"}</div>
-                <div style={{ fontSize: 11, color: "#444" }}>{String.fromCharCode(65 + p.posColuna)}</div>
-              </div>
-            );
-          }),
-        )}
-      </div>
-      </div>
-
-      <aside style={{ minWidth: 200, border: "1px solid #e1e1ef", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ background: "#1F2940", color: "#fff", padding: "8px 12px", fontWeight: 600, fontSize: 13 }}>
-          Tratamentos
+        <div className="scroll-x">
+          <div
+            style={{
+              display: "inline-grid",
+              gridTemplateColumns: `repeat(${numColunas}, 84px)`,
+              gap: 6,
+            }}
+          >
+            {grade.flatMap((linha, li) =>
+              linha.map((p, ci) => {
+                if (!p) return <div key={`${li}-${ci}`} />;
+                const t = tratById.get(p.tratamentoId);
+                return (
+                  <div
+                    key={p.id}
+                    draggable
+                    onDragStart={() => setDragId(p.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => soltar(p.id)}
+                    title={`Parcela ${p.numero} • Bloco ${p.bloco}`}
+                    style={{
+                      background: t ? corTratamento(t.numeroRef) : "#eee",
+                      border: p.isInicio ? "2px solid #1F2940" : "1px solid rgba(0,0,0,.08)",
+                      borderRadius: 8,
+                      padding: "8px 6px",
+                      textAlign: "center",
+                      cursor: "grab",
+                      userSelect: "none",
+                      minHeight: 56,
+                    }}
+                  >
+                    <div style={{ fontSize: 11, color: "#5a5a6e" }}>
+                      {p.numero}
+                      {p.isInicio ? " ★" : ""}
+                    </div>
+                    <div style={{ fontWeight: 700, color: "#1F2940" }}>{t?.tag ?? "?"}</div>
+                    <div style={{ fontSize: 11, color: "#444" }}>
+                      {String.fromCharCode(65 + p.posColuna)}
+                    </div>
+                  </div>
+                );
+              }),
+            )}
+          </div>
         </div>
-        <ul style={{ listStyle: "none", margin: 0, padding: 8 }}>
-          {[...(exp.tratamentos ?? [])].sort((a, b) => a.numeroRef - b.numeroRef).map((t) => (
-            <li key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 6px" }}>
-              <span style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, marginTop: 2, background: corTratamento(t.numeroRef), border: "1px solid rgba(0,0,0,.12)" }} />
-              <span style={{ fontSize: 13, color: "#1F2940" }}>
-                <strong>{t.tag ?? `T${t.numeroRef}`}</strong>{t.nome ? ` — ${t.nome}` : ""}
-                {(t.produtos ?? []).length > 0 && (
-                  <span style={{ display: "block", fontSize: 11, color: "#7987A1" }}>
-                    {(t.produtos ?? [])
-                      .map((p) => [p.produto?.nome, p.dose != null ? `${p.dose}${p.unidadeDose ? ` ${p.unidadeDose}` : ""}` : null].filter(Boolean).join(" "))
-                      .filter(Boolean)
-                      .join(" · ")}
+
+        <aside
+          style={{
+            minWidth: 200,
+            border: "1px solid #e1e1ef",
+            borderRadius: 10,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              background: "#1F2940",
+              color: "#fff",
+              padding: "8px 12px",
+              fontWeight: 600,
+              fontSize: 13,
+            }}
+          >
+            Tratamentos
+          </div>
+          <ul style={{ listStyle: "none", margin: 0, padding: 8 }}>
+            {[...(exp.tratamentos ?? [])]
+              .sort((a, b) => a.numeroRef - b.numeroRef)
+              .map((t) => (
+                <li
+                  key={t.id}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 6px" }}
+                >
+                  <span
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 4,
+                      flexShrink: 0,
+                      marginTop: 2,
+                      background: corTratamento(t.numeroRef),
+                      border: "1px solid rgba(0,0,0,.12)",
+                    }}
+                  />
+                  <span style={{ fontSize: 13, color: "#1F2940" }}>
+                    <strong>{t.tag ?? `T${t.numeroRef}`}</strong>
+                    {t.nome ? ` — ${t.nome}` : ""}
+                    {(t.produtos ?? []).length > 0 && (
+                      <span style={{ display: "block", fontSize: 11, color: "#7987A1" }}>
+                        {(t.produtos ?? [])
+                          .map((p) =>
+                            [
+                              p.produto?.nome,
+                              p.dose != null
+                                ? `${p.dose}${p.unidadeDose ? ` ${p.unidadeDose}` : ""}`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" "),
+                          )
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </aside>
+                </li>
+              ))}
+          </ul>
+        </aside>
       </div>
       <p style={{ color: "#7987A1", fontSize: 12, marginTop: 10 }}>
         Colunas = blocos (A, B, C…). ★ = ponto de início. Cores por tratamento.
@@ -150,5 +221,12 @@ export function CroquiEditor({ exp, onChange }: { exp: Experimento; onChange: (e
 }
 
 function btn(bg: string): React.CSSProperties {
-  return { background: bg, color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer" };
+  return {
+    background: bg,
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: "8px 14px",
+    cursor: "pointer",
+  };
 }

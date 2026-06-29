@@ -27,10 +27,28 @@ export default async function Home() {
           </strong>
         </p>
         <p style={{ marginTop: 16, display: "flex", gap: 10 }}>
-          <a href="/login" style={{ background: "#1F2940", color: "#fff", padding: "10px 16px", borderRadius: 8, textDecoration: "none" }}>
+          <a
+            href="/login"
+            style={{
+              background: "#1F2940",
+              color: "#fff",
+              padding: "10px 16px",
+              borderRadius: 8,
+              textDecoration: "none",
+            }}
+          >
             Entrar →
           </a>
-          <a href="/experimentos" style={{ background: "#6FA830", color: "#fff", padding: "10px 16px", borderRadius: 8, textDecoration: "none" }}>
+          <a
+            href="/experimentos"
+            style={{
+              background: "#6FA830",
+              color: "#fff",
+              padding: "10px 16px",
+              borderRadius: 8,
+              textDecoration: "none",
+            }}
+          >
             Protocolos / Experimentos →
           </a>
         </p>

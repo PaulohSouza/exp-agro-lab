@@ -18,7 +18,15 @@ export class UsuariosController {
   @RequirePapel("gestao_instituicao")
   criar(
     @CurrentUser() user: UsuarioAtual,
-    @Body() dto: { nome: string; email: string; senha: string; papel?: Papel; isAdminInstituicao?: boolean; unidadeId?: string },
+    @Body()
+    dto: {
+      nome: string;
+      email: string;
+      senha: string;
+      papel?: Papel;
+      isAdminInstituicao?: boolean;
+      unidadeId?: string;
+    },
   ) {
     return this.service.criar(user, dto);
   }
@@ -28,7 +36,13 @@ export class UsuariosController {
   atualizar(
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
-    @Body() dto: { papel?: Papel; departamentoId?: string | null; unidadeId?: string | null; ativo?: boolean },
+    @Body()
+    dto: {
+      papel?: Papel;
+      departamentoId?: string | null;
+      unidadeId?: string | null;
+      ativo?: boolean;
+    },
   ) {
     return this.service.atualizar(user, id, dto);
   }

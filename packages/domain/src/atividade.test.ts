@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { validarApontamento, apontamentoEsperado, marcosPadrao, statusMarco, type CampoDef } from "./atividade.js";
+import {
+  validarApontamento,
+  apontamentoEsperado,
+  marcosPadrao,
+  statusMarco,
+  type CampoDef,
+} from "./atividade.js";
 
 // Ex.: aplicação via CO2 → vento (num), umidade (num), data (data)
 const camposCO2: CampoDef[] = [
@@ -54,10 +60,7 @@ describe("validarApontamento", () => {
   });
 
   it("campo opcional ausente não gera erro", () => {
-    const erros = validarApontamento(
-      [{ rotulo: "obs", tipo: "texto", obrigatorio: false }],
-      [],
-    );
+    const erros = validarApontamento([{ rotulo: "obs", tipo: "texto", obrigatorio: false }], []);
     expect(erros).toEqual([]);
   });
 });
@@ -78,15 +81,23 @@ describe("marcos do cronograma", () => {
   });
 
   it("statusMarco: confirmado tem prioridade", () => {
-    expect(statusMarco({ dataPrevista: "2020-01-01", confirmada: true, hojeISO: "2026-06-29" })).toBe("confirmado");
+    expect(
+      statusMarco({ dataPrevista: "2020-01-01", confirmada: true, hojeISO: "2026-06-29" }),
+    ).toBe("confirmado");
   });
   it("statusMarco: previsão no passado e não confirmado → atrasado", () => {
-    expect(statusMarco({ dataPrevista: "2026-06-01", confirmada: false, hojeISO: "2026-06-29" })).toBe("atrasado");
+    expect(
+      statusMarco({ dataPrevista: "2026-06-01", confirmada: false, hojeISO: "2026-06-29" }),
+    ).toBe("atrasado");
   });
   it("statusMarco: previsão futura → pendente", () => {
-    expect(statusMarco({ dataPrevista: "2026-12-01", confirmada: false, hojeISO: "2026-06-29" })).toBe("pendente");
+    expect(
+      statusMarco({ dataPrevista: "2026-12-01", confirmada: false, hojeISO: "2026-06-29" }),
+    ).toBe("pendente");
   });
   it("statusMarco: sem data → pendente", () => {
-    expect(statusMarco({ dataPrevista: null, confirmada: false, hojeISO: "2026-06-29" })).toBe("pendente");
+    expect(statusMarco({ dataPrevista: null, confirmada: false, hojeISO: "2026-06-29" })).toBe(
+      "pendente",
+    );
   });
 });

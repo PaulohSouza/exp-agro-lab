@@ -19,7 +19,11 @@ export class OrdemServicoController {
   }
 
   @Post("ordens-servico/:id/submeter")
-  submeter(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: { clienteEmail: string }) {
+  submeter(
+    @CurrentUser() user: UsuarioAtual,
+    @Param("id") id: string,
+    @Body() dto: { clienteEmail: string },
+  ) {
     return this.service.submeter(id, user, dto);
   }
 

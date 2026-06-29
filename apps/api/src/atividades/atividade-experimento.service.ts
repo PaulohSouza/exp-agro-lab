@@ -1,5 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { validarApontamento, marcosPadrao, type ValorApontamento, type MarcoTipo } from "@exp/domain";
+import {
+  validarApontamento,
+  marcosPadrao,
+  type ValorApontamento,
+  type MarcoTipo,
+} from "@exp/domain";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -84,7 +89,11 @@ export class AtividadeExperimentoService {
     if (!atv) throw new NotFoundException("Atividade não encontrada.");
     await this.experimentos.garantirAcesso(atv.experimentoId, user, "edit");
 
-    const campos = (atv.modelo?.campos ?? []).map((c) => ({ rotulo: c.rotulo, tipo: c.tipo, obrigatorio: c.obrigatorio }));
+    const campos = (atv.modelo?.campos ?? []).map((c) => ({
+      rotulo: c.rotulo,
+      tipo: c.tipo,
+      obrigatorio: c.obrigatorio,
+    }));
     if (campos.length) {
       const erros = validarApontamento(campos, valores);
       if (erros.length) throw new BadRequestException(erros.join("; "));
@@ -105,7 +114,10 @@ export class AtividadeExperimentoService {
         });
       }
     });
-    return this.prisma.atividadeExperimento.findUnique({ where: { id: atividadeId }, include: { valores: true } });
+    return this.prisma.atividadeExperimento.findUnique({
+      where: { id: atividadeId },
+      include: { valores: true },
+    });
   }
 
   /** Cria os marcos do cronograma faltantes (implantação/início/fim + semeadura/colheita se cultura). */
@@ -113,48 +125,84 @@ export class AtividadeExperimentoService {
     await this.experimentos.garantirAcesso(experimentoId, user, "edit");
     const exp = await this.prisma.experimento.findUnique({
       where: { id: experimentoId },
-      select: { objetoEstudo: { select: { subcategoria: { select: { categoria: { select: { eCultura: true } } } } } } },
+      select: {
+        objetoEstudo: {
+          select: { subcategoria: { select: { categoria: { select: { eCultura: true } } } } },
+        },
+      },
     });
     const eCultura = exp?.objetoEstudo?.subcategoria?.categoria?.eCultura ?? false;
     const desejados = marcosPadrao(eCultura);
 
     const existentes = new Set(
-      (await this.prisma.atividadeExperimento.findMany({
-        where: { experimentoId, marco: { not: null } },
-        select: { marco: true },
-      })).map((a) => a.marco as MarcoTipo),
+      (
+        await this.prisma.atividadeExperimento.findMany({
+          where: { experimentoId, marco: { not: null } },
+          select: { marco: true },
+        })
+      ).map((a) => a.marco as MarcoTipo),
     );
     const faltantes = desejados.filter((m) => !existentes.has(m));
     let ordem = await this.prisma.atividadeExperimento.count({ where: { experimentoId } });
     // Modelo de Colheita (apontamento linhas/comprimento) que fornece a área útil (RN-PROD / C5).
     const modeloColheita = faltantes.includes("colheita")
-      ? await this.prisma.modeloAtividade.findFirst({ where: { fornecAreaColheita: true, ativo: true }, include: { campos: { orderBy: { ordem: "asc" } } } })
+      ? await this.prisma.modeloAtividade.findFirst({
+          where: { fornecAreaColheita: true, ativo: true },
+          include: { campos: { orderBy: { ordem: "asc" } } },
+        })
       : null;
     for (const m of faltantes) {
       ordem += 1;
       if (m === "colheita" && modeloColheita) {
         await this.prisma.atividadeExperimento.create({
           data: {
-            experimentoId, marco: m, nome: ROTULO_MARCO[m], modeloId: modeloColheita.id, tipo: modeloColheita.tipo, ordem,
-            valores: modeloColheita.campos.length ? { create: modeloColheita.campos.map((c) => ({ rotulo: c.rotulo })) } : undefined,
+            experimentoId,
+            marco: m,
+            nome: ROTULO_MARCO[m],
+            modeloId: modeloColheita.id,
+            tipo: modeloColheita.tipo,
+            ordem,
+            valores: modeloColheita.campos.length
+              ? { create: modeloColheita.campos.map((c) => ({ rotulo: c.rotulo })) }
+              : undefined,
           },
         });
       } else {
-        await this.prisma.atividadeExperimento.create({ data: { experimentoId, nome: ROTULO_MARCO[m], marco: m, tipo: "acao", ordem } });
+        await this.prisma.atividadeExperimento.create({
+          data: { experimentoId, nome: ROTULO_MARCO[m], marco: m, tipo: "acao", ordem },
+        });
       }
     }
     return { criados: faltantes.map((m) => ROTULO_MARCO[m]), eCultura };
   }
 
   /** Atualiza um marco/atividade: previsão, confirmação e data realizada. */
-  async atualizar(atividadeId: string, user: UsuarioAtual, dto: { dataPrevista?: string | null; confirmada?: boolean; data?: string | null; responsavel?: string; obs?: string }) {
-    const atv = await this.prisma.atividadeExperimento.findUnique({ where: { id: atividadeId }, select: { experimentoId: true } });
+  async atualizar(
+    atividadeId: string,
+    user: UsuarioAtual,
+    dto: {
+      dataPrevista?: string | null;
+      confirmada?: boolean;
+      data?: string | null;
+      responsavel?: string;
+      obs?: string;
+    },
+  ) {
+    const atv = await this.prisma.atividadeExperimento.findUnique({
+      where: { id: atividadeId },
+      select: { experimentoId: true },
+    });
     if (!atv) throw new NotFoundException("Atividade não encontrada.");
     await this.experimentos.garantirAcesso(atv.experimentoId, user, "edit");
     return this.prisma.atividadeExperimento.update({
       where: { id: atividadeId },
       data: {
-        dataPrevista: dto.dataPrevista === undefined ? undefined : dto.dataPrevista ? new Date(dto.dataPrevista) : null,
+        dataPrevista:
+          dto.dataPrevista === undefined
+            ? undefined
+            : dto.dataPrevista
+              ? new Date(dto.dataPrevista)
+              : null,
         confirmada: dto.confirmada,
         data: dto.data === undefined ? undefined : dto.data ? new Date(dto.data) : null,
         responsavel: dto.responsavel,
@@ -165,7 +213,10 @@ export class AtividadeExperimentoService {
   }
 
   async remover(atividadeId: string, user: UsuarioAtual) {
-    const atv = await this.prisma.atividadeExperimento.findUnique({ where: { id: atividadeId }, select: { experimentoId: true } });
+    const atv = await this.prisma.atividadeExperimento.findUnique({
+      where: { id: atividadeId },
+      select: { experimentoId: true },
+    });
     if (!atv) throw new NotFoundException("Atividade não encontrada.");
     await this.experimentos.garantirAcesso(atv.experimentoId, user, "edit");
     await this.prisma.atividadeExperimento.delete({ where: { id: atividadeId } });

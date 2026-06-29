@@ -1,0 +1,32 @@
+# Build/saída
+**/dist/
+**/.next/
+**/.turbo/
+**/node_modules/
+**/coverage/
+**/build/
+
+# Gerados / não-código
+apps/api/prisma/migrations/
+apps/api/email-previews/
+pnpm-lock.yaml
+*.min.js
+
+# Documentos binários
+*.docx
+*.pdf
+*.pptx
+*.xlsx
+*.sql
+
+# Material de referência / não-código (fora do monorepo)
+base-projeto/
+BD/
+estrutura claude/
+prints-projeto-exemplo/
+projeto pesquisa comercial/
+apps/mobile/
+
+# Markdown (docs em prosa): formatação manual por ora, para não reflowar tabelas
+# e textos do SDD. Pode ser habilitado num passo dedicado depois.
+**/*.md
