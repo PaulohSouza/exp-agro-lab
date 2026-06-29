@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type Experimento, type RelatorioAvaliacao } from "../../../lib/api";
+import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type Experimento, type ModeloAvaliacao, type RelatorioAvaliacao } from "../../../lib/api";
 
 export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (e: Experimento) => void }) {
   const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao } | { tipo: "analise"; aval: Avaliacao }>({ tipo: "lista" });
@@ -16,6 +16,7 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
 
   return (
     <div>
+      <AdicionarDoCatalogo exp={exp} onAdicionou={recarregar} />
       <NovaAvaliacao exp={exp} onCriou={recarregar} />
       <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
         <thead>
@@ -45,6 +46,45 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
           {avaliacoes.length === 0 && <tr><td style={td} colSpan={7}><span style={{ color: "#a9abbd" }}>Nenhuma avaliação.</span></td></tr>}
         </tbody>
       </table></div>
+    </div>
+  );
+}
+
+function AdicionarDoCatalogo({ exp, onAdicionou }: { exp: Experimento; onAdicionou: () => void }) {
+  const [modelos, setModelos] = useState<ModeloAvaliacao[]>([]);
+  const [sel, setSel] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => { api.listarModelos().then(setModelos).catch(() => {}); }, []);
+
+  async function adicionar() {
+    if (!sel) return;
+    setMsg(null); setErro(null);
+    try {
+      const r = await api.adicionarAvaliacoesDoModelo(exp.id, [sel]);
+      const nomes = r.criadas.map((a) => a.nome);
+      let txt = nomes.length ? `Adicionada(s): ${nomes.join(", ")}.` : "Modelo já estava no experimento.";
+      if (r.prerequisitosAdicionados.length) txt += ` Pré-requisito(s) incluído(s) automaticamente: ${r.prerequisitosAdicionados.join(", ")}.`;
+      setMsg(txt);
+      setSel("");
+      onAdicionou();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao adicionar do catálogo");
+    }
+  }
+
+  if (modelos.length === 0) return null;
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#eef6fc", padding: 12, borderRadius: 8, marginBottom: 10 }}>
+      <span style={{ fontSize: 13, color: "#1F2940", fontWeight: 600 }}>Adicionar do catálogo:</span>
+      <select value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, minWidth: 220 }}>
+        <option value="">— escolher modelo —</option>
+        {modelos.map((m) => <option key={m.id} value={m.id}>{m.nome}{m.unidadeSaida ? ` (${m.unidadeSaida})` : ""}</option>)}
+      </select>
+      <button onClick={adicionar} disabled={!sel} style={mini(sel ? "#1F2940" : "#a9abbd")}>adicionar</button>
+      {msg && <span style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      {erro && <span style={{ fontSize: 12, color: "#F34343" }}>{erro}</span>}
     </div>
   );
 }

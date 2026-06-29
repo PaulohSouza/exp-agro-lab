@@ -44,7 +44,8 @@ Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para mu
 - **A1 schema** ✅ — `ModeloAvaliacao` (escopo sistema/instituição/depto) + `ModeloAvaliacaoPrereq` (pré-req self-M:N) + `GrupoColeta`/`GrupoColetaItem`; `Avaliacao` ganhou `modeloId`/`grupoColetaId`/`numeroPontos`/`descricaoColeta`. Migration `20260629124049`.
 - **A2 domínio** ✅ — `packages/domain/modeloAvaliacao.ts`: visibilidade por escopo, `podeGerenciarEscopo`, fechamento transitivo de pré-requisitos. **+14 testes** (domain agora **44**).
 - **A3 API** ✅ — `ModeloAvaliacaoModule` (`/modelos-avaliacao` CRUD c/ RBAC por escopo). Smoke OK: admin instituição cria escopo instituição; escopo sistema só super-admin (403 caso contrário).
-- **Falta A:** A4 web (consulta 3 escopos + CRUD por papel) · A5 integração na aba Avaliações (adicionar do catálogo + auto-add de pré-requisitos).
+- **A4 web** ✅ — página `/catalogo` (link no nav): filtros por escopo (Todos/Geral/Instituição/Depto), tabela com badge de escopo, CRUD gated por papel (`podeGerenciar` espelha o domínio), form com pré-requisitos (checkboxes) e seletor de departamento.
+- **A5 integração** ✅ — endpoint `POST /experimentos/:id/avaliacoes/do-modelo` (resolve pré-req transitivos via domínio, herda campos do modelo, não duplica). UI "Adicionar do catálogo" na aba Avaliações avisa os pré-requisitos auto-incluídos. Smoke OK: Produtividade trouxe Umidade junto. **Macro A concluída.**
 - **Depois (C):** catálogo de atividades (ação/apontamento) — **refatorar a colheita** (mover nº linhas/comprimento/área de `AvaliacaoDado` p/ Atividade-Colheita; toca RN-PROD/seed/analytics). **Depois (B):** coleta agrupada (filtro + grupos salvos + lote web/mobile). Ordem confirmada: **A → C → B**.
 
 ## 3.1 Em andamento — croqui de 2+ fatores (esquema)

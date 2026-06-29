@@ -58,6 +58,38 @@ export interface Avaliacao {
   timing?: Timing | null;
   _count?: { dados: number };
 }
+export type EscopoModelo = "sistema" | "instituicao" | "departamento";
+export interface ModeloAvaliacao {
+  id: string;
+  nome: string;
+  descricaoColeta: string | null;
+  numeroPontos: number;
+  metodologiaRelatorio: string | null;
+  unidadeColeta: string | null;
+  unidadeSaida: string | null;
+  calculoRelatorio: string | null;
+  escopo: EscopoModelo;
+  instituicaoId: string | null;
+  departamentoId: string | null;
+  baseadoEmId: string | null;
+  ativo: boolean;
+  prerequisitos?: { prerequisitoId: string; prerequisito: { id: string; nome: string } }[];
+  _count?: { avaliacoes: number };
+}
+export interface ModeloAvaliacaoInput {
+  nome: string;
+  descricaoColeta?: string;
+  numeroPontos?: number;
+  metodologiaRelatorio?: string;
+  unidadeColeta?: string;
+  unidadeSaida?: string;
+  calculoRelatorio?: string;
+  escopo: EscopoModelo;
+  departamentoId?: string;
+  baseadoEmId?: string;
+  prerequisitoIds?: string[];
+}
+
 export interface AvaliacaoDado {
   id: string;
   parcelaId: string;
@@ -238,6 +270,19 @@ export const api = {
   lancarDados: (avaliacaoId: string, dados: Array<Partial<AvaliacaoDado>>) =>
     req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
   relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
+  adicionarAvaliacoesDoModelo: (expId: string, modeloIds: string[]) =>
+    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[] }>(
+      `/experimentos/${expId}/avaliacoes/do-modelo`,
+      { method: "POST", body: JSON.stringify({ modeloIds }) },
+    ),
+
+  // catálogo de modelos de avaliação (multi-escopo)
+  listarModelos: () => req<ModeloAvaliacao[]>("/modelos-avaliacao"),
+  criarModelo: (body: ModeloAvaliacaoInput) =>
+    req<ModeloAvaliacao>("/modelos-avaliacao", { method: "POST", body: JSON.stringify(body) }),
+  atualizarModelo: (id: string, body: Partial<ModeloAvaliacaoInput>) =>
+    req<ModeloAvaliacao>(`/modelos-avaliacao/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  removerModelo: (id: string) => req<{ ok: boolean }>(`/modelos-avaliacao/${id}`, { method: "DELETE" }),
   analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
     req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
 

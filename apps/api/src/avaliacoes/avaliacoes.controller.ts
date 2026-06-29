@@ -21,6 +21,11 @@ export class AvaliacoesController {
     return this.service.criar(id, user, dto);
   }
 
+  @Post("experimentos/:id/avaliacoes/do-modelo")
+  adicionarDoModelo(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() body: { modeloIds: string[] }) {
+    return this.service.adicionarDoModelo(id, user, body.modeloIds);
+  }
+
   @Put("avaliacoes/:id")
   atualizar(@CurrentUser() user: UsuarioAtual, @Param("id") id: string, @Body() dto: Partial<CriarAvaliacaoDto>) {
     return this.service.atualizar(id, user, dto);

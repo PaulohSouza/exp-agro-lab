@@ -26,6 +26,7 @@ export function Protected({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" style={navlink}>Painel</Link>
           <Link href="/experimentos" style={navlink}>Protocolos</Link>
           <Link href="/cadastros" style={navlink}>Cadastros</Link>
+          <Link href="/catalogo" style={navlink}>Catálogo</Link>
           {user?.isAdminInstituicao && <Link href="/usuarios" style={navlink}>Usuários</Link>}
           {user?.isAdminInstituicao && <Link href="/instituicao" style={navlink}>Instituição</Link>}
         </nav>

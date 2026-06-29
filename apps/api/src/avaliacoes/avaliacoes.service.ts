@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
-import { calcularSaida } from "@exp/domain";
+import { calcularSaida, resolverPrerequisitos } from "@exp/domain";
 import { anovaUmFator, type Observacao, type Delineamento } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
@@ -51,6 +51,66 @@ export class AvaliacoesService {
       orderBy: { ordem: "asc" },
       include: { timing: true, _count: { select: { dados: true } } },
     });
+  }
+
+  /**
+   * Adiciona avaliações a partir do catálogo (A5). Resolve o fechamento
+   * transitivo dos pré-requisitos (regra do domínio) — ex.: Produtividade traz
+   * Umidade — e cria uma avaliação por modelo, herdando os campos. Modelos já
+   * presentes no experimento são ignorados (não duplica).
+   */
+  async adicionarDoModelo(experimentoId: string, user: UsuarioAtual, modeloIds: string[]) {
+    await this.experimentos.garantirAcesso(experimentoId, user, "edit");
+    if (!modeloIds?.length) throw new BadRequestException("Informe ao menos um modelo.");
+
+    const arestas = await this.prisma.modeloAvaliacaoPrereq.findMany({
+      select: { modeloId: true, prerequisitoId: true },
+    });
+    const { todos, adicionados } = resolverPrerequisitos(modeloIds, arestas);
+
+    const modelos = await this.prisma.modeloAvaliacao.findMany({ where: { id: { in: todos } } });
+    if (modelos.length !== todos.length) throw new BadRequestException("Modelo inexistente.");
+
+    const jaPresentes = new Set(
+      (await this.prisma.avaliacao.findMany({
+        where: { experimentoId, modeloId: { in: todos } },
+        select: { modeloId: true },
+      })).map((a) => a.modeloId),
+    );
+
+    let ordem = await this.prisma.avaliacao.count({ where: { experimentoId } });
+    const porId = new Map(modelos.map((m) => [m.id, m]));
+    const criadas = [];
+    for (const id of todos) {
+      if (jaPresentes.has(id)) continue;
+      const m = porId.get(id)!;
+      ordem += 1;
+      criadas.push(
+        await this.prisma.avaliacao.create({
+          data: {
+            experimentoId,
+            modeloId: m.id,
+            nome: m.nome,
+            descricaoColeta: m.descricaoColeta,
+            numeroPontos: m.numeroPontos,
+            metodologia: m.metodologiaRelatorio,
+            unidadeColeta: m.unidadeColeta,
+            unidadeSaida: m.unidadeSaida,
+            formula: m.calculoRelatorio,
+            ordem,
+          },
+          include: { timing: true, _count: { select: { dados: true } } },
+        }),
+      );
+    }
+
+    return {
+      criadas,
+      // modelos auto-incluídos por serem pré-requisito (para o aviso na UI)
+      prerequisitosAdicionados: adicionados
+        .filter((id) => !jaPresentes.has(id))
+        .map((id) => porId.get(id)?.nome ?? id),
+    };
   }
 
   async criar(experimentoId: string, user: UsuarioAtual, dto: CriarAvaliacaoDto) {
