@@ -29,6 +29,7 @@ model Instituicao {
   aprovadores  AprovadorInstituicao[]
   modelosAvaliacao ModeloAvaliacao[]
   gruposColeta GrupoColeta[]
+  modelosAtividade ModeloAtividade[]
 }
 
 enum PoliticaAprovacao {
@@ -48,6 +49,7 @@ model Departamento {
   usuarios      User[]
   modelosAvaliacao ModeloAvaliacao[]
   gruposColeta  GrupoColeta[]
+  modelosAtividade ModeloAtividade[]
 
   @@index([instituicaoId])
 }
@@ -210,6 +212,7 @@ model Experimento {
   tratamentos     Tratamento[]
   parcelas        Parcela[]
   avaliacoes      Avaliacao[]
+  atividades      AtividadeExperimento[]
   timings         Timing[]
   compartilhamentos ExperimentoCompartilhamento[]
   responsaveis    ExperimentoResponsavel[]
@@ -467,6 +470,97 @@ model GrupoColetaItem {
   modelo   ModeloAvaliacao @relation(fields: [modeloId], references: [id], onDelete: Cascade)
 
   @@unique([grupoId, modeloId])
+}
+
+// ----------------------- Catálogo de atividades (Macro C) -----------------------
+// Atividade = registro GERAL do experimento (não por parcela). Pode ser de ação
+// (sem coleta) ou com apontamento (campos parametrizados). Multi-escopo como o
+// catálogo de avaliações. NÃO confundir com o cadastro simples `Atividade`
+// (nome+valorVenda) usado em TratamentoProduto.
+// Ver SDD/04-design-detalhado/08-catalogo-avaliacoes.md (Demanda C).
+model ModeloAtividade {
+  id                   String  @id @default(cuid())
+  nome                 String
+  descricao            String? @db.Text
+  tipo                 TipoAtividade @default(acao)
+  metodologiaRelatorio String? @db.Text
+  escopo               EscopoModelo @default(sistema)
+  instituicaoId        String?
+  departamentoId       String?
+  ativo                Boolean @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  instituicao   Instituicao?  @relation(fields: [instituicaoId], references: [id])
+  departamento  Departamento? @relation(fields: [departamentoId], references: [id])
+  campos        ModeloAtividadeCampo[]
+  atividades    AtividadeExperimento[]
+
+  @@index([escopo])
+  @@index([instituicaoId])
+  @@index([departamentoId])
+}
+
+enum TipoAtividade {
+  acao
+  apontamento
+}
+
+// Campo parametrizado de uma atividade com apontamento (ex.: CO2 → vento, umidade, data).
+model ModeloAtividadeCampo {
+  id          String @id @default(cuid())
+  modeloId    String
+  rotulo      String
+  tipo        TipoCampo @default(numero)
+  unidade     String?
+  obrigatorio Boolean @default(false)
+  ordem       Int     @default(0)
+  modelo      ModeloAtividade @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+
+  @@index([modeloId])
+}
+
+enum TipoCampo {
+  numero
+  texto
+  data
+  booleano
+}
+
+// Registro de uma atividade no experimento (nível experimento, não por parcela).
+model AtividadeExperimento {
+  id            String @id @default(cuid())
+  experimentoId String
+  modeloId      String?
+  nome          String
+  tipo          TipoAtividade @default(acao)
+  data          DateTime?
+  responsavel   String?
+  obs           String? @db.Text
+  status        String?
+  ordem         Int     @default(0)
+  createdAt     DateTime @default(now())
+  experimento   Experimento      @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  modelo        ModeloAtividade? @relation(fields: [modeloId], references: [id])
+  valores       AtividadeApontamentoValor[]
+
+  @@index([experimentoId])
+  @@index([modeloId])
+}
+
+// Valor de um campo de apontamento de uma atividade do experimento.
+model AtividadeApontamentoValor {
+  id          String @id @default(cuid())
+  atividadeId String
+  campoId     String?            // ref. ao ModeloAtividadeCampo (quando veio do modelo)
+  rotulo      String             // snapshot do rótulo
+  valorNum    Float?
+  valorTexto  String?
+  valorData   DateTime?
+  valorBool   Boolean?
+  atividade   AtividadeExperimento @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+
+  @@index([atividadeId])
 }
 
 model AvaliacaoDado {
