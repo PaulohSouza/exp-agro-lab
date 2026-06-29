@@ -55,6 +55,7 @@ export interface Avaliacao {
   tipo: string;
   ordem: number;
   timingId: string | null;
+  grupoColetaId?: string | null;
   dataPrevista: string | null;
   timing?: Timing | null;
   _count?: { dados: number };
@@ -156,6 +157,26 @@ export interface AtividadeExperimento {
   valores: AtividadeApontamentoValor[];
   modelo?: ModeloAtividade | null;
 }
+
+// ---- Grupos de coleta (Macro B) ----
+export interface GrupoColeta {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  escopo: EscopoModelo;
+  instituicaoId: string | null;
+  departamentoId: string | null;
+  ativo: boolean;
+  itens?: { modeloId: string; modelo: { id: string; nome: string } }[];
+}
+export interface GrupoColetaInput {
+  nome: string;
+  descricao?: string;
+  escopo: EscopoModelo;
+  departamentoId?: string;
+  modeloIds?: string[];
+}
+export interface LancamentoLote { avaliacaoId: string; parcelaId: string; numAmostra?: number; valorColetado?: number | null }
 
 export interface AvaliacaoDado {
   id: string;
@@ -371,6 +392,16 @@ export const api = {
     req<AtividadeExperimento>(`/atividades/${atividadeId}`, { method: "PUT", body: JSON.stringify(body) }),
   removerAtividadeExp: (atividadeId: string) => req<{ ok: boolean }>(`/atividades/${atividadeId}`, { method: "DELETE" }),
   gerarMarcos: (expId: string) => req<{ criados: string[]; eCultura: boolean }>(`/experimentos/${expId}/marcos/gerar`, { method: "POST" }),
+
+  // grupos de coleta + coleta em lote
+  listarGrupos: () => req<GrupoColeta[]>("/grupos-coleta"),
+  criarGrupo: (body: GrupoColetaInput) => req<GrupoColeta>("/grupos-coleta", { method: "POST", body: JSON.stringify(body) }),
+  atualizarGrupo: (id: string, body: Partial<GrupoColetaInput>) => req<GrupoColeta>(`/grupos-coleta/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  removerGrupo: (id: string) => req<{ ok: boolean }>(`/grupos-coleta/${id}`, { method: "DELETE" }),
+  aplicarGrupo: (expId: string, grupoId: string) =>
+    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[]; atividadesAdicionadas: string[] }>(`/experimentos/${expId}/grupos/${grupoId}/aplicar`, { method: "POST" }),
+  lancarLote: (expId: string, lancamentos: LancamentoLote[]) =>
+    req<{ salvos: number }>(`/experimentos/${expId}/coleta-lote`, { method: "POST", body: JSON.stringify({ lancamentos }) }),
   analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
     req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
 

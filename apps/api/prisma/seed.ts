@@ -230,13 +230,21 @@ async function main() {
   const mUmidade = await prisma.modeloAvaliacao.create({
     data: { nome: "Umidade", escopo: "sistema", unidadeColeta: "%", unidadeSaida: "%", numeroPontos: 1, descricaoColeta: "Umidade dos grãos (para correção a 13%)." },
   });
-  await prisma.modeloAvaliacao.create({
+  const mProd = await prisma.modeloAvaliacao.create({
     data: {
       nome: "Produtividade", escopo: "sistema", unidadeColeta: "kg", unidadeSaida: "sacas/ha",
       calculoRelatorio: "(valor / areaUtil) * 10000", numeroPontos: 1,
       descricaoColeta: "Massa colhida por parcela; área útil vem da atividade Colheita.",
       prerequisitos: { create: [{ prerequisitoId: mUmidade.id }] },
       prerequisitosAtividade: { create: [{ modeloAtividadeId: modeloColheita.id }] },
+    },
+  });
+  // Grupo de coleta demo (Macro B): conjunto coletado junto na colheita.
+  await prisma.grupoColeta.create({
+    data: {
+      nome: "Colheita (Umidade + Produtividade)", escopo: "sistema",
+      descricao: "Avaliações coletadas juntas no momento da colheita.",
+      itens: { create: [{ modeloId: mUmidade.id, ordem: 0 }, { modeloId: mProd.id, ordem: 1 }] },
     },
   });
 

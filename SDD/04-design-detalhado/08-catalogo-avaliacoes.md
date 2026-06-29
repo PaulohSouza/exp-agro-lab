@@ -40,7 +40,10 @@ Um modelo de avaliação pode exigir **outras avaliações** (`ModeloAvaliacaoPr
 - `gestao_departamento` / responsável → CRUD do escopo **departamento** do seu depto.
 - Demais papéis → leitura. Ver [05-seguranca/03-papeis-rbac.md](../05-seguranca/03-papeis-rbac.md).
 
-## Demanda B — Coleta agrupada (filtro de coleta)
+## Demanda B — Coleta agrupada (filtro de coleta) — IMPLEMENTADA (B1–B4)
+Status: B1 grupos CRUD ✅ · B2 domínio (`dedupLancamentos`) ✅ · B3 API coleta em lote (`POST /experimentos/:id/coleta-lote`) + aplicar grupo (`.../grupos/:grupoId/aplicar`) ✅ · B4 web (aba Avaliações: "Aplicar grupo" + "Coleta em lote (grade)" com filtro por timing/grupo) ✅ · **B5 mobile offline — follow-up** (mobile não testável aqui; a coleta em lote no app reusa `lancarLote`/sync). Catálogo `/catalogo` ganhou subaba **Grupos de coleta**.
+
+
 
 Otimizar o tempo registrando várias avaliações de uma vez, na **web e no app**.
 - **Filtro dinâmico:** a tela de coleta filtra as avaliações do experimento por **timing/data** e mostra todas juntas numa grade (parcela × avaliação).

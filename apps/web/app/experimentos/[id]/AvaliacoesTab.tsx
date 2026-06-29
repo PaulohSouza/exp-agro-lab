@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type EscopoModelo, type Experimento, type ModeloAvaliacao, type RelatorioAvaliacao } from "../../../lib/api";
+import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type EscopoModelo, type Experimento, type GrupoColeta, type LancamentoLote, type ModeloAvaliacao, type RelatorioAvaliacao } from "../../../lib/api";
 
 const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: string }> = {
   sistema: { sigla: "GER", label: "Geral (sistema)", cor: "#1F2940" },
@@ -9,7 +9,7 @@ const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: str
 };
 
 export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (e: Experimento) => void }) {
-  const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao } | { tipo: "analise"; aval: Avaliacao }>({ tipo: "lista" });
+  const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao } | { tipo: "analise"; aval: Avaliacao } | { tipo: "lote" }>({ tipo: "lista" });
   const avaliacoes = exp.avaliacoes ?? [];
 
   async function recarregar() {
@@ -19,10 +19,17 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
   if (modo.tipo === "lancar") return <Lancar exp={exp} aval={modo.aval} voltar={() => { setModo({ tipo: "lista" }); recarregar(); }} />;
   if (modo.tipo === "relatorio") return <Relatorio aval={modo.aval} voltar={() => setModo({ tipo: "lista" })} />;
   if (modo.tipo === "analise") return <Analise aval={modo.aval} voltar={() => setModo({ tipo: "lista" })} />;
+  if (modo.tipo === "lote") return <ColetaLote exp={exp} voltar={() => { setModo({ tipo: "lista" }); recarregar(); }} />;
 
   return (
     <div>
       <AdicionarDoCatalogo exp={exp} onAdicionou={recarregar} />
+      <AplicarGrupo exp={exp} onAplicou={recarregar} />
+      {avaliacoes.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <button data-testid="abrir-coleta-lote" onClick={() => setModo({ tipo: "lote" })} style={mini("#1F2940")}>Coleta em lote (grade)</button>
+        </div>
+      )}
       <NovaAvaliacao exp={exp} onCriou={recarregar} />
       <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
         <thead>
@@ -152,6 +159,122 @@ function Bloco({ rotulo, texto }: { rotulo: string; texto?: string | null }) {
     <div>
       <div style={{ color: "#7987A1", marginBottom: 2 }}>{rotulo}:</div>
       <div style={{ whiteSpace: "pre-wrap" }}>{texto?.trim() ? texto : <span style={{ color: "#a9abbd" }}>— não informado —</span>}</div>
+    </div>
+  );
+}
+
+function AplicarGrupo({ exp, onAplicou }: { exp: Experimento; onAplicou: () => void }) {
+  const [grupos, setGrupos] = useState<GrupoColeta[]>([]);
+  const [sel, setSel] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  useEffect(() => { api.listarGrupos().then(setGrupos).catch(() => {}); }, []);
+
+  async function aplicar() {
+    if (!sel) return;
+    setMsg(null); setErro(null);
+    try {
+      const r = await api.aplicarGrupo(exp.id, sel);
+      const nomes = r.criadas.map((a) => a.nome);
+      let txt = nomes.length ? `Grupo aplicado — adicionada(s): ${nomes.join(", ")}.` : "Avaliações do grupo já estavam no experimento.";
+      if (r.atividadesAdicionadas.length) txt += ` Atividade(s): ${r.atividadesAdicionadas.join(", ")}.`;
+      setMsg(txt); setSel(""); onAplicou();
+    } catch (e) { setErro(e instanceof Error ? e.message : "Falha ao aplicar grupo"); }
+  }
+
+  if (grupos.length === 0) return null;
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#f3f0fb", padding: 12, borderRadius: 8, marginBottom: 10 }}>
+      <span style={{ fontSize: 13, color: "#1F2940", fontWeight: 600 }}>Aplicar grupo de coleta:</span>
+      <select data-testid="aplicar-grupo-select" value={sel} onChange={(e) => setSel(e.target.value)} style={inp}>
+        <option value="">— escolher grupo —</option>
+        {grupos.map((g) => <option key={g.id} value={g.id}>{g.nome} ({g.itens?.length ?? 0})</option>)}
+      </select>
+      <button data-testid="aplicar-grupo-btn" onClick={aplicar} disabled={!sel} style={mini(sel ? "#1F2940" : "#a9abbd")}>aplicar</button>
+      {msg && <span style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      {erro && <span style={{ fontSize: 12, color: "#F34343" }}>{erro}</span>}
+    </div>
+  );
+}
+
+function ColetaLote({ exp, voltar }: { exp: Experimento; voltar: () => void }) {
+  const avals = exp.avaliacoes ?? [];
+  const parcelas = useMemo(() => [...(exp.parcelas ?? [])].sort((a, b) => a.numero - b.numero), [exp.parcelas]);
+  const tratPorId = useMemo(() => new Map((exp.tratamentos ?? []).map((t) => [t.id, t])), [exp.tratamentos]);
+  const [grupos, setGrupos] = useState<GrupoColeta[]>([]);
+  const [timing, setTiming] = useState("todos");
+  const [grupo, setGrupo] = useState("todos");
+  const [vals, setVals] = useState<Record<string, Record<string, string>>>({});
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.listarGrupos().then(setGrupos).catch(() => {});
+    Promise.all(avals.map((a) => api.listarDados(a.id).then((ds) => [a.id, ds] as const))).then((pares) => {
+      const m: Record<string, Record<string, string>> = {};
+      for (const [avalId, ds] of pares) for (const d of ds) (m[d.parcelaId] ??= {})[avalId] = d.valorColetado?.toString() ?? "";
+      setVals(m);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filtradas = avals.filter((a) => (timing === "todos" || a.timingId === timing) && (grupo === "todos" || a.grupoColetaId === grupo));
+
+  function set(parcelaId: string, avalId: string, v: string) {
+    setVals((prev) => ({ ...prev, [parcelaId]: { ...(prev[parcelaId] ?? {}), [avalId]: v } }));
+  }
+
+  async function salvar() {
+    const lancamentos: LancamentoLote[] = [];
+    for (const p of parcelas) for (const a of filtradas) {
+      const v = vals[p.id]?.[a.id];
+      if (v !== undefined && v !== "") lancamentos.push({ avaliacaoId: a.id, parcelaId: p.id, valorColetado: Number(v) });
+    }
+    const r = await api.lancarLote(exp.id, lancamentos);
+    setMsg(`${r.salvos} valor(es) salvos.`);
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 12 }}>
+        <button onClick={voltar} style={mini("#a9abbd")}>← voltar</button>
+        <strong>Coleta em lote</strong>
+        <label style={{ fontSize: 12, color: "#7987A1" }}>Timing:
+          <select value={timing} onChange={(e) => setTiming(e.target.value)} style={{ ...inp, marginLeft: 4 }}>
+            <option value="todos">todos</option>
+            {(exp.timings ?? []).map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+          </select>
+        </label>
+        {grupos.length > 0 && (
+          <label style={{ fontSize: 12, color: "#7987A1" }}>Grupo:
+            <select value={grupo} onChange={(e) => setGrupo(e.target.value)} style={{ ...inp, marginLeft: 4 }}>
+              <option value="todos">todos</option>
+              {grupos.map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+            </select>
+          </label>
+        )}
+        <button data-testid="coleta-lote-salvar" onClick={salvar} style={mini("#1F2940")}>Salvar tudo</button>
+        {msg && <span style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      </div>
+      {filtradas.length === 0 ? <p style={{ color: "#a9abbd" }}>Nenhuma avaliação no filtro.</p> : (
+        <div className="tabela-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead><tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
+            <th style={th}>Parcela</th><th style={th}>Bloco</th><th style={th}>Trat.</th>
+            {filtradas.map((a) => <th key={a.id} style={th}>{a.nome}{a.unidadeColeta ? ` (${a.unidadeColeta})` : ""}</th>)}
+          </tr></thead>
+          <tbody>
+            {parcelas.map((p) => (
+              <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f8" }}>
+                <td style={td}>{p.numero}{p.isInicio ? " ★" : ""}</td>
+                <td style={td}>{p.bloco}</td>
+                <td style={td}>{tratPorId.get(p.tratamentoId)?.tag ?? "?"}</td>
+                {filtradas.map((a) => (
+                  <td key={a.id} style={td}><input value={vals[p.id]?.[a.id] ?? ""} onChange={(e) => set(p.id, a.id, e.target.value)} style={{ ...inp, width: 80 }} /></td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table></div>
+      )}
     </div>
   );
 }

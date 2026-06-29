@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { api, type Departamento, type EscopoModelo, type ModeloAvaliacao, type ModeloAvaliacaoInput, type ModeloAtividade, type ModeloAtividadeInput, type Papel, type TipoCampo } from "../../lib/api";
+import { api, type Departamento, type EscopoModelo, type GrupoColeta, type GrupoColetaInput, type ModeloAvaliacao, type ModeloAvaliacaoInput, type ModeloAtividade, type ModeloAtividadeInput, type Papel, type TipoCampo } from "../../lib/api";
 import { Protected } from "../../components/Protected";
 import { getUser } from "../../lib/auth";
 
@@ -61,7 +61,7 @@ const VAZIO: ModeloAvaliacaoInput = {
 };
 
 export default function CatalogoPage() {
-  const [vista, setVista] = useState<"avaliacoes" | "atividades">("avaliacoes");
+  const [vista, setVista] = useState<"avaliacoes" | "atividades" | "grupos">("avaliacoes");
   return (
     <Protected>
       <main style={{ maxWidth: 1100, margin: "32px auto", padding: 24 }}>
@@ -74,9 +74,10 @@ export default function CatalogoPage() {
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <button onClick={() => setVista("avaliacoes")} style={subtab(vista === "avaliacoes")}>Avaliações</button>
             <button onClick={() => setVista("atividades")} style={subtab(vista === "atividades")}>Atividades</button>
+            <button onClick={() => setVista("grupos")} style={subtab(vista === "grupos")}>Grupos de coleta</button>
           </div>
         </div>
-        {vista === "avaliacoes" ? <Catalogo /> : <CatalogoAtividades />}
+        {vista === "avaliacoes" ? <Catalogo /> : vista === "atividades" ? <CatalogoAtividades /> : <CatalogoGrupos />}
       </main>
     </Protected>
   );
@@ -431,6 +432,117 @@ function CatalogoAtividades() {
               );
             })}
             {visiveis.length === 0 && <tr><td style={td} colSpan={6}><span style={{ color: "#a9abbd" }}>Nenhuma atividade neste escopo.</span></td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------- Grupos de coleta ----------------------------- */
+
+function CatalogoGrupos() {
+  const papel = getUser()?.papel;
+  const escoposGerenciaveis = ESCOPOS.filter((e) => podeGerenciar(papel, e.value));
+  const [grupos, setGrupos] = useState<GrupoColeta[]>([]);
+  const [modelos, setModelos] = useState<ModeloAvaliacao[]>([]);
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+  const [form, setForm] = useState<GrupoColetaInput>({ nome: "", descricao: "", escopo: "instituicao", departamentoId: "", modeloIds: [] });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function recarregar() { setGrupos(await api.listarGrupos()); }
+  useEffect(() => {
+    recarregar().catch((e) => setErro(e instanceof Error ? e.message : "Falha ao carregar"));
+    api.listarModelos().then(setModelos).catch(() => {});
+    if (podeGerenciar(papel, "departamento")) api.departamentos().then(setDepartamentos).catch(() => {});
+    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function reset() { setForm({ nome: "", descricao: "", escopo: escoposGerenciaveis[0]?.value ?? "instituicao", departamentoId: "", modeloIds: [] }); setEditId(null); }
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault(); setErro(null); setMsg(null);
+    if (!form.nome.trim()) return;
+    try {
+      const body: GrupoColetaInput = { ...form, departamentoId: form.escopo === "departamento" ? form.departamentoId || undefined : undefined };
+      if (editId) await api.atualizarGrupo(editId, body); else await api.criarGrupo(body);
+      setMsg(editId ? "Grupo atualizado." : "Grupo criado."); reset(); recarregar();
+    } catch (err) { setErro(err instanceof Error ? err.message : "Falha ao salvar"); }
+  }
+
+  function editar(g: GrupoColeta) {
+    setEditId(g.id);
+    setForm({ nome: g.nome, descricao: g.descricao ?? "", escopo: g.escopo, departamentoId: g.departamentoId ?? "", modeloIds: g.itens?.map((i) => i.modeloId) ?? [] });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function excluir(g: GrupoColeta) {
+    if (!confirm(`Remover o grupo "${g.nome}"?`)) return;
+    try { await api.removerGrupo(g.id); recarregar(); } catch (err) { setErro(err instanceof Error ? err.message : "Falha"); }
+  }
+
+  return (
+    <div>
+      <p style={{ color: "#7987A1", fontSize: 13, marginTop: 16 }}>Conjuntos nomeados de avaliações coletadas juntas (ex.: "Colheita" = Umidade + PMG + Produtividade). Aplique a um experimento na aba Avaliações.</p>
+      {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
+      {msg && <p style={{ color: "#1F2940" }}>{msg}</p>}
+
+      {escoposGerenciaveis.length > 0 && (
+        <form onSubmit={salvar} style={{ background: "#f9f9fb", padding: 16, borderRadius: 10, marginBottom: 20 }}>
+          <strong style={{ color: "#1F2940" }}>{editId ? "Editar grupo" : "Novo grupo"}</strong>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 10 }}>
+            <input data-testid="grupo-nome" placeholder="Nome (ex.: Colheita)" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} style={inp} />
+            <input placeholder="descrição" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} style={inp} />
+            <select data-testid="grupo-escopo" value={form.escopo} onChange={(e) => setForm({ ...form, escopo: e.target.value as EscopoModelo })} style={inp} disabled={!!editId}>
+              {escoposGerenciaveis.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
+            </select>
+            {form.escopo === "departamento" && (
+              <select value={form.departamentoId} onChange={(e) => setForm({ ...form, departamentoId: e.target.value })} style={inp}>
+                <option value="">— departamento —</option>
+                {departamentos.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </select>
+            )}
+          </div>
+          <div style={{ marginTop: 12, maxWidth: 360 }}>
+            <MultiPicker
+              testid="grupo-modelos"
+              label="Avaliações do grupo:"
+              opcoes={modelos.map((m) => ({ id: m.id, rotulo: `[${siglaEscopo(m.escopo)}] ${m.nome}` }))}
+              selecionados={form.modeloIds ?? []}
+              onChange={(ids) => setForm({ ...form, modeloIds: ids })}
+            />
+          </div>
+          <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+            <button type="submit" data-testid="grupo-salvar" style={btn("#1F2940")}>{editId ? "Salvar" : "Criar grupo"}</button>
+            {editId && <button type="button" onClick={reset} style={btn("#a9abbd")}>cancelar</button>}
+          </div>
+        </form>
+      )}
+
+      <div className="tabela-scroll">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead><tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
+            {["Grupo", "Escopo", "Avaliações", "Ações"].map((h) => <th key={h} style={th}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {grupos.map((g) => {
+              const podeEditar = podeGerenciar(papel, g.escopo);
+              const esc = ESCOPOS.find((e) => e.value === g.escopo)!;
+              return (
+                <tr key={g.id} style={{ borderBottom: "1px solid #eaecf3" }}>
+                  <td style={td}><strong>{g.nome}</strong>{g.descricao ? <div style={{ fontSize: 11, color: "#7987A1" }}>{g.descricao}</div> : null}</td>
+                  <td style={td}><span style={{ background: esc.cor, color: g.escopo === "departamento" ? "#1F2940" : "#fff", borderRadius: 6, padding: "2px 8px", fontSize: 11 }}>{esc.label}</span></td>
+                  <td style={td}>{g.itens?.map((i) => i.modelo.nome).join(", ") || "—"}</td>
+                  <td style={td}>
+                    {podeEditar ? <><button onClick={() => editar(g)} style={mini("#4EC2F0")}>editar</button>{" "}<button onClick={() => excluir(g)} style={mini("#F34343")}>x</button></> : <span style={{ color: "#a9abbd", fontSize: 12 }}>leitura</span>}
+                  </td>
+                </tr>
+              );
+            })}
+            {grupos.length === 0 && <tr><td style={td} colSpan={4}><span style={{ color: "#a9abbd" }}>Nenhum grupo.</span></td></tr>}
           </tbody>
         </table>
       </div>

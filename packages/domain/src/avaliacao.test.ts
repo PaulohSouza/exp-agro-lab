@@ -3,7 +3,27 @@ import {
   calcularAreaUtilColhida,
   calcularProdutividadeKgHa,
   calcularSaida,
+  dedupLancamentos,
 } from "./avaliacao.js";
+
+describe("dedupLancamentos (coleta em lote)", () => {
+  it("mantém o último por (avaliação, parcela, amostra)", () => {
+    const r = dedupLancamentos([
+      { avaliacaoId: "a", parcelaId: "p1", valorColetado: 1 },
+      { avaliacaoId: "a", parcelaId: "p1", valorColetado: 9 },
+      { avaliacaoId: "b", parcelaId: "p1", valorColetado: 2 },
+    ]);
+    expect(r).toHaveLength(2);
+    expect(r.find((x) => x.avaliacaoId === "a")!.valorColetado).toBe(9);
+  });
+  it("distingue por amostra", () => {
+    const r = dedupLancamentos([
+      { avaliacaoId: "a", parcelaId: "p1", numAmostra: 1, valorColetado: 1 },
+      { avaliacaoId: "a", parcelaId: "p1", numAmostra: 2, valorColetado: 2 },
+    ]);
+    expect(r).toHaveLength(2);
+  });
+});
 
 describe("RN-PROD (produtividade kg/parcela → kg/ha)", () => {
   it("área útil = linhas × espaçamento × comprimento (exemplo PC1699)", () => {

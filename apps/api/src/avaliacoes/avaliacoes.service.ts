@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
-import { calcularSaida, resolverPrerequisitos, calcularAreaUtilColhida } from "@exp/domain";
+import { calcularSaida, resolverPrerequisitos, calcularAreaUtilColhida, dedupLancamentos, type LancamentoLote } from "@exp/domain";
 import { anovaUmFator, type Observacao, type Delineamento } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
@@ -238,6 +238,45 @@ export class AvaliacoesService {
       include: { parcela: { include: { tratamento: true } } },
       orderBy: { parcela: { numero: "asc" } },
     });
+  }
+
+  /** Aplica um grupo de coleta: adiciona as avaliações dos modelos do grupo
+   *  (com pré-requisitos) e as marca com o grupo, p/ filtrar a coleta por grupo. */
+  async aplicarGrupo(experimentoId: string, user: UsuarioAtual, grupoId: string) {
+    const grupo = await this.prisma.grupoColeta.findUnique({ where: { id: grupoId }, include: { itens: true } });
+    if (!grupo) throw new NotFoundException("Grupo de coleta não encontrado.");
+    const modeloIds = grupo.itens.map((i) => i.modeloId);
+    if (!modeloIds.length) throw new BadRequestException("Grupo sem avaliações.");
+    const r = await this.adicionarDoModelo(experimentoId, user, modeloIds);
+    const ids = r.criadas.map((a) => a.id);
+    if (ids.length) await this.prisma.avaliacao.updateMany({ where: { id: { in: ids } }, data: { grupoColetaId: grupoId } });
+    return r;
+  }
+
+  /**
+   * COLETA EM LOTE (Macro B): grava várias avaliações × parcelas numa transação.
+   * Otimiza a coleta quando se registra um conjunto de avaliações junto (ex.:
+   * Umidade + PMG + Produtividade). Idempotente (upsert por chave única).
+   */
+  async lancarLote(experimentoId: string, user: UsuarioAtual, lancamentos: LancamentoLote[]) {
+    await this.experimentos.garantirAcesso(experimentoId, user);
+    if (!lancamentos?.length) return { salvos: 0 };
+    const avalIds = [...new Set(lancamentos.map((l) => l.avaliacaoId))];
+    const validas = await this.prisma.avaliacao.count({ where: { id: { in: avalIds }, experimentoId } });
+    if (validas !== avalIds.length) throw new BadRequestException("Avaliação fora do experimento.");
+
+    const limpos = dedupLancamentos(lancamentos);
+    await this.prisma.$transaction(
+      limpos.map((l) => {
+        const numAmostra = l.numAmostra ?? 1;
+        return this.prisma.avaliacaoDado.upsert({
+          where: { avaliacaoId_parcelaId_numAmostra: { avaliacaoId: l.avaliacaoId, parcelaId: l.parcelaId, numAmostra } },
+          create: { avaliacaoId: l.avaliacaoId, parcelaId: l.parcelaId, numAmostra, valorColetado: l.valorColetado ?? null, origem: "web", syncedAt: new Date() },
+          update: { valorColetado: l.valorColetado ?? null, syncedAt: new Date() },
+        });
+      }),
+    );
+    return { salvos: limpos.length };
   }
 
   /** Lança/atualiza o VALOR BRUTO por parcela (acesso >= input). */

@@ -47,6 +47,27 @@ export function calcularSaida(input: {
   return avaliarExpressao(input.formula, escopo);
 }
 
+/**
+ * Coleta em lote (Macro B): um lançamento de valor por (avaliação, parcela, amostra).
+ */
+export interface LancamentoLote {
+  avaliacaoId: string;
+  parcelaId: string;
+  numAmostra?: number;
+  valorColetado?: number | null;
+}
+
+/**
+ * Deduplica lançamentos por (avaliação, parcela, amostra) — last-write-wins.
+ * Usado na coleta em lote (a grade pode reenviar a mesma célula) e mantém o
+ * upsert idempotente no servidor.
+ */
+export function dedupLancamentos(items: LancamentoLote[]): LancamentoLote[] {
+  const m = new Map<string, LancamentoLote>();
+  for (const it of items) m.set(`${it.avaliacaoId}|${it.parcelaId}|${it.numAmostra ?? 1}`, it);
+  return [...m.values()];
+}
+
 /* ------------------------------------------------------------------ */
 /* Avaliador de expressão seguro (shunting-yard) — sem eval.           */
 /* Suporta: números, variáveis, + - * / , parênteses, unário -.        */
