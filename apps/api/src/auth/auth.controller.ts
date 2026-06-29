@@ -3,6 +3,13 @@ import { AuthService } from "./auth.service";
 import { Public } from "./public.decorator";
 import { CurrentUser } from "./current-user.decorator";
 import type { UsuarioAtual } from "./jwt.strategy";
+import { ZodValidationPipe } from "../common/zod-validation.pipe";
+import {
+  loginSchema,
+  registrarInstituicaoSchema,
+  type LoginDto,
+  type RegistrarInstituicaoDto,
+} from "./auth.schema";
 
 @Controller("auth")
 export class AuthController {
@@ -10,21 +17,13 @@ export class AuthController {
 
   @Public()
   @Post("login")
-  login(@Body() dto: { email: string; senha: string }) {
+  login(@Body(new ZodValidationPipe(loginSchema)) dto: LoginDto) {
     return this.auth.login(dto.email, dto.senha);
   }
 
   @Public()
   @Post("register-instituicao")
-  registrar(
-    @Body()
-    dto: {
-      instituicaoNome: string;
-      adminNome: string;
-      adminEmail: string;
-      adminSenha: string;
-    },
-  ) {
+  registrar(@Body(new ZodValidationPipe(registrarInstituicaoSchema)) dto: RegistrarInstituicaoDto) {
     return this.auth.registrarInstituicao(dto);
   }
 
