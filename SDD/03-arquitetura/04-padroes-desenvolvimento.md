@@ -304,21 +304,25 @@ criar(@Param("id") id: string, @Body(new ZodPipe(criarLancamentoSchema)) dto: Cr
 
 **Já em conformidade:** FK `<entidade>Id` + relação camelCase; PK `id cuid()`; rotas kebab-case plural; DI (sem `new` indevido); models PascalCase; domínio puro testado.
 
-**Progresso por tema (1 PR por tema, verificado com typecheck + testes + e2e):**
+**Progresso por tema (1 PR por tema, verificado com typecheck + testes + e2e). Iniciativa concluída em 29/06/2026.**
 
 | # | Tema | Alvo | Custo | Status |
 |---|---|---|---|---|
-| — | Ferramental | ESLint/Prettier + naming-convention no CI | só config | ✅ feito |
-| — | Documento | este padrão | doc | ✅ feito |
-| 1 | Booleanos (D4) | prefixo `is/has/can` | migração (RENAME COLUMN) | ✅ feito |
-| 2 | Enums (D3) | `UPPER_SNAKE_CASE` | migração de dados | ✅ feito |
-| 3 | Timestamps | `at`/`decididoEm` → sufixo `At` | migração de coluna | ⏳ |
-| 4 | Abreviações | `obs`/`num*`/`pos*`/`seq`/`refTipo` → por extenso | migração de coluna | ⏳ |
-| 5 | Idioma | model `User` → `Usuario` | migração + refs | ⏳ |
-| 6 | Referência de enums (D6) | tabela `DominioValor` + seed + API/UI (§4.9) | código + tabela nova | ⏳ |
-| — | Validação | `@Body()` → DTO Zod + pipe | só código | ⏳ |
+| — | Ferramental | ESLint/Prettier + naming-convention | só config | ✅ feito (PR #4) |
+| — | Documento | este padrão (+D6) | doc | ✅ feito (PR #3, #7) |
+| 1 | Booleanos (D4) | prefixo `is/has/can` | migração (RENAME COLUMN) | ✅ feito (PR #5) |
+| 2 | Enums (D3) | `UPPER_SNAKE_CASE` | migração de dados | ✅ feito (PR #6) |
+| 3 | Timestamps | `at`/`decididoEm` → sufixo `At` | migração de coluna | ✅ feito (PR #8) |
+| 4 | Abreviações | `obs`/`num*`/`pos*`/`seq`/`refTipo` → por extenso | migração de coluna | ✅ feito (PR #9) |
+| 5 | Idioma | model `User` → `Usuario` | migração + refs | ✅ feito (PR #10) |
+| 6 | Referência de enums (D6) | tabela `DominioValor` + seed + API | código + tabela nova | ✅ feito (PR #11) |
+| — | Validação Zod | `@Body()` → schema Zod + pipe (48 endpoints) | só código | ✅ feito (PR #12, #13) |
 
-**Já em conformidade:** FK `<entidade>Id` + relação camelCase; PK `id cuid()`; rotas kebab-case plural; DI (sem `new` indevido); models PascalCase; domínio puro testado; booleanos e enums no padrão.
+**Tudo em conformidade:** idioma, casing, PK/FK, **booleanos**, **enums**, **timestamps**, **sem abreviações**, `Usuario`, **referência de enums no banco** e **validação Zod na borda**. Já eram conformes desde o início: FK `<entidade>Id` + relação camelCase; PK `id cuid()`; rotas kebab-case plural; DI; models PascalCase; domínio puro testado.
+
+**Follow-ups abertos (opcionais, sem migração):**
+- UI consumir os rótulos de `DominioValor` (substituir mapas de label hardcoded no web — §4.9). Os rótulos já são idênticos (mesma fonte PT).
+- `userId`/`UsuarioAtual.userId` mantidos como convenção de auth (exceção documentada no tema 5); renomear p/ `usuarioId` só se desejado.
 
 **Como cada tema de migração é feito (receita validada nos temas 1–2):**
 1. Schema + domínio (uniões espelho) → `prisma generate` → **typecheck como guia** dos literais a trocar.
@@ -326,4 +330,4 @@ criar(@Param("id") id: string, @Body(new ZodPipe(criarLancamentoSchema)) dto: Cr
 3. Migração **preservando dados** (RENAME COLUMN p/ rename; ENUM→VARCHAR→UPDATE→ENUM p/ valores). Verificar `migrate diff` (sem drift).
 4. Atualizar `seed.ts`, web, mobile, **e2e**; rodar typecheck + domain + analytics + 5 e2e — tudo verde antes do PR.
 
-> Itens **sem migração** (validação Zod) podem entrar a qualquer momento. Os de migração vão **um por PR**, sobre uma `main` estável (pilha rasa), para revisão fácil e baixo risco.
+> **Receita comprovada** nesta iniciativa: um tema por PR, sobre uma `main` estável (pilha rasa), cada um com migração preservando dados e verificação completa (typecheck + domain + analytics + build + reseed + 5 e2e) antes do merge. Reutilizável em outros projetos ao adotar este padrão sobre um código legado.
