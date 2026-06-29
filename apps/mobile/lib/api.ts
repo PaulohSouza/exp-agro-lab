@@ -73,7 +73,8 @@ export interface BundleOffline {
     espacamentoLinhasM: number | null;
     tratamentos: { id: string; numeroRef: number; tag: string | null; nome: string | null }[];
     parcelas: { id: string; numero: number; bloco: number; isInicio: boolean; tratamentoId: string }[];
-    avaliacoes: { id: string; nome: string; unidadeColeta: string | null; unidadeSaida: string | null; formula: string | null }[];
+    avaliacoes: { id: string; nome: string; unidadeColeta: string | null; unidadeSaida: string | null; formula: string | null; timingId?: string | null; grupoColetaId?: string | null }[];
+    timings?: { id: string; nome: string }[];
   };
   dados: { avaliacaoId: string; parcelaId: string; numAmostra: number; valorColetado: number | null }[];
   serverTime: number;

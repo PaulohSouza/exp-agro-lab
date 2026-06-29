@@ -27,7 +27,8 @@ export class SyncService {
         delineamento: { select: { nome: true } },
         tratamentos: { orderBy: { numeroRef: "asc" }, select: { id: true, numeroRef: true, tag: true, nome: true } },
         parcelas: { orderBy: { numero: "asc" }, select: { id: true, numero: true, bloco: true, posLinha: true, posColuna: true, isInicio: true, tratamentoId: true } },
-        avaliacoes: { orderBy: { ordem: "asc" }, select: { id: true, nome: true, unidadeColeta: true, unidadeSaida: true, formula: true, tipo: true } },
+        avaliacoes: { orderBy: { ordem: "asc" }, select: { id: true, nome: true, unidadeColeta: true, unidadeSaida: true, formula: true, tipo: true, timingId: true, grupoColetaId: true } },
+        timings: { orderBy: { ordem: "asc" }, select: { id: true, nome: true } },
       },
     });
     if (!exp) throw new NotFoundException("Experimento não encontrado.");
