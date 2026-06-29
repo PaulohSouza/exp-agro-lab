@@ -1,16 +1,26 @@
 # STATUS do projeto — EXP-AGROLAB
 
-> **Handoff para retomar em nova conversa.** Última atualização: 29/06/2026.
-> **Onde estamos:** feature **catálogo de avaliações/atividades + período/marcos + coleta agrupada** concluída na branch `feature/catalogo-avaliacoes-coleta` e aberta no **PR [#1](https://github.com/PaulohSouza/exp-agro-lab/pull/1)** para a `main` (aguardando merge — ver §8.0). Macros A ✅ · C ✅ (incl. C5) · D ✅ · B ✅ (B5 mobile compila, falta device).
-> **Comece por aqui:** §8 (próximos passos) lista tudo o que falta, priorizado. Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md). Design da feature: [SDD/04-design-detalhado/08-catalogo-avaliacoes.md](SDD/04-design-detalhado/08-catalogo-avaliacoes.md).
-> Testes: **domain 59** + **5 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`).
+> **Handoff para retomar em nova conversa.** Última atualização: 29/06/2026 (fim do dia).
+> **Onde estamos:** catálogo de avaliações/atividades + período/marcos + coleta agrupada **mergeado** (PR #1, tag **v0.7.0**). Em seguida, **iniciativa de padronização de código concluída** (ver §0) — CI no GitHub + padrão de desenvolvimento documentado + 6 temas de schema + validação Zod. **`main` 100% no padrão.**
+> **Comece por aqui:** §0 (padronização) e §8 (próximos passos). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
+> Testes: **domain 59** + **analytics 24** + **5 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
+## 0. Padronização de código (concluída em 29/06/2026)
+Iniciativa para alinhar todo o código a um padrão único — ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** (§12 = progresso). Tudo mergeado na `main`, cada etapa verificada (typecheck + 59+24 testes + build + reseed + 5 e2e):
+- **CI** (GitHub Actions): job `unit` (build/typecheck/test) + job `e2e` (MySQL + 5 suites). PR #2.
+- **Ferramental:** ESLint (flat) + Prettier + `naming-convention`. PR #4.
+- **Documento do padrão** (+ decisão **D6**). PRs #3, #7.
+- **Temas de schema** (1 PR cada, migração preservando dados): booleanos `is/has` (#5) · enums `UPPER_SNAKE` (#6) · timestamps `At` (#8) · abreviações por extenso (#9) · `User`→`Usuario` (#10) · **`DominioValor`** = dicionário de enums no banco/D6 (#11).
+- **Validação Zod** na borda em **todos os 48 endpoints** `@Body` (#12, #13).
+- **Follow-ups opcionais:** UI consumir rótulos de `DominioValor` (substituir mapas hardcoded); `userId` mantido como convenção de auth.
+- **Nota:** o `node_modules` de `apps/mobile` foi tocado por um sed durante o rollout — rodar **`npm ci` em `apps/mobile`** antes do próximo trabalho no mobile.
 
 ## 1. O que é
 Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de 1–3 fatores, tratamentos, croqui clique-e-arraste, avaliações (valor bruto), dois fluxos (interno/comercial), multi-instituição com compartilhamento, análise estatística e relatório PPTX. Objeto de estudo genérico (cultura, máquina, pessoa/atleta…).
 
 ## 2. Stack
 Monorepo TypeScript (pnpm + Turborepo):
-- `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **30 testes**.
+- `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **59 testes**.
 - `packages/analytics` — estatística pura: ANOVA, CV, Bartlett, **Tukey/Scott-Knott/LSD** (amplitude estudentizada `ptukey`/`qtukey`), distribuições F/t/χ². **24 testes**.
 - `apps/api` — NestJS + Prisma + **MySQL** (`expagrolab_dev`). JWT/bcrypt.
 - `apps/web` — Next.js (App Router), tema azul do TCC.
@@ -60,7 +70,7 @@ Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para mu
 - **Status geral:** A ✅ · C ✅ (incl. C5) · B ✅ (B5 mobile pendente). Pré-requisitos cruzam avaliações **e** atividades. Testes: **domain 59** + **5 suites e2e** (Playwright Python em `e2e/`, todas passando).
 
 ## 3.1 Em andamento — croqui de 2+ fatores (esquema)
-Distinção **fatorial × parcela subdividida (split-plot)**. Domínio implementado e testado em `packages/domain/croqui.ts` (`gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal`) — **30 testes** no domain. Design em [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md). **Falta:** campos `esquema`/`grupoPrincipal` no schema Prisma + API, UX de arraste em 2 níveis no web, e ramificação da ANOVA (split-plot tem 2 erros → liga com analytics fase B).
+Distinção **fatorial × parcela subdividida (split-plot)**. Domínio implementado e testado em `packages/domain/croqui.ts` (`gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal`) — coberto pelos **59 testes** do domain. Design em [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md). **Falta:** campos `esquema`/`grupoPrincipal` no schema Prisma + API, UX de arraste em 2 níveis no web, e ramificação da ANOVA (split-plot tem 2 erros → liga com analytics fase B).
 
 ## 4. Pendências / limitações conhecidas
 - **Analytics fase B parcial:** **Tukey (HSD)**, **Scott-Knott** e LSD já implementados (default Tukey, como o SAGRE) com `ptukey`/`qtukey` validados vs tabela de Tukey. **Falta:** fatorial 2–3 + desdobramento, **split-plot (2 erros)** — liga com o croqui [[06]], transformações (Box-Cox/log/√), não-paramétrico (Kruskal/Friedman + post-hoc), análise conjunta, e **golden tests vs SAGRE** (rodar os mesmos dados no R e comparar com tolerância — pendente por não ter o ambiente R aqui).
@@ -91,11 +101,11 @@ Ver o checklist completo em **[TESTES.md](TESTES.md)**.
 
 ## 8. Próximos passos (handoff — registrado para a próxima conversa)
 
-### 8.0 Imediatas desta entrega (catálogo/coleta)
-- [ ] **Merge do PR [#1](https://github.com/PaulohSouza/exp-agro-lab/pull/1)** na `main` (bloqueado p/ o agente pelo classificador "merge sem revisão" — **o usuário executa**: `gh pr merge 1 --merge`).
-- [ ] Após o merge: `git checkout main && git pull && git tag v0.7.0 && git push origin v0.7.0` (tag definitiva; `v0.7.0-catalogo.2` é pre-release de branch).
-- [x] **B5** — coleta offline no mobile: caminho de dados já funcionava; adicionado **filtro por timing** nos chips (compila por tsc; validar em device).
-- [x] Docs: `docs/` restaurado; `estrutura claude/` + `bloqueio-requisitos.png` no `.gitignore` (pasta de trabalho local, fora do repo).
+### 8.0 Concluído (catálogo/coleta + padronização)
+- [x] **PR #1** mergeado na `main` + tag **v0.7.0** + release.
+- [x] **CI no GitHub** (job unit + job e2e). Roda em todo PR.
+- [x] **Padronização de código completa** — ver **§0**. `main` 100% no padrão (booleanos/enums/timestamps/abreviações/`Usuario`/`DominioValor`/Zod).
+- [x] **B5** mobile (filtro por timing nos chips; validar em device).
 
 ### 8.1 Croqui de 2+ fatores (split-plot) — domínio pronto, falta o resto
 Campos `esquema`/`grupoPrincipal` no schema+API · UX de arraste em 2 níveis na web · ramificação da ANOVA (2 erros → liga com analytics). Design: [SDD 06](SDD/04-design-detalhado/06-croqui-esquemas.md).
@@ -110,12 +120,15 @@ Aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (layout fiel).
 Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de coleta do B5.
 
 ### 8.5 Endurecimento / infra
-**CI no GitHub** (rodar domain 59 testes + 5 suites e2e no PR) · refresh-token + senha forte · RBAC fino + auditoria · e-mail real (hoje SIMULATE em `email-previews/`) · observabilidade.
+~~CI no GitHub~~ ✅ feito. Restam: refresh-token + senha forte · RBAC fino + auditoria · e-mail real (hoje SIMULATE em `email-previews/`) · observabilidade · **CI ganhar `pnpm lint`/`format:check`** no job unit (actions ainda em Node 20 — bumpar quando saírem `@v5`).
 
-> **Prioridade sugerida:** (1) merge+tag → (2) CI → (3) croqui split-plot + analytics fase B (andam juntos) → (4) golden vs SAGRE → (5) PPTX fiel → (6) mobile em device.
+### 8.6 Follow-ups da padronização (opcionais)
+UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
+
+> **Prioridade sugerida:** (1) croqui split-plot + analytics fase B (andam juntos) → (2) golden vs SAGRE → (3) PPTX fiel → (4) mobile em device (rodar `npm ci` em `apps/mobile` antes). Padronização e CI já fechados.
 
 ## 9. Releases
-`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · **`v0.7.0-catalogo.2`** (pre-release de branch: catálogo de avaliações/atividades + período/marcos + coleta agrupada — **PR #1 aberto p/ main**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
+`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · **`v0.7.0`** (catálogo de avaliações/atividades + período/marcos + coleta agrupada — mergeado, **Latest**). Depois do v0.7.0: CI + **padronização de código** (PRs #2–#14, ainda sem tag — candidata a `v0.8.0`). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
 
 ## 10. Infra / notas de ambiente
 - `pnpm` symlinkado em `~/.local/bin`. MySQL local: root via socket (`mysql -u root`); app usa user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar schema `sagre`).
