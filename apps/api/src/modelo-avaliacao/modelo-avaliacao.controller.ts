@@ -16,6 +16,7 @@ interface ModeloBody {
   departamentoId?: string;
   baseadoEmId?: string;
   prerequisitoIds?: string[];
+  prerequisitoAtividadeIds?: string[];
 }
 
 @Controller("modelos-avaliacao")

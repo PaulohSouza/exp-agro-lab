@@ -17,6 +17,16 @@ NOME = f"E2E CO2 {int(time.time())}"
 EXPERIMENTO = "SIM 2-Fatores"
 
 
+def drena(page, name, exact=False):
+    """Remove deterministicamente todos os botões com esse nome (espera a contagem cair)."""
+    botoes = page.get_by_role("button", name=name, exact=exact)
+    n = botoes.count()
+    while n > 0:
+        botoes.first.click()
+        expect(botoes).to_have_count(n - 1)
+        n -= 1
+
+
 def run() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -48,6 +58,11 @@ def run() -> int:
         page.locator("tr", has_text=EXPERIMENTO).get_by_role("link", name="abrir").click()
         page.wait_for_url("**/experimentos/**")
         page.get_by_role("button", name="Atividades", exact=True).click()
+        # aguarda o fetch da lista de atividades concluir antes de limpar (evita race)
+        page.wait_for_load_state("networkidle")
+
+        # defensivo: limpa atividades pré-existentes (ex.: Colheita puxada por outra avaliação)
+        drena(page, "excluir")
 
         sel = page.locator('[data-testid="atv-exp-select"]')
         value = sel.locator("option", has_text=NOME).first.get_attribute("value")
@@ -56,18 +71,19 @@ def run() -> int:
         page.locator('[data-testid="atv-exp-add"]').click()
         print("✓ atividade adicionada ao experimento")
 
+        # agora há exatamente uma atividade (a nossa) → escopo único do apontamento
+        salvar = page.locator('[data-testid="atv-apont-salvar"]')
         # validação: campo obrigatório vazio → erro
-        page.locator('[data-testid="atv-apont-salvar"]').click()
+        salvar.click()
         expect(page.get_by_text("vento", exact=False)).to_be_visible()  # campo presente
         # preenche e salva
         page.locator('input[type="number"]').first.fill("3.2")
-        page.locator('[data-testid="atv-apont-salvar"]').click()
+        salvar.click()
         expect(page.get_by_text("Apontamento salvo.")).to_be_visible()
         print("✓ apontamento preenchido e salvo")
 
         # limpeza: remove a atividade do experimento
-        page.get_by_role("button", name="excluir").first.click()
-        page.wait_for_timeout(400)
+        drena(page, "excluir")
         # remove o modelo no catálogo
         page.goto(f"{BASE}/catalogo")
         page.get_by_role("button", name="Atividades").first.click()

@@ -74,6 +74,7 @@ export interface ModeloAvaliacao {
   baseadoEmId: string | null;
   ativo: boolean;
   prerequisitos?: { prerequisitoId: string; prerequisito: { id: string; nome: string } }[];
+  prerequisitosAtividade?: { modeloAtividadeId: string; modeloAtividade: { id: string; nome: string; tipo: string } }[];
   _count?: { avaliacoes: number };
 }
 export interface ModeloAvaliacaoInput {
@@ -88,6 +89,7 @@ export interface ModeloAvaliacaoInput {
   departamentoId?: string;
   baseadoEmId?: string;
   prerequisitoIds?: string[];
+  prerequisitoAtividadeIds?: string[];
 }
 
 // ---- Atividades (Macro C) ----
@@ -332,7 +334,7 @@ export const api = {
     req<AvaliacaoDado[]>(`/avaliacoes/${avaliacaoId}/dados`, { method: "POST", body: JSON.stringify({ dados }) }),
   relatorioAvaliacao: (avaliacaoId: string) => req<RelatorioAvaliacao>(`/avaliacoes/${avaliacaoId}/relatorio`),
   adicionarAvaliacoesDoModelo: (expId: string, modeloIds: string[]) =>
-    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[] }>(
+    req<{ criadas: Avaliacao[]; prerequisitosAdicionados: string[]; atividadesAdicionadas: string[] }>(
       `/experimentos/${expId}/avaliacoes/do-modelo`,
       { method: "POST", body: JSON.stringify({ modeloIds }) },
     ),

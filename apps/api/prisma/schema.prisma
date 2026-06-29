@@ -412,8 +412,9 @@ model ModeloAvaliacao {
   baseadoEm     ModeloAvaliacao?  @relation("ModeloDerivacao", fields: [baseadoEmId], references: [id])
   derivados     ModeloAvaliacao[] @relation("ModeloDerivacao")
 
-  prerequisitos ModeloAvaliacaoPrereq[] @relation("ModeloPrereqs")     // modelos que este exige
-  requeridoPor  ModeloAvaliacaoPrereq[] @relation("ModeloRequeridoPor") // modelos que exigem este
+  prerequisitos ModeloAvaliacaoPrereq[] @relation("ModeloPrereqs")     // avaliações que este exige
+  requeridoPor  ModeloAvaliacaoPrereq[] @relation("ModeloRequeridoPor") // avaliações que exigem este
+  prerequisitosAtividade ModeloAvaliacaoPrereqAtividade[] @relation("AvalReqAtiv") // atividades que este exige
 
   avaliacoes    Avaliacao[]
   gruposItens   GrupoColetaItem[]
@@ -429,7 +430,7 @@ enum EscopoModelo {
   departamento
 }
 
-// Pré-requisito entre modelos: ex.: Produtividade exige Umidade (conversão a 13%).
+// Pré-requisito entre avaliações: ex.: Produtividade exige Umidade (conversão a 13%).
 model ModeloAvaliacaoPrereq {
   modeloId       String
   prerequisitoId String
@@ -438,6 +439,18 @@ model ModeloAvaliacaoPrereq {
 
   @@id([modeloId, prerequisitoId])
   @@index([prerequisitoId])
+}
+
+// Pré-requisito de uma avaliação sobre uma ATIVIDADE: ex.: Produtividade exige a
+// atividade Colheita (linhas/comprimento). Cruza os dois catálogos.
+model ModeloAvaliacaoPrereqAtividade {
+  modeloAvaliacaoId String
+  modeloAtividadeId String
+  modeloAvaliacao   ModeloAvaliacao @relation("AvalReqAtiv", fields: [modeloAvaliacaoId], references: [id], onDelete: Cascade)
+  modeloAtividade   ModeloAtividade @relation("AtivReqPorAval", fields: [modeloAtividadeId], references: [id], onDelete: Cascade)
+
+  @@id([modeloAvaliacaoId, modeloAtividadeId])
+  @@index([modeloAtividadeId])
 }
 
 // Conjunto nomeado de avaliações coletadas juntas (ex.: "Colheita" = Umidade+PMG+Produtividade).
@@ -495,6 +508,7 @@ model ModeloAtividade {
   departamento  Departamento? @relation(fields: [departamentoId], references: [id])
   campos        ModeloAtividadeCampo[]
   atividades    AtividadeExperimento[]
+  requeridaPorAvaliacao ModeloAvaliacaoPrereqAtividade[] @relation("AtivReqPorAval")
 
   @@index([escopo])
   @@index([instituicaoId])

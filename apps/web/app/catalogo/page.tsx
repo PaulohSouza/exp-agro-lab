@@ -22,7 +22,7 @@ function podeGerenciar(papel: Papel | undefined, escopo: EscopoModelo): boolean 
 const VAZIO: ModeloAvaliacaoInput = {
   nome: "", descricaoColeta: "", numeroPontos: 1, metodologiaRelatorio: "",
   unidadeColeta: "", unidadeSaida: "", calculoRelatorio: "", escopo: "instituicao",
-  departamentoId: "", prerequisitoIds: [],
+  departamentoId: "", prerequisitoIds: [], prerequisitoAtividadeIds: [],
 };
 
 export default function CatalogoPage() {
@@ -55,6 +55,7 @@ function Catalogo() {
   const user = getUser();
   const papel = user?.papel;
   const [modelos, setModelos] = useState<ModeloAvaliacao[]>([]);
+  const [modelosAtividade, setModelosAtividade] = useState<ModeloAtividade[]>([]);
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [filtro, setFiltro] = useState<EscopoModelo | "todos">("todos");
   const [form, setForm] = useState<ModeloAvaliacaoInput>(VAZIO);
@@ -69,6 +70,7 @@ function Catalogo() {
   }
   useEffect(() => {
     recarregar().catch((e) => setErro(e instanceof Error ? e.message : "Falha ao carregar"));
+    api.listarModelosAtividade().then(setModelosAtividade).catch(() => {});
     if (podeGerenciar(papel, "departamento")) api.departamentos().then(setDepartamentos).catch(() => {});
     // ajusta o escopo default do form para um que o usuário possa gerir
     setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }));
@@ -108,6 +110,7 @@ function Catalogo() {
       metodologiaRelatorio: m.metodologiaRelatorio ?? "", unidadeColeta: m.unidadeColeta ?? "",
       unidadeSaida: m.unidadeSaida ?? "", calculoRelatorio: m.calculoRelatorio ?? "", escopo: m.escopo,
       departamentoId: m.departamentoId ?? "", prerequisitoIds: m.prerequisitos?.map((p) => p.prerequisitoId) ?? [],
+      prerequisitoAtividadeIds: m.prerequisitosAtividade?.map((p) => p.modeloAtividadeId) ?? [],
     });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -155,26 +158,30 @@ function Catalogo() {
           <textarea placeholder="Descrição da coleta (como será feita)" value={form.descricaoColeta} onChange={(e) => setForm({ ...form, descricaoColeta: e.target.value })} style={{ ...inp, width: "100%", marginTop: 10, minHeight: 48 }} />
           <textarea placeholder="Metodologia p/ relatório (base para a IA redigir)" value={form.metodologiaRelatorio} onChange={(e) => setForm({ ...form, metodologiaRelatorio: e.target.value })} style={{ ...inp, width: "100%", marginTop: 10, minHeight: 48 }} />
 
-          {/* pré-requisitos */}
-          <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>Pré-requisitos (avaliações que precisam ser coletadas junto):</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {modelos.filter((m) => m.id !== editId).map((m) => {
-                const on = form.prerequisitoIds?.includes(m.id) ?? false;
-                return (
-                  <label key={m.id} style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center", background: on ? "#e3eef7" : "#fff", border: "1px solid #d6d6e6", borderRadius: 6, padding: "3px 8px", cursor: "pointer" }}>
-                    <input type="checkbox" checked={on} onChange={(e) => {
-                      const set = new Set(form.prerequisitoIds ?? []);
-                      e.target.checked ? set.add(m.id) : set.delete(m.id);
-                      setForm({ ...form, prerequisitoIds: [...set] });
-                    }} />
-                    {m.nome}
-                  </label>
-                );
-              })}
-              {modelos.filter((m) => m.id !== editId).length === 0 && <span style={{ fontSize: 12, color: "#a9abbd" }}>nenhum outro modelo</span>}
+          {/* pré-requisitos: dois multi-selects (avaliações + atividades) */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginTop: 12 }}>
+            <div>
+              <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>Pré-requisitos — avaliações (coletadas junto):</div>
+              <select multiple data-testid="prereq-aval" value={form.prerequisitoIds ?? []}
+                onChange={(e) => setForm({ ...form, prerequisitoIds: Array.from(e.target.selectedOptions, (o) => o.value) })}
+                style={{ ...inp, width: "100%", minHeight: 96 }}>
+                {modelos.filter((m) => m.id !== editId).map((m) => (
+                  <option key={m.id} value={m.id}>[{ESCOPOS.find((e) => e.value === m.escopo)!.label.slice(0, 4)}] {m.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>Pré-requisitos — atividades (ex.: Colheita):</div>
+              <select multiple data-testid="prereq-atv" value={form.prerequisitoAtividadeIds ?? []}
+                onChange={(e) => setForm({ ...form, prerequisitoAtividadeIds: Array.from(e.target.selectedOptions, (o) => o.value) })}
+                style={{ ...inp, width: "100%", minHeight: 96 }}>
+                {modelosAtividade.map((m) => (
+                  <option key={m.id} value={m.id}>[{ESCOPOS.find((e) => e.value === m.escopo)!.label.slice(0, 4)}] {m.nome}{m.tipo === "apontamento" ? " (apont.)" : ""}</option>
+                ))}
+              </select>
             </div>
           </div>
+          <div style={{ fontSize: 11, color: "#a9abbd", marginTop: 4 }}>Segure Ctrl/Cmd para selecionar vários. Ao adicionar a avaliação a um experimento, os pré-requisitos faltantes (avaliações e atividades) são incluídos automaticamente.</div>
 
           <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
             <button type="submit" data-testid="modelo-salvar" style={btn("#1F2940")}>{editId ? "Salvar" : "Criar modelo"}</button>
@@ -201,7 +208,11 @@ function Catalogo() {
                   <td style={td}><span style={{ background: esc.cor, color: esc.value === "departamento" ? "#1F2940" : "#fff", borderRadius: 6, padding: "2px 8px", fontSize: 11 }}>{esc.label}</span></td>
                   <td style={td}>{m.numeroPontos}</td>
                   <td style={td}>{m.unidadeColeta ?? "—"}{m.unidadeSaida ? ` → ${m.unidadeSaida}` : ""}</td>
-                  <td style={td}>{m.prerequisitos?.length ? m.prerequisitos.map((p) => p.prerequisito.nome).join(", ") : "—"}</td>
+                  <td style={td}>
+                    {m.prerequisitos?.length ? m.prerequisitos.map((p) => p.prerequisito.nome).join(", ") : null}
+                    {m.prerequisitosAtividade?.length ? <div style={{ fontSize: 11, color: "#7987A1" }}>atividades: {m.prerequisitosAtividade.map((p) => p.modeloAtividade.nome).join(", ")}</div> : null}
+                    {!m.prerequisitos?.length && !m.prerequisitosAtividade?.length ? "—" : null}
+                  </td>
                   <td style={td}>{m._count?.avaliacoes ?? 0}</td>
                   <td style={td}>
                     {podeEditar ? (

@@ -14,11 +14,22 @@ BASE = "http://localhost:3000"
 EXPERIMENTO = "SIM 2-Fatores"
 
 
+def drena(page, name, exact=False):
+    """Remove deterministicamente todos os botões com esse nome (espera a contagem cair)."""
+    botoes = page.get_by_role("button", name=name, exact=exact)
+    n = botoes.count()
+    while n > 0:
+        botoes.first.click()
+        expect(botoes).to_have_count(n - 1)
+        n -= 1
+
+
 def run() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.set_default_timeout(15000)
+        page.on("dialog", lambda d: d.accept())
 
         # login
         page.goto(f"{BASE}/login")
@@ -67,10 +78,12 @@ def run() -> int:
         print("✓ Produtividade + Umidade listadas")
 
         # limpeza: remove todas as avaliações criadas (botão "x", sem confirm)
-        while page.get_by_role("button", name="x", exact=True).count() > 0:
-            page.get_by_role("button", name="x", exact=True).first.click()
-            page.wait_for_timeout(300)
-        print("✓ avaliações removidas (limpeza)")
+        drena(page, "x", exact=True)
+        # e as atividades que a Produtividade possa ter puxado (aba Atividades)
+        page.get_by_role("button", name="Atividades", exact=True).click()
+        page.wait_for_load_state("networkidle")
+        drena(page, "excluir")
+        print("✓ avaliações e atividades removidas (limpeza)")
 
         browser.close()
     print("\nA5 e2e PASSOU ✅")

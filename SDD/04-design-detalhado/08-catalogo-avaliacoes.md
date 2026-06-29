@@ -28,8 +28,8 @@ Template reutilizável: `nome`, `descricaoColeta` (como coletar), `numeroPontos`
 
 A mesma medida pode existir nos três escopos. **Resolução:** a consulta **mostra as três versões rotuladas** (Geral / Instituição / Depto) e o usuário escolhe — não há "shadow" automático. Um modelo de escopo mais específico pode derivar de outro via `baseadoEmId` (ex.: depto herda o do sistema mudando só `numeroPontos`).
 
-### Pré-requisitos (`ModeloAvaliacaoPrereq`, self-M:N)
-Um modelo pode exigir outros. Ex.: **Produtividade** exige **Umidade** (necessária para converter a 13%). Ao adicionar uma avaliação ao experimento, o sistema **auto-adiciona os pré-requisitos (com aviso)** — fechamento transitivo. Regra no domínio.
+### Pré-requisitos (cruzam avaliações **e** atividades)
+Um modelo de avaliação pode exigir **outras avaliações** (`ModeloAvaliacaoPrereq`, self-M:N) **e** **atividades** (`ModeloAvaliacaoPrereqAtividade`, avaliação→atividade). Ex.: **Produtividade** exige **Umidade** (avaliação, conversão a 13%) **e** a atividade **Colheita** (linhas/comprimento). Ao adicionar a avaliação ao experimento, o sistema **auto-adiciona os pré-requisitos faltantes (com aviso)**: avaliações via fechamento transitivo (regra no domínio `resolverPrerequisitos`) e atividades via união dos pré-requisitos de atividade de todas as avaliações resolvidas. No catálogo, o form usa **dois multi-selects** (avaliações + atividades) — melhor que checkboxes quando há muitos modelos.
 
 ### Uso no experimento
 `Avaliacao.modeloId` (opcional) referencia o catálogo. Ao "Adicionar do catálogo", a avaliação **herda** os campos e permite **override** (principalmente `numeroPontos`). Avaliações ad-hoc continuam possíveis (`modeloId` nulo).

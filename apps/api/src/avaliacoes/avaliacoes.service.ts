@@ -104,13 +104,60 @@ export class AvaliacoesService {
       );
     }
 
+    // pré-requisitos de ATIVIDADE de todas as avaliações resolvidas: cria as faltantes
+    const atividadesAdicionadas = await this.adicionarAtividadesPrereq(experimentoId, todos);
+
     return {
       criadas,
-      // modelos auto-incluídos por serem pré-requisito (para o aviso na UI)
+      // avaliações auto-incluídas por serem pré-requisito (para o aviso na UI)
       prerequisitosAdicionados: adicionados
         .filter((id) => !jaPresentes.has(id))
         .map((id) => porId.get(id)?.nome ?? id),
+      // atividades auto-incluídas por serem pré-requisito
+      atividadesAdicionadas,
     };
+  }
+
+  /** Cria, no experimento, as atividades exigidas (pré-requisito) pelas avaliações
+   *  resolvidas que ainda não existam. Retorna os nomes adicionados. */
+  private async adicionarAtividadesPrereq(experimentoId: string, modeloAvaliacaoIds: string[]): Promise<string[]> {
+    const arestas = await this.prisma.modeloAvaliacaoPrereqAtividade.findMany({
+      where: { modeloAvaliacaoId: { in: modeloAvaliacaoIds } },
+      select: { modeloAtividadeId: true },
+    });
+    const ids = [...new Set(arestas.map((a) => a.modeloAtividadeId))];
+    if (!ids.length) return [];
+
+    const jaPresentes = new Set(
+      (await this.prisma.atividadeExperimento.findMany({
+        where: { experimentoId, modeloId: { in: ids } },
+        select: { modeloId: true },
+      })).map((a) => a.modeloId),
+    );
+    const faltantes = ids.filter((id) => !jaPresentes.has(id));
+    if (!faltantes.length) return [];
+
+    const modelos = await this.prisma.modeloAtividade.findMany({
+      where: { id: { in: faltantes } },
+      include: { campos: { orderBy: { ordem: "asc" } } },
+    });
+    let ordem = await this.prisma.atividadeExperimento.count({ where: { experimentoId } });
+    const nomes: string[] = [];
+    for (const m of modelos) {
+      ordem += 1;
+      await this.prisma.atividadeExperimento.create({
+        data: {
+          experimentoId,
+          modeloId: m.id,
+          nome: m.nome,
+          tipo: m.tipo,
+          ordem,
+          valores: m.campos.length ? { create: m.campos.map((c) => ({ rotulo: c.rotulo })) } : undefined,
+        },
+      });
+      nomes.push(m.nome);
+    }
+    return nomes;
   }
 
   async criar(experimentoId: string, user: UsuarioAtual, dto: CriarAvaliacaoDto) {

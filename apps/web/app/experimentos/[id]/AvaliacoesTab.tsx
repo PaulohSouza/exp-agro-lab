@@ -79,7 +79,8 @@ function AdicionarDoCatalogo({ exp, onAdicionou }: { exp: Experimento; onAdicion
       const r = await api.adicionarAvaliacoesDoModelo(exp.id, [sel]);
       const nomes = r.criadas.map((a) => a.nome);
       let txt = nomes.length ? `Adicionada(s): ${nomes.join(", ")}.` : "Modelo já estava no experimento.";
-      if (r.prerequisitosAdicionados.length) txt += ` Pré-requisito(s) incluído(s) automaticamente: ${r.prerequisitosAdicionados.join(", ")}.`;
+      if (r.prerequisitosAdicionados.length) txt += ` Avaliação(ões) pré-requisito incluída(s): ${r.prerequisitosAdicionados.join(", ")}.`;
+      if (r.atividadesAdicionadas.length) txt += ` Atividade(s) pré-requisito incluída(s) (ver aba Atividades): ${r.atividadesAdicionadas.join(", ")}.`;
       setMsg(txt);
       setSel("");
       onAdicionou();
@@ -130,7 +131,10 @@ function ModeloInfoModal({ modelo, onClose }: { modelo: ModeloAvaliacao; onClose
           <Linha rotulo="Unidade" valor={`${modelo.unidadeColeta ?? "—"}${modelo.unidadeSaida ? ` → ${modelo.unidadeSaida}` : ""}`} />
           {modelo.calculoRelatorio && <Linha rotulo="Cálculo (relatório)" valor={modelo.calculoRelatorio} />}
           {modelo.prerequisitos && modelo.prerequisitos.length > 0 && (
-            <Linha rotulo="Pré-requisitos" valor={modelo.prerequisitos.map((p) => p.prerequisito.nome).join(", ")} />
+            <Linha rotulo="Pré-requisitos (avaliações)" valor={modelo.prerequisitos.map((p) => p.prerequisito.nome).join(", ")} />
+          )}
+          {modelo.prerequisitosAtividade && modelo.prerequisitosAtividade.length > 0 && (
+            <Linha rotulo="Pré-requisitos (atividades)" valor={modelo.prerequisitosAtividade.map((p) => p.modeloAtividade.nome).join(", ")} />
           )}
           <Bloco rotulo="Como coletar" texto={modelo.descricaoColeta} />
           <Bloco rotulo="Metodologia (relatório)" texto={modelo.metodologiaRelatorio} />

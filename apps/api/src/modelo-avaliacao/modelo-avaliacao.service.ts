@@ -14,8 +14,14 @@ interface ModeloDto {
   escopo: EscopoModelo;
   departamentoId?: string; // exigido quando escopo = departamento
   baseadoEmId?: string;
-  prerequisitoIds?: string[];
+  prerequisitoIds?: string[];          // pré-requisitos de avaliação
+  prerequisitoAtividadeIds?: string[]; // pré-requisitos de atividade
 }
+
+const INCLUDE_PREREQS = {
+  prerequisitos: { include: { prerequisito: { select: { id: true, nome: true } } } },
+  prerequisitosAtividade: { include: { modeloAtividade: { select: { id: true, nome: true, tipo: true } } } },
+} as const;
 
 @Injectable()
 export class ModeloAvaliacaoService {
@@ -51,10 +57,7 @@ export class ModeloAvaliacaoService {
     return this.prisma.modeloAvaliacao.findMany({
       where: { ...where, ativo: true },
       orderBy: [{ escopo: "asc" }, { nome: "asc" }],
-      include: {
-        prerequisitos: { include: { prerequisito: { select: { id: true, nome: true } } } },
-        _count: { select: { avaliacoes: true } },
-      },
+      include: { ...INCLUDE_PREREQS, _count: { select: { avaliacoes: true } } },
     });
   }
 
@@ -62,6 +65,7 @@ export class ModeloAvaliacaoService {
     this.exigirGestao(user.papel, dto.escopo);
     const { instituicaoId, departamentoId } = await this.donoDoEscopo(user, dto);
     await this.validarPrerequisitos(dto.prerequisitoIds);
+    await this.validarPrereqAtividades(dto.prerequisitoAtividadeIds);
 
     return this.prisma.modeloAvaliacao.create({
       data: {
@@ -79,14 +83,18 @@ export class ModeloAvaliacaoService {
         prerequisitos: dto.prerequisitoIds?.length
           ? { create: dto.prerequisitoIds.map((prerequisitoId) => ({ prerequisitoId })) }
           : undefined,
+        prerequisitosAtividade: dto.prerequisitoAtividadeIds?.length
+          ? { create: dto.prerequisitoAtividadeIds.map((modeloAtividadeId) => ({ modeloAtividadeId })) }
+          : undefined,
       },
-      include: { prerequisitos: { include: { prerequisito: { select: { id: true, nome: true } } } } },
+      include: INCLUDE_PREREQS,
     });
   }
 
   async atualizar(user: UsuarioAtual, id: string, dto: Partial<ModeloDto>) {
     await this.garantirAcesso(user, id);
     if (dto.prerequisitoIds) await this.validarPrerequisitos(dto.prerequisitoIds, id);
+    if (dto.prerequisitoAtividadeIds) await this.validarPrereqAtividades(dto.prerequisitoAtividadeIds);
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.prerequisitoIds) {
@@ -94,6 +102,14 @@ export class ModeloAvaliacaoService {
         if (dto.prerequisitoIds.length) {
           await tx.modeloAvaliacaoPrereq.createMany({
             data: dto.prerequisitoIds.map((prerequisitoId) => ({ modeloId: id, prerequisitoId })),
+          });
+        }
+      }
+      if (dto.prerequisitoAtividadeIds) {
+        await tx.modeloAvaliacaoPrereqAtividade.deleteMany({ where: { modeloAvaliacaoId: id } });
+        if (dto.prerequisitoAtividadeIds.length) {
+          await tx.modeloAvaliacaoPrereqAtividade.createMany({
+            data: dto.prerequisitoAtividadeIds.map((modeloAtividadeId) => ({ modeloAvaliacaoId: id, modeloAtividadeId })),
           });
         }
       }
@@ -110,7 +126,7 @@ export class ModeloAvaliacaoService {
           baseadoEmId: dto.baseadoEmId,
           // escopo/dono não mudam após criado
         },
-        include: { prerequisitos: { include: { prerequisito: { select: { id: true, nome: true } } } } },
+        include: INCLUDE_PREREQS,
       });
     });
   }
@@ -151,6 +167,12 @@ export class ModeloAvaliacaoService {
     if (selfId && ids.includes(selfId)) throw new BadRequestException("Um modelo não pode ser pré-requisito de si mesmo.");
     const achados = await this.prisma.modeloAvaliacao.count({ where: { id: { in: ids } } });
     if (achados !== new Set(ids).size) throw new BadRequestException("Pré-requisito inexistente.");
+  }
+
+  private async validarPrereqAtividades(ids: string[] | undefined) {
+    if (!ids?.length) return;
+    const achados = await this.prisma.modeloAtividade.count({ where: { id: { in: ids } } });
+    if (achados !== new Set(ids).size) throw new BadRequestException("Pré-requisito de atividade inexistente.");
   }
 
   /** Carrega o modelo e confere papel + posse para gestão. */
