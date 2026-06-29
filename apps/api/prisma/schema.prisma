@@ -741,3 +741,18 @@ model StatusHistorico {
   createdAt     DateTime @default(now())
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
 }
+
+// Dicionário de valores enumerados (cadastro auxiliar). Uma linha por (dominio, codigo).
+// Dá significado legível no banco a cada código de enum (D6 / §4.9 do padrão).
+model DominioValor {
+  id        String  @id @default(cuid())
+  dominio   String // ex.: "StatusExperimento"
+  codigo    String // ex.: "EM_CONDUCAO"
+  rotulo    String // ex.: "Em condução" (PT — D1)
+  descricao String? @db.Text
+  ordem     Int     @default(0)
+  isAtivo   Boolean @default(true)
+
+  @@unique([dominio, codigo])
+  @@index([dominio])
+}

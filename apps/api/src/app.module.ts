@@ -22,6 +22,7 @@ import { DepartamentosModule } from "./departamentos/departamentos.module";
 import { ModeloAvaliacaoModule } from "./modelo-avaliacao/modelo-avaliacao.module";
 import { AtividadesModule } from "./atividades/atividades.module";
 import { GruposColetaModule } from "./grupos-coleta/grupos-coleta.module";
+import { DominiosModule } from "./dominios/dominios.module";
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { GruposColetaModule } from "./grupos-coleta/grupos-coleta.module";
     ModeloAvaliacaoModule,
     AtividadesModule,
     GruposColetaModule,
+    DominiosModule,
   ],
   controllers: [HealthController],
   providers: [
