@@ -6,7 +6,13 @@ import {
   dedupLancamentos,
   type LancamentoLote,
 } from "@exp/domain";
-import { anovaUmFator, type Observacao, type Delineamento } from "@exp/analytics";
+import {
+  anovaUmFator,
+  anovaSplitPlot,
+  type Observacao,
+  type ObservacaoSplit,
+  type Delineamento,
+} from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
@@ -335,7 +341,11 @@ export class AvaliacoesService {
       const numeroAmostra = d.numeroAmostra ?? 1;
       await this.prisma.avaliacaoDado.upsert({
         where: {
-          avaliacaoId_parcelaId_numeroAmostra: { avaliacaoId, parcelaId: d.parcelaId, numeroAmostra },
+          avaliacaoId_parcelaId_numeroAmostra: {
+            avaliacaoId,
+            parcelaId: d.parcelaId,
+            numeroAmostra,
+          },
         },
         create: {
           avaliacaoId,
@@ -373,21 +383,49 @@ export class AvaliacoesService {
     });
 
     const areaUtil = await this.areaUtilDoExperimento(aval.experimentoId);
-    const observacoes: Observacao[] = dados.map((d) => {
-      let valor = d.valorColetado as number;
-      if (aval.formula) {
-        try {
-          valor = calcularSaida({
-            valorColetado: d.valorColetado as number,
-            formula: aval.formula,
-            params: areaUtil ? { areaUtil } : {},
-          });
-        } catch {
-          /* mantém bruto */
-        }
+    const valorDe = (d: (typeof dados)[number]): number => {
+      if (!aval.formula) return d.valorColetado as number;
+      try {
+        return calcularSaida({
+          valorColetado: d.valorColetado as number,
+          formula: aval.formula,
+          params: areaUtil ? { areaUtil } : {},
+        });
+      } catch {
+        return d.valorColetado as number; // mantém bruto
       }
-      return { tratamento: d.parcela.tratamento?.tag ?? "?", bloco: d.parcela.bloco, valor };
-    });
+    };
+
+    // Split-plot: ANOVA com DOIS erros (Erro(a) testa A; Erro(b) testa B e A×B).
+    if (aval.experimento.esquema === "PARCELA_SUBDIVIDIDA") {
+      const obs: ObservacaoSplit[] = dados
+        .filter((d) => d.parcela.nivelPrincipal != null && d.parcela.nivelSub != null)
+        .map((d) => ({
+          bloco: d.parcela.bloco,
+          fatorA: `A${(d.parcela.nivelPrincipal as number) + 1}`,
+          fatorB: `B${(d.parcela.nivelSub as number) + 1}`,
+          valor: valorDe(d),
+        }));
+      try {
+        const resultado = anovaSplitPlot(obs);
+        return {
+          avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
+          esquema: "PARCELA_SUBDIVIDIDA" as const,
+          n: obs.length,
+          resultado,
+        };
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : "Não foi possível analisar.",
+        );
+      }
+    }
+
+    const observacoes: Observacao[] = dados.map((d) => ({
+      tratamento: d.parcela.tratamento?.tag ?? "?",
+      bloco: d.parcela.bloco,
+      valor: valorDe(d),
+    }));
 
     const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
     const delineamento: Delineamento =
@@ -397,6 +435,7 @@ export class AvaliacoesService {
       const resultado = anovaUmFator(observacoes, delineamento, { metodo: metodo ?? "Tukey" });
       return {
         avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
+        esquema: null,
         delineamento,
         n: observacoes.length,
         resultado,

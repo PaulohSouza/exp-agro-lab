@@ -4,3 +4,4 @@ export * from "./tukey.js";
 export * from "./pressupostos.js";
 export * from "./comparacao.js";
 export * from "./anova.js";
+export * from "./splitPlot.js";

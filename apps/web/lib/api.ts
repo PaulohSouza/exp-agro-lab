@@ -65,6 +65,10 @@ export interface Parcela {
   posicaoLinha: number;
   posicaoColuna: number;
   isInicio: boolean;
+  // Split-plot (PARCELA_SUBDIVIDIDA): grupo da parcela principal + níveis. Nulos no fatorial.
+  grupoPrincipal?: number | null;
+  nivelPrincipal?: number | null;
+  nivelSub?: number | null;
 }
 export interface Avaliacao {
   id: string;
@@ -274,22 +278,47 @@ export interface Aprovador {
   isAtivo: boolean;
   user: { id: string; nome: string; email: string };
 }
-export interface AnaliseResultado {
-  avaliacao: { nome: string; unidadeSaida: string | null };
-  delineamento: string;
-  n: number;
-  resultado: {
-    tabela: { fonte: string; gl: number; sq: number; qm: number; f?: number; p?: number }[];
-    mediaGeral: number;
-    cv: number;
-    fTratamento: number;
-    pTratamento: number;
-    significativo: boolean;
-    medias: { tratamento: string; media: number; n: number; letra?: string }[];
-    pressupostos: { bartlettEstatistica: number; bartlettP: number; homogeneo: boolean };
-    comparacao: { metodo: string; alpha: number };
-  };
+interface LinhaAnova {
+  fonte: string;
+  gl: number;
+  sq: number;
+  qm?: number;
+  f?: number;
+  p?: number;
 }
+export interface AnaliseUmFator {
+  tabela: LinhaAnova[];
+  mediaGeral: number;
+  cv: number;
+  fTratamento: number;
+  pTratamento: number;
+  significativo: boolean;
+  medias: { tratamento: string; media: number; n: number; letra?: string }[];
+  pressupostos: { bartlettEstatistica: number; bartlettP: number; homogeneo: boolean };
+  comparacao: { metodo: string; alpha: number };
+}
+export interface AnaliseSplit {
+  esquema: "PARCELA_SUBDIVIDIDA";
+  tabela: LinhaAnova[];
+  mediaGeral: number;
+  cvParcela: number;
+  cvSubparcela: number;
+  fatorA: { f: number; p: number; significativo: boolean };
+  fatorB: { f: number; p: number; significativo: boolean };
+  interacao: { f: number; p: number; significativo: boolean };
+  mediasA: { nivel: string; media: number; n: number }[];
+  mediasB: { nivel: string; media: number; n: number }[];
+}
+type AvaliacaoRef = { nome: string; unidadeSaida: string | null };
+export type AnaliseResultado =
+  | {
+      avaliacao: AvaliacaoRef;
+      esquema?: null;
+      delineamento: string;
+      n: number;
+      resultado: AnaliseUmFator;
+    }
+  | { avaliacao: AvaliacaoRef; esquema: "PARCELA_SUBDIVIDIDA"; n: number; resultado: AnaliseSplit };
 export interface Experimento {
   id: string;
   codigo: string | null;
@@ -317,6 +346,8 @@ export interface Experimento {
   numeroRepeticoes: number | null;
   totalParcelas: number | null;
   espacamentoLinhasM: number | null;
+  esquema?: "FATORIAL" | "PARCELA_SUBDIVIDIDA" | null;
+  fatorPrincipalOrdem?: number | null;
   objetoEstudo?: Ref | null;
   local?: Ref | null;
   safra?: Ref | null;
@@ -446,7 +477,14 @@ export const api = {
     }),
   gerarCroqui: (
     id: string,
-    body: { delineamento?: string; blocos?: number; seed?: number; numeroInicial?: number },
+    body: {
+      delineamento?: string;
+      blocos?: number;
+      seed?: number;
+      numeroInicial?: number;
+      esquema?: "FATORIAL" | "PARCELA_SUBDIVIDIDA";
+      fatorPrincipalOrdem?: number;
+    },
   ) =>
     req<Experimento>(`/experimentos/${id}/croqui/gerar`, {
       method: "POST",

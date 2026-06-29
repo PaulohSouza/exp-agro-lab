@@ -102,6 +102,43 @@ export class RelatorioService {
       } catch {
         continue; // sem dados suficientes
       }
+      // Split-plot: tabela com dois erros (sem comparação de médias única).
+      if (analise.esquema === "PARCELA_SUBDIVIDIDA") {
+        const rs = analise.resultado;
+        const slideSP = pptx.addSlide();
+        this.titulo(
+          slideSP,
+          `Análise (split-plot) — ${aval.nome}${aval.unidadeSaida ? ` (${aval.unidadeSaida})` : ""}`,
+        );
+        const headSP = ["Fonte", "GL", "SQ", "QM", "F", "p"].map((t) => ({
+          text: t,
+          options: { bold: true, color: "FFFFFF", fill: { color: NAVY } },
+        }));
+        const linhasSP = rs.tabela.map((l) => [
+          { text: l.fonte },
+          { text: String(l.gl) },
+          { text: l.sq.toFixed(2) },
+          { text: l.qm != null ? l.qm.toFixed(2) : "—" },
+          { text: l.f != null ? l.f.toFixed(2) : "—" },
+          { text: l.p != null ? (l.p < 0.001 ? "<0.001" : l.p.toFixed(3)) : "—" },
+        ]);
+        slideSP.addTable([headSP, ...linhasSP], {
+          x: 0.7,
+          y: 1.4,
+          w: 7.5,
+          fontSize: 12,
+          border: { type: "solid", color: "E1E1EF", pt: 1 },
+          rowH: 0.3,
+        });
+        slideSP.addText(
+          `CV(parcela) = ${rs.cvParcela.toFixed(2)}%   ·   CV(subparcela) = ${rs.cvSubparcela.toFixed(2)}%   ·   ` +
+            `A ${rs.fatorA.significativo ? "signif." : "n.s."}   ·   B ${rs.fatorB.significativo ? "signif." : "n.s."}   ·   ` +
+            `A×B ${rs.interacao.significativo ? "signif." : "n.s."}`,
+          { x: 0.7, y: 5.0, w: 8.8, fontSize: 11, color: "555555" },
+        );
+        continue;
+      }
+
       const r = analise.resultado;
       const slide = pptx.addSlide();
       this.titulo(
@@ -118,7 +155,7 @@ export class RelatorioService {
         { text: l.fonte },
         { text: String(l.gl) },
         { text: l.sq.toFixed(2) },
-        { text: l.qm.toFixed(2) },
+        { text: l.qm != null ? l.qm.toFixed(2) : "—" },
         { text: l.f != null ? l.f.toFixed(2) : "—" },
         { text: l.p != null ? (l.p < 0.001 ? "<0.001" : l.p.toFixed(3)) : "—" },
       ]);
