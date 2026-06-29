@@ -689,7 +689,7 @@ model AprovacaoOSInterna {
   aprovadorUserId String
   decisao        Decisao
   motivo         String?
-  at             DateTime @default(now())
+  decididoAt     DateTime @default(now())
   ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
 }
 
@@ -700,7 +700,7 @@ model AprovacaoCliente {
   token          String @unique
   decisao        Decisao @default(PENDENTE)
   motivo         String?
-  decididoEm     DateTime?
+  decididoAt     DateTime?
   ip             String?
   ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
 }
@@ -738,6 +738,6 @@ model StatusHistorico {
   de            String?
   para          String
   userId        String?
-  at            DateTime @default(now())
+  createdAt     DateTime @default(now())
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
 }

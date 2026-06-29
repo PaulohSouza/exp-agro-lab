@@ -70,7 +70,7 @@ export class OrdemServicoService {
           clienteEmail: dto.clienteEmail,
           decisao: "PENDENTE",
           motivo: null,
-          decididoEm: null,
+          decididoAt: null,
         },
       });
     }
@@ -178,7 +178,7 @@ export class OrdemServicoService {
     }
     await this.prisma.aprovacaoCliente.update({
       where: { token },
-      data: { decisao: dto.decisao, motivo: dto.motivo, decididoEm: new Date(), ip: dto.ip },
+      data: { decisao: dto.decisao, motivo: dto.motivo, decididoAt: new Date(), ip: dto.ip },
     });
     await this.prisma.ordemServico.update({
       where: { id: ap.ordemServicoId },
