@@ -39,6 +39,14 @@ Monorepo TypeScript (pnpm + Turborepo):
 | **RBAC fatia 2 parte 2** | ✅ | **super-admin global de fato** (`admin_sistema` vê/abre todas as instituições — `listar`/`garantirAcesso` ignoram o tenant; lista mostra a instituição); **responsável de coleta** (`ExperimentoResponsavel`, rotas `/experimentos/:id/responsaveis`) entra no escopo "atribuídos" do painel. UI na aba Compartilhar. Super-admin demo: `root@sistema.com`/`root123`. |
 | **Web responsiva** (mobile/tablet) | ✅ | `globals.css` (viewport, box-sizing, `.tabela-scroll`/`.scroll-x`); tabelas roláveis, header/abas sem corte, grids `auto-fit`, containers fluidos. Auditoria das 16 telas. |
 
+## 3.0 Em andamento — Catálogo de avaliações + atividades + coleta agrupada
+Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para multi-instituição. Design completo em [SDD/04-design-detalhado/08-catalogo-avaliacoes.md](SDD/04-design-detalhado/08-catalogo-avaliacoes.md). Conceito-base: **dois tipos de registro** — Avaliação (por parcela) × Atividade (geral do experimento: ação / com apontamento).
+- **A1 schema** ✅ — `ModeloAvaliacao` (escopo sistema/instituição/depto) + `ModeloAvaliacaoPrereq` (pré-req self-M:N) + `GrupoColeta`/`GrupoColetaItem`; `Avaliacao` ganhou `modeloId`/`grupoColetaId`/`numeroPontos`/`descricaoColeta`. Migration `20260629124049`.
+- **A2 domínio** ✅ — `packages/domain/modeloAvaliacao.ts`: visibilidade por escopo, `podeGerenciarEscopo`, fechamento transitivo de pré-requisitos. **+14 testes** (domain agora **44**).
+- **A3 API** ✅ — `ModeloAvaliacaoModule` (`/modelos-avaliacao` CRUD c/ RBAC por escopo). Smoke OK: admin instituição cria escopo instituição; escopo sistema só super-admin (403 caso contrário).
+- **Falta A:** A4 web (consulta 3 escopos + CRUD por papel) · A5 integração na aba Avaliações (adicionar do catálogo + auto-add de pré-requisitos).
+- **Depois (C):** catálogo de atividades (ação/apontamento) — **refatorar a colheita** (mover nº linhas/comprimento/área de `AvaliacaoDado` p/ Atividade-Colheita; toca RN-PROD/seed/analytics). **Depois (B):** coleta agrupada (filtro + grupos salvos + lote web/mobile). Ordem confirmada: **A → C → B**.
+
 ## 3.1 Em andamento — croqui de 2+ fatores (esquema)
 Distinção **fatorial × parcela subdividida (split-plot)**. Domínio implementado e testado em `packages/domain/croqui.ts` (`gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal`) — **30 testes** no domain. Design em [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md). **Falta:** campos `esquema`/`grupoPrincipal` no schema Prisma + API, UX de arraste em 2 níveis no web, e ramificação da ANOVA (split-plot tem 2 erros → liga com analytics fase B).
 

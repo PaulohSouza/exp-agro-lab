@@ -27,6 +27,8 @@ model Instituicao {
   usuarios     User[]
   experimentos Experimento[]
   aprovadores  AprovadorInstituicao[]
+  modelosAvaliacao ModeloAvaliacao[]
+  gruposColeta GrupoColeta[]
 }
 
 enum PoliticaAprovacao {
@@ -44,6 +46,8 @@ model Departamento {
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   unidades      Unidade[]
   usuarios      User[]
+  modelosAvaliacao ModeloAvaliacao[]
+  gruposColeta  GrupoColeta[]
 
   @@index([instituicaoId])
 }
@@ -348,8 +352,12 @@ model Parcela {
 model Avaliacao {
   id            String @id @default(cuid())
   experimentoId String
+  modeloId      String?            // origem no catálogo (null = ad-hoc)
+  grupoColetaId String?            // grupo de coleta de origem (filtro de coleta)
   nome          String
   metodologia   String? @db.Text
+  descricaoColeta String? @db.Text // como a coleta é feita (herdado do modelo, sobreponível)
+  numeroPontos  Int     @default(1) // pontos amostrais (sobrepõe o do modelo)
   unidadeColeta String?
   unidadeSaida  String?
   formula       String?
@@ -360,13 +368,105 @@ model Avaliacao {
   dataPrevista  DateTime?
   ordem         Int     @default(0)
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
+  modelo        ModeloAvaliacao? @relation(fields: [modeloId], references: [id])
+  grupoColeta   GrupoColeta?     @relation(fields: [grupoColetaId], references: [id])
   timing        Timing?  @relation(fields: [timingId], references: [id])
   dados         AvaliacaoDado[]
+
+  @@index([modeloId])
+  @@index([grupoColetaId])
 }
 
 enum TipoAvaliacao {
   calendarizada
   condicional
+}
+
+// ----------------------- Catálogo de avaliações (multi-escopo) -----------------------
+// Modelo reutilizável de avaliação. Existe em três escopos: padrão do sistema,
+// padrão da instituição (só admin da instituição cadastra) e metodologia própria
+// do departamento/laboratório. A mesma medida (ex.: "Altura de plantas") pode ter
+// versões distintas em cada escopo. Ver SDD/04-design-detalhado/08-catalogo-avaliacoes.md
+model ModeloAvaliacao {
+  id                   String  @id @default(cuid())
+  nome                 String
+  descricaoColeta      String? @db.Text  // como a coleta é feita
+  numeroPontos         Int     @default(1) // pontos amostrais coletados
+  metodologiaRelatorio String? @db.Text  // base para a IA redigir o relatório
+  unidadeColeta        String?            // ex.: kg
+  unidadeSaida         String?            // ex.: sacas/ha
+  calculoRelatorio     String?            // fórmula de conversão
+  escopo               EscopoModelo @default(sistema)
+  instituicaoId        String?            // dono quando escopo = instituicao/departamento
+  departamentoId       String?            // dono quando escopo = departamento
+  baseadoEmId          String?            // derivado de outro modelo (ex.: depto herda do sistema)
+  ativo                Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  instituicao   Instituicao?  @relation(fields: [instituicaoId], references: [id])
+  departamento  Departamento? @relation(fields: [departamentoId], references: [id])
+  baseadoEm     ModeloAvaliacao?  @relation("ModeloDerivacao", fields: [baseadoEmId], references: [id])
+  derivados     ModeloAvaliacao[] @relation("ModeloDerivacao")
+
+  prerequisitos ModeloAvaliacaoPrereq[] @relation("ModeloPrereqs")     // modelos que este exige
+  requeridoPor  ModeloAvaliacaoPrereq[] @relation("ModeloRequeridoPor") // modelos que exigem este
+
+  avaliacoes    Avaliacao[]
+  gruposItens   GrupoColetaItem[]
+
+  @@index([escopo])
+  @@index([instituicaoId])
+  @@index([departamentoId])
+}
+
+enum EscopoModelo {
+  sistema
+  instituicao
+  departamento
+}
+
+// Pré-requisito entre modelos: ex.: Produtividade exige Umidade (conversão a 13%).
+model ModeloAvaliacaoPrereq {
+  modeloId       String
+  prerequisitoId String
+  modelo         ModeloAvaliacao @relation("ModeloPrereqs", fields: [modeloId], references: [id], onDelete: Cascade)
+  prerequisito   ModeloAvaliacao @relation("ModeloRequeridoPor", fields: [prerequisitoId], references: [id], onDelete: Cascade)
+
+  @@id([modeloId, prerequisitoId])
+  @@index([prerequisitoId])
+}
+
+// Conjunto nomeado de avaliações coletadas juntas (ex.: "Colheita" = Umidade+PMG+Produtividade).
+// Reutilizável e escopado como o catálogo. Ver demanda de coleta agrupada (B).
+model GrupoColeta {
+  id             String  @id @default(cuid())
+  nome           String
+  descricao      String?
+  escopo         EscopoModelo @default(instituicao)
+  instituicaoId  String?
+  departamentoId String?
+  ativo          Boolean @default(true)
+  createdAt      DateTime @default(now())
+
+  instituicao   Instituicao?  @relation(fields: [instituicaoId], references: [id])
+  departamento  Departamento? @relation(fields: [departamentoId], references: [id])
+  itens         GrupoColetaItem[]
+  avaliacoes    Avaliacao[]
+
+  @@index([instituicaoId])
+  @@index([departamentoId])
+}
+
+model GrupoColetaItem {
+  id       String @id @default(cuid())
+  grupoId  String
+  modeloId String
+  ordem    Int    @default(0)
+  grupo    GrupoColeta     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  modelo   ModeloAvaliacao @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+
+  @@unique([grupoId, modeloId])
 }
 
 model AvaliacaoDado {

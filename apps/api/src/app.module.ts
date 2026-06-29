@@ -19,9 +19,10 @@ import { SyncModule } from "./sync/sync.module";
 import { RelatorioModule } from "./relatorio/relatorio.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { DepartamentosModule } from "./departamentos/departamentos.module";
+import { ModeloAvaliacaoModule } from "./modelo-avaliacao/modelo-avaliacao.module";
 
 @Module({
-  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule, InstituicaoModule, OrdemServicoModule, ExportModule, SyncModule, RelatorioModule, DashboardModule, DepartamentosModule],
+  imports: [AuthModule, PrismaModule, EmailModule, ExperimentosModule, CadastrosModule, TratamentosModule, AvaliacoesModule, UsuariosModule, CompartilhamentoModule, InstituicaoModule, OrdemServicoModule, ExportModule, SyncModule, RelatorioModule, DashboardModule, DepartamentosModule, ModeloAvaliacaoModule],
   controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
