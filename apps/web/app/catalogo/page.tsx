@@ -128,12 +128,12 @@ function Catalogo() {
         <form onSubmit={salvar} style={{ background: "#f9f9fb", padding: 16, borderRadius: 10, marginBottom: 20 }}>
           <strong style={{ color: "#1F2940" }}>{editId ? "Editar modelo" : "Novo modelo"}</strong>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 10 }}>
-            <input placeholder="Nome (ex.: Altura de plantas)" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} style={inp} />
+            <input data-testid="modelo-nome" placeholder="Nome (ex.: Altura de plantas)" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} style={inp} />
             <input type="number" min={1} placeholder="nº de pontos" value={form.numeroPontos} onChange={(e) => setForm({ ...form, numeroPontos: Number(e.target.value) })} style={inp} />
             <input placeholder="unid. coleta (ex.: kg)" value={form.unidadeColeta} onChange={(e) => setForm({ ...form, unidadeColeta: e.target.value })} style={inp} />
             <input placeholder="unid. saída (ex.: sacas/ha)" value={form.unidadeSaida} onChange={(e) => setForm({ ...form, unidadeSaida: e.target.value })} style={inp} />
             <input placeholder="cálculo p/ relatório (fórmula)" value={form.calculoRelatorio} onChange={(e) => setForm({ ...form, calculoRelatorio: e.target.value })} style={inp} />
-            <select value={form.escopo} onChange={(e) => setForm({ ...form, escopo: e.target.value as EscopoModelo })} style={inp} disabled={!!editId}>
+            <select data-testid="modelo-escopo" value={form.escopo} onChange={(e) => setForm({ ...form, escopo: e.target.value as EscopoModelo })} style={inp} disabled={!!editId}>
               {escoposGerenciaveis.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
             </select>
             {form.escopo === "departamento" && (
@@ -168,7 +168,7 @@ function Catalogo() {
           </div>
 
           <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-            <button type="submit" style={btn("#1F2940")}>{editId ? "Salvar" : "Criar modelo"}</button>
+            <button type="submit" data-testid="modelo-salvar" style={btn("#1F2940")}>{editId ? "Salvar" : "Criar modelo"}</button>
             {editId && <button type="button" onClick={() => { setEditId(null); setForm({ ...VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }); }} style={btn("#a9abbd")}>cancelar</button>}
           </div>
         </form>

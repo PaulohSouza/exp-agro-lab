@@ -78,12 +78,12 @@ function AdicionarDoCatalogo({ exp, onAdicionou }: { exp: Experimento; onAdicion
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#eef6fc", padding: 12, borderRadius: 8, marginBottom: 10 }}>
       <span style={{ fontSize: 13, color: "#1F2940", fontWeight: 600 }}>Adicionar do catálogo:</span>
-      <select value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, minWidth: 220 }}>
+      <select data-testid="add-catalogo-select" value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, minWidth: 220 }}>
         <option value="">— escolher modelo —</option>
         {modelos.map((m) => <option key={m.id} value={m.id}>{m.nome}{m.unidadeSaida ? ` (${m.unidadeSaida})` : ""}</option>)}
       </select>
-      <button onClick={adicionar} disabled={!sel} style={mini(sel ? "#1F2940" : "#a9abbd")}>adicionar</button>
-      {msg && <span style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
+      <button data-testid="add-catalogo-btn" onClick={adicionar} disabled={!sel} style={mini(sel ? "#1F2940" : "#a9abbd")}>adicionar</button>
+      {msg && <span data-testid="add-catalogo-msg" style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
       {erro && <span style={{ fontSize: 12, color: "#F34343" }}>{erro}</span>}
     </div>
   );

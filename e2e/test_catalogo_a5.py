@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""
+Teste e2e da integração A5: "Adicionar do catálogo" na aba Avaliações, com
+auto-inclusão de pré-requisitos (Produtividade → Umidade).
+
+Pré: API :3001 + web :3000 no ar, e o catálogo com os modelos demo
+(Produtividade com pré-requisito Umidade). Usa a experiência vazia
+"SIM 2-Fatores" e remove as avaliações criadas ao final (auto-limpante).
+"""
+import sys
+from playwright.sync_api import sync_playwright, expect
+
+BASE = "http://localhost:3000"
+EXPERIMENTO = "SIM 2-Fatores"
+
+
+def run() -> int:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.set_default_timeout(15000)
+
+        # login
+        page.goto(f"{BASE}/login")
+        page.locator('input[type="email"]').fill("admin@demo.com")
+        page.locator('input[type="password"]').fill("admin123")
+        page.get_by_role("button", name="Entrar").click()
+        page.wait_for_url("**/experimentos")
+
+        # abre a experiência (link "abrir →" na linha do experimento) e a aba Avaliações
+        page.locator("tr", has_text=EXPERIMENTO).get_by_role("link", name="abrir").click()
+        page.wait_for_url("**/experimentos/**")
+        page.get_by_role("button", name="Avaliações").click()
+        print("✓ aba Avaliações aberta")
+
+        # escolhe "Produtividade" no select do catálogo (pega o value pelo texto)
+        sel = page.locator('[data-testid="add-catalogo-select"]')
+        expect(sel).to_be_visible()
+        value = sel.locator("option", has_text="Produtividade").first.get_attribute("value")
+        assert value, "modelo 'Produtividade' não está no catálogo (rode o seed do catálogo)"
+        sel.select_option(value)
+        page.locator('[data-testid="add-catalogo-btn"]').click()
+
+        # aviso deve mencionar a auto-inclusão de Umidade (pré-requisito)
+        msg = page.locator('[data-testid="add-catalogo-msg"]')
+        expect(msg).to_contain_text("Umidade")
+        print(f"✓ adicionar do catálogo OK — aviso: {msg.inner_text()}")
+
+        # verifica as duas avaliações na tabela
+        expect(page.locator("tr", has_text="Produtividade")).to_be_visible()
+        expect(page.locator("tr", has_text="Umidade")).to_be_visible()
+        print("✓ Produtividade + Umidade listadas")
+
+        # limpeza: remove todas as avaliações criadas (botão "x", sem confirm)
+        while page.get_by_role("button", name="x", exact=True).count() > 0:
+            page.get_by_role("button", name="x", exact=True).first.click()
+            page.wait_for_timeout(300)
+        print("✓ avaliações removidas (limpeza)")
+
+        browser.close()
+    print("\nA5 e2e PASSOU ✅")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(run())
+    except Exception as e:  # noqa: BLE001
+        print(f"\nFALHOU ❌: {e}")
+        sys.exit(1)
