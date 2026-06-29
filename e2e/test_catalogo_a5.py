@@ -33,12 +33,27 @@ def run() -> int:
         page.get_by_role("button", name="Avaliações").click()
         print("✓ aba Avaliações aberta")
 
-        # escolhe "Produtividade" no select do catálogo (pega o value pelo texto)
+        # sigla de escopo nas opções (ex.: "[GER] Produtividade")
         sel = page.locator('[data-testid="add-catalogo-select"]')
         expect(sel).to_be_visible()
+        opt_prod = sel.locator("option", has_text="Produtividade").first
+        assert "[" in (opt_prod.inner_text()), "faltou a sigla de escopo na opção"
+        print(f"✓ sigla de escopo na opção: {opt_prod.inner_text().strip()}")
+
+        # filtro por escopo (Geral/sistema) mantém Produtividade visível
+        page.get_by_label("Filtrar por escopo").select_option("sistema")
         value = sel.locator("option", has_text="Produtividade").first.get_attribute("value")
-        assert value, "modelo 'Produtividade' não está no catálogo (rode o seed do catálogo)"
+        assert value, "Produtividade (sistema) não está no catálogo"
         sel.select_option(value)
+        print("✓ filtro por escopo aplicado")
+
+        # modal de metodologia
+        page.get_by_role("button", name="Ver metodologia").click()
+        expect(page.get_by_text("Metodologia (relatório)")).to_be_visible()
+        expect(page.get_by_text("Pontos amostrais")).to_be_visible()
+        page.get_by_role("button", name="Fechar").click()
+        print("✓ modal de metodologia abriu e fechou")
+
         page.locator('[data-testid="add-catalogo-btn"]').click()
 
         # aviso deve mencionar a auto-inclusão de Umidade (pré-requisito)

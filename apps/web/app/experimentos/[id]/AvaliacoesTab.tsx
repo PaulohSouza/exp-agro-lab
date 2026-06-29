@@ -1,6 +1,12 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type Experimento, type ModeloAvaliacao, type RelatorioAvaliacao } from "../../../lib/api";
+import { api, type AnaliseResultado, type Avaliacao, type AvaliacaoDado, type EscopoModelo, type Experimento, type ModeloAvaliacao, type RelatorioAvaliacao } from "../../../lib/api";
+
+const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: string }> = {
+  sistema: { sigla: "GER", label: "Geral (sistema)", cor: "#1F2940" },
+  instituicao: { sigla: "INST", label: "Instituição", cor: "#4EC2F0" },
+  departamento: { sigla: "DEP", label: "Departamento", cor: "#C9B3F0" },
+};
 
 export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (e: Experimento) => void }) {
   const [modo, setModo] = useState<{ tipo: "lista" } | { tipo: "lancar"; aval: Avaliacao } | { tipo: "relatorio"; aval: Avaliacao } | { tipo: "analise"; aval: Avaliacao }>({ tipo: "lista" });
@@ -52,11 +58,19 @@ export function AvaliacoesTab({ exp, onChange }: { exp: Experimento; onChange: (
 
 function AdicionarDoCatalogo({ exp, onAdicionou }: { exp: Experimento; onAdicionou: () => void }) {
   const [modelos, setModelos] = useState<ModeloAvaliacao[]>([]);
+  const [filtro, setFiltro] = useState<EscopoModelo | "todos">("todos");
   const [sel, setSel] = useState("");
+  const [info, setInfo] = useState<ModeloAvaliacao | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => { api.listarModelos().then(setModelos).catch(() => {}); }, []);
+
+  const visiveis = useMemo(
+    () => (filtro === "todos" ? modelos : modelos.filter((m) => m.escopo === filtro)),
+    [modelos, filtro],
+  );
+  const selModelo = modelos.find((m) => m.id === sel) ?? null;
 
   async function adicionar() {
     if (!sel) return;
@@ -78,13 +92,62 @@ function AdicionarDoCatalogo({ exp, onAdicionou }: { exp: Experimento; onAdicion
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#eef6fc", padding: 12, borderRadius: 8, marginBottom: 10 }}>
       <span style={{ fontSize: 13, color: "#1F2940", fontWeight: 600 }}>Adicionar do catálogo:</span>
-      <select data-testid="add-catalogo-select" value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, minWidth: 220 }}>
-        <option value="">— escolher modelo —</option>
-        {modelos.map((m) => <option key={m.id} value={m.id}>{m.nome}{m.unidadeSaida ? ` (${m.unidadeSaida})` : ""}</option>)}
+      <select aria-label="Filtrar por escopo" value={filtro} onChange={(e) => { setFiltro(e.target.value as EscopoModelo | "todos"); setSel(""); }} style={inp}>
+        <option value="todos">Todos os escopos</option>
+        <option value="sistema">Geral (sistema)</option>
+        <option value="instituicao">Instituição</option>
+        <option value="departamento">Departamento</option>
       </select>
+      <select data-testid="add-catalogo-select" value={sel} onChange={(e) => setSel(e.target.value)} style={{ ...inp, minWidth: 240 }}>
+        <option value="">— escolher modelo —</option>
+        {visiveis.map((m) => (
+          <option key={m.id} value={m.id}>
+            [{ESCOPO_INFO[m.escopo].sigla}] {m.nome}{m.unidadeSaida ? ` (${m.unidadeSaida})` : ""}
+          </option>
+        ))}
+      </select>
+      <button title="Ver metodologia" aria-label="Ver metodologia" disabled={!selModelo} onClick={() => setInfo(selModelo)} style={mini(selModelo ? "#4EC2F0" : "#a9abbd")}>ⓘ info</button>
       <button data-testid="add-catalogo-btn" onClick={adicionar} disabled={!sel} style={mini(sel ? "#1F2940" : "#a9abbd")}>adicionar</button>
       {msg && <span data-testid="add-catalogo-msg" style={{ fontSize: 12, color: "#1F2940" }}>{msg}</span>}
       {erro && <span style={{ fontSize: 12, color: "#F34343" }}>{erro}</span>}
+      {info && <ModeloInfoModal modelo={info} onClose={() => setInfo(null)} />}
+    </div>
+  );
+}
+
+function ModeloInfoModal({ modelo, onClose }: { modelo: ModeloAvaliacao; onClose: () => void }) {
+  const esc = ESCOPO_INFO[modelo.escopo];
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(20,27,45,.55)", display: "grid", placeItems: "center", zIndex: 1000, padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, maxWidth: 520, width: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,.3)" }}>
+        <div style={{ background: "#1F2940", color: "#fff", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
+          <strong style={{ flex: 1 }}>{modelo.nome}</strong>
+          <span style={{ background: esc.cor, color: modelo.escopo === "departamento" ? "#1F2940" : "#fff", borderRadius: 6, padding: "2px 8px", fontSize: 11 }}>{esc.label}</span>
+          <button onClick={onClose} aria-label="Fechar" style={{ background: "none", border: "none", color: "#fff", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: 18, fontSize: 13, color: "#1F2940", display: "grid", gap: 10 }}>
+          <Linha rotulo="Pontos amostrais" valor={String(modelo.numeroPontos)} />
+          <Linha rotulo="Unidade" valor={`${modelo.unidadeColeta ?? "—"}${modelo.unidadeSaida ? ` → ${modelo.unidadeSaida}` : ""}`} />
+          {modelo.calculoRelatorio && <Linha rotulo="Cálculo (relatório)" valor={modelo.calculoRelatorio} />}
+          {modelo.prerequisitos && modelo.prerequisitos.length > 0 && (
+            <Linha rotulo="Pré-requisitos" valor={modelo.prerequisitos.map((p) => p.prerequisito.nome).join(", ")} />
+          )}
+          <Bloco rotulo="Como coletar" texto={modelo.descricaoColeta} />
+          <Bloco rotulo="Metodologia (relatório)" texto={modelo.metodologiaRelatorio} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return <div><span style={{ color: "#7987A1" }}>{rotulo}: </span><strong>{valor}</strong></div>;
+}
+function Bloco({ rotulo, texto }: { rotulo: string; texto?: string | null }) {
+  return (
+    <div>
+      <div style={{ color: "#7987A1", marginBottom: 2 }}>{rotulo}:</div>
+      <div style={{ whiteSpace: "pre-wrap" }}>{texto?.trim() ? texto : <span style={{ color: "#a9abbd" }}>— não informado —</span>}</div>
     </div>
   );
 }
