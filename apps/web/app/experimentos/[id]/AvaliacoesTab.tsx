@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   api,
   type AnaliseResultado,
+  type AnaliseSplit,
   type Avaliacao,
   type AvaliacaoDado,
   type EscopoModelo,
@@ -931,6 +932,8 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
       {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
       {!a ? (
         !erro && <p style={{ color: "#7987A1" }}>Calculando…</p>
+      ) : a.esquema === "PARCELA_SUBDIVIDIDA" ? (
+        <AnaliseSplitView a={a} />
       ) : (
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
           <div>
@@ -955,7 +958,7 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
                       <td style={td}>{l.fonte}</td>
                       <td style={td}>{l.gl}</td>
                       <td style={td}>{l.sq.toFixed(2)}</td>
-                      <td style={td}>{l.qm.toFixed(2)}</td>
+                      <td style={td}>{l.qm != null ? l.qm.toFixed(2) : "—"}</td>
                       <td style={td}>{l.f != null ? l.f.toFixed(2) : "—"}</td>
                       <td style={td}>
                         {l.p != null ? (l.p < 0.001 ? "<0.001" : l.p.toFixed(3)) : "—"}
@@ -1010,6 +1013,89 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Render da ANOVA de parcela subdividida (split-plot) — dois erros + médias por fator. */
+function AnaliseSplitView({ a }: { a: { n: number; resultado: AnaliseSplit } }) {
+  const r = a.resultado;
+  const sig = (s: boolean) =>
+    s ? (
+      <span style={{ color: "#6FA830" }}>significativo</span>
+    ) : (
+      <span style={{ color: "#F34343" }}>n.s.</span>
+    );
+  return (
+    <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+      <div>
+        <h4 style={{ margin: "0 0 8px" }}>ANOVA — parcela subdividida (dois erros), n={a.n}</h4>
+        <div className="tabela-scroll">
+          <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ color: "#7987A1", textAlign: "left" }}>
+                <th style={th}>Fonte</th>
+                <th style={th}>GL</th>
+                <th style={th}>SQ</th>
+                <th style={th}>QM</th>
+                <th style={th}>F</th>
+                <th style={th}>p</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.tabela.map((l, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #f0f0f8" }}>
+                  <td style={td}>{l.fonte}</td>
+                  <td style={td}>{l.gl}</td>
+                  <td style={td}>{l.sq.toFixed(2)}</td>
+                  <td style={td}>{l.qm != null ? l.qm.toFixed(2) : "—"}</td>
+                  <td style={td}>{l.f != null ? l.f.toFixed(2) : "—"}</td>
+                  <td style={td}>
+                    {l.p != null ? (l.p < 0.001 ? "<0.001" : l.p.toFixed(3)) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ fontSize: 13, color: "#1F2940", marginTop: 8 }}>
+          CV(parcela) = <strong>{r.cvParcela.toFixed(2)}%</strong> · CV(subparcela) ={" "}
+          <strong>{r.cvSubparcela.toFixed(2)}%</strong> · média geral {r.mediaGeral.toFixed(1)}
+        </p>
+        <p style={{ fontSize: 12, color: "#7987A1" }}>
+          Fator A (parcela): {sig(r.fatorA.significativo)} · Fator B (subparcela):{" "}
+          {sig(r.fatorB.significativo)} · A×B: {sig(r.interacao.significativo)}
+        </p>
+      </div>
+      <div>
+        <h4 style={{ margin: "0 0 8px" }}>Médias por nível</h4>
+        <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+          {[
+            { titulo: "Fator A (parcela)", medias: r.mediasA },
+            { titulo: "Fator B (subparcela)", medias: r.mediasB },
+          ].map((bloco) => (
+            <div key={bloco.titulo}>
+              <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>{bloco.titulo}</div>
+              <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+                <tbody>
+                  {bloco.medias.map((m) => (
+                    <tr key={m.nivel} style={{ borderBottom: "1px solid #f0f0f8" }}>
+                      <td style={td}>
+                        <strong>{m.nivel}</strong>
+                      </td>
+                      <td style={td}>{m.media.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+        <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8, maxWidth: 260 }}>
+          Split-plot: o fator principal é testado pelo Erro(a); o subfator e a interação pelo
+          Erro(b). Port do SAGRE; comparação de médias por fator é um follow-up.
+        </p>
+      </div>
     </div>
   );
 }
