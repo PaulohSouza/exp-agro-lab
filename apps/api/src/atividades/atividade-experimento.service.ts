@@ -23,7 +23,7 @@ interface CriarAtividadeDto {
   tipo?: "ACAO" | "APONTAMENTO";
   data?: string;
   responsavel?: string;
-  obs?: string;
+  observacoes?: string;
 }
 
 @Injectable()
@@ -72,7 +72,7 @@ export class AtividadeExperimentoService {
         tipo,
         data: dto.data ? new Date(dto.data) : null,
         responsavel: dto.responsavel,
-        obs: dto.obs,
+        observacoes: dto.observacoes,
         ordem,
         valores: camposSnapshot.length ? { create: camposSnapshot } : undefined,
       },
@@ -185,7 +185,7 @@ export class AtividadeExperimentoService {
       isConfirmada?: boolean;
       data?: string | null;
       responsavel?: string;
-      obs?: string;
+      observacoes?: string;
     },
   ) {
     const atv = await this.prisma.atividadeExperimento.findUnique({
@@ -206,7 +206,7 @@ export class AtividadeExperimentoService {
         isConfirmada: dto.isConfirmada,
         data: dto.data === undefined ? undefined : dto.data ? new Date(dto.data) : null,
         responsavel: dto.responsavel,
-        obs: dto.obs,
+        observacoes: dto.observacoes,
       },
       include: { valores: true, modelo: { include: { campos: { orderBy: { ordem: "asc" } } } } },
     });

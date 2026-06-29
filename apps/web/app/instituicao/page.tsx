@@ -46,7 +46,7 @@ export default function InstituicaoPage() {
   }
 
   async function salvarPolitica(politica: string, n: number) {
-    setInst(await api.atualizarInstituicao({ politicaAprovacao: politica, nAprovadores: n }));
+    setInst(await api.atualizarInstituicao({ politicaAprovacao: politica, numeroAprovadores: n }));
     setMsg("Política salva.");
   }
   async function addAprovador() {
@@ -79,7 +79,7 @@ export default function InstituicaoPage() {
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <select
                 value={inst.politicaAprovacao}
-                onChange={(e) => salvarPolitica(e.target.value, inst.nAprovadores)}
+                onChange={(e) => salvarPolitica(e.target.value, inst.numeroAprovadores)}
                 style={inp}
               >
                 <option value="TODOS">Todos os aprovadores</option>
@@ -91,7 +91,7 @@ export default function InstituicaoPage() {
                   <input
                     type="number"
                     min={1}
-                    value={inst.nAprovadores}
+                    value={inst.numeroAprovadores}
                     onChange={(e) => salvarPolitica(inst.politicaAprovacao, Number(e.target.value))}
                     style={{ ...inp, width: 70 }}
                   />

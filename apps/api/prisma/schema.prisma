@@ -17,7 +17,7 @@ model Instituicao {
   nome              String
   cnpj              String?
   politicaAprovacao PoliticaAprovacao @default(TODOS)
-  nAprovadores      Int      @default(1)
+  numeroAprovadores      Int      @default(1)
   isAtivo             Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -131,7 +131,7 @@ model ObjetoEstudo {
   id             String @id @default(cuid())
   subcategoriaId String
   nome           String
-  obs            String?
+  observacoes            String?
   isAtivo          Boolean @default(true)
   subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
   experimentos   Experimento[]
@@ -192,10 +192,10 @@ model Experimento {
 
   parcelaLarguraM     Float?
   parcelaComprimentoM Float?
-  parcelaNumLinhas    Int?
+  parcelaNumeroLinhas    Int?
   espacamentoLinhasM  Float?
-  numRepeticoes       Int?
-  numTratamentos      Int?
+  numeroRepeticoes       Int?
+  numeroTratamentos      Int?
   totalParcelas       Int?
 
   previsaoSemeadura DateTime?
@@ -322,7 +322,7 @@ model Timing {
 model TratamentoProduto {
   id             String @id @default(cuid())
   tratamentoId   String
-  seq            Int     @default(1)
+  sequencia            Int     @default(1)
   produtoId      String
   modoAplicacao  String?
   dose           Float?
@@ -346,8 +346,8 @@ model Parcela {
   tratamentoId  String
   bloco         Int
   numero        Int
-  posLinha      Int
-  posColuna     Int
+  posicaoLinha      Int
+  posicaoColuna     Int
   isInicio      Boolean @default(false)
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
   tratamento    Tratamento  @relation(fields: [tratamentoId], references: [id])
@@ -576,7 +576,7 @@ model AtividadeExperimento {
   isConfirmada    Boolean @default(false) // marco confirmado pelo usuário
   data          DateTime?          // data realizada/confirmada
   responsavel   String?
-  obs           String? @db.Text
+  observacoes           String? @db.Text
   status        String?
   ordem         Int     @default(0)
   createdAt     DateTime @default(now())
@@ -607,11 +607,11 @@ model AvaliacaoDado {
   id                 String @id @default(cuid())
   avaliacaoId        String
   parcelaId          String
-  numAmostra         Int     @default(1)
+  numeroAmostra         Int     @default(1)
   // Valor BRUTO coletado no campo. A produtividade (kg/ha) é apresentada no relatório.
   // RN-PROD: a área útil vem da ATIVIDADE de Colheita (linhas/comprimento), nível experimento — ver C5.
   valorColetado      Float?
-  obs                String? @db.Text
+  observacoes                String? @db.Text
   status             String?
   fotoUrl            String?
   origem             OrigemColeta @default(WEB)
@@ -624,7 +624,7 @@ model AvaliacaoDado {
   avaliacao          Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
   parcela            Parcela   @relation(fields: [parcelaId], references: [id])
 
-  @@unique([avaliacaoId, parcelaId, numAmostra])
+  @@unique([avaliacaoId, parcelaId, numeroAmostra])
 }
 
 enum OrigemColeta {
@@ -721,8 +721,8 @@ model EmailLog {
   htmlPath  String?
   status    StatusEmail @default(SIMULADO)
   erro      String? @db.Text
-  refTipo   String?
-  refId     String?
+  referenciaTipo   String?
+  referenciaId     String?
   createdAt DateTime @default(now())
 }
 

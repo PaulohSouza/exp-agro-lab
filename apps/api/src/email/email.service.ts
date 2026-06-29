@@ -9,8 +9,8 @@ export interface EmailInput {
   para: string;
   assunto: string;
   html: string;
-  refTipo?: string;
-  refId?: string;
+  referenciaTipo?: string;
+  referenciaId?: string;
 }
 
 export interface EmailResultado {
@@ -104,8 +104,8 @@ export class EmailService {
       para: params.para,
       assunto: `[EXP-AGROLAB] Aprovação da OS — ${params.experimentoTitulo}`,
       html,
-      refTipo: "OrdemServico",
-      refId: params.ordemServicoId,
+      referenciaTipo: "OrdemServico",
+      referenciaId: params.ordemServicoId,
     });
   }
 
@@ -132,8 +132,8 @@ export class EmailService {
           htmlPath: d.htmlPath,
           status: d.status,
           erro: d.erro,
-          refTipo: d.refTipo,
-          refId: d.refId,
+          referenciaTipo: d.referenciaTipo,
+          referenciaId: d.referenciaId,
         },
       });
     } catch (e) {

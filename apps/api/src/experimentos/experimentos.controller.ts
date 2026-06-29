@@ -70,8 +70,8 @@ export class ExperimentosController {
         id: string;
         tratamentoId: string;
         bloco: number;
-        posLinha: number;
-        posColuna: number;
+        posicaoLinha: number;
+        posicaoColuna: number;
         numero: number;
         isInicio?: boolean;
       }>;

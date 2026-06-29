@@ -52,7 +52,7 @@ export class AvaliacoesController {
       lancamentos: Array<{
         avaliacaoId: string;
         parcelaId: string;
-        numAmostra?: number;
+        numeroAmostra?: number;
         valorColetado?: number | null;
       }>;
     },

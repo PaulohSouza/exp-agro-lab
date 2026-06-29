@@ -163,7 +163,7 @@ function TratamentoCard({
           <tbody>
             {(t.produtos ?? []).map((p) => (
               <tr key={p.id} style={{ background: "#f2f8fd", borderTop: "1px solid #e3eef7" }}>
-                <td style={cell}>{p.seq}</td>
+                <td style={cell}>{p.sequencia}</td>
                 <td style={cell}>{p.produto?.nome}</td>
                 <td style={cell}>{p.modoAplicacao ?? "—"}</td>
                 <td style={cell}>

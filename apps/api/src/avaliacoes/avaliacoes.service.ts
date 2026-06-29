@@ -27,9 +27,9 @@ export interface CriarAvaliacaoDto {
 
 export interface LancarDadoDto {
   parcelaId: string;
-  numAmostra?: number;
+  numeroAmostra?: number;
   valorColetado?: number;
-  obs?: string;
+  observacoes?: string;
   origem?: "WEB" | "MOBILE";
 }
 
@@ -304,19 +304,19 @@ export class AvaliacoesService {
     const limpos = dedupLancamentos(lancamentos);
     await this.prisma.$transaction(
       limpos.map((l) => {
-        const numAmostra = l.numAmostra ?? 1;
+        const numeroAmostra = l.numeroAmostra ?? 1;
         return this.prisma.avaliacaoDado.upsert({
           where: {
-            avaliacaoId_parcelaId_numAmostra: {
+            avaliacaoId_parcelaId_numeroAmostra: {
               avaliacaoId: l.avaliacaoId,
               parcelaId: l.parcelaId,
-              numAmostra,
+              numeroAmostra,
             },
           },
           create: {
             avaliacaoId: l.avaliacaoId,
             parcelaId: l.parcelaId,
-            numAmostra,
+            numeroAmostra,
             valorColetado: l.valorColetado ?? null,
             origem: "WEB",
             syncedAt: new Date(),
@@ -332,23 +332,23 @@ export class AvaliacoesService {
   async lancar(avaliacaoId: string, user: UsuarioAtual, dados: LancarDadoDto[]) {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     for (const d of dados) {
-      const numAmostra = d.numAmostra ?? 1;
+      const numeroAmostra = d.numeroAmostra ?? 1;
       await this.prisma.avaliacaoDado.upsert({
         where: {
-          avaliacaoId_parcelaId_numAmostra: { avaliacaoId, parcelaId: d.parcelaId, numAmostra },
+          avaliacaoId_parcelaId_numeroAmostra: { avaliacaoId, parcelaId: d.parcelaId, numeroAmostra },
         },
         create: {
           avaliacaoId,
           parcelaId: d.parcelaId,
-          numAmostra,
+          numeroAmostra,
           valorColetado: d.valorColetado,
-          obs: d.obs,
+          observacoes: d.observacoes,
           origem: d.origem ?? "WEB",
           syncedAt: new Date(),
         },
         update: {
           valorColetado: d.valorColetado,
-          obs: d.obs,
+          observacoes: d.observacoes,
           syncedAt: new Date(),
         },
       });
@@ -373,7 +373,7 @@ export class AvaliacoesService {
     });
 
     const areaUtil = await this.areaUtilDoExperimento(aval.experimentoId);
-    const obs: Observacao[] = dados.map((d) => {
+    const observacoes: Observacao[] = dados.map((d) => {
       let valor = d.valorColetado as number;
       if (aval.formula) {
         try {
@@ -394,11 +394,11 @@ export class AvaliacoesService {
       nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
 
     try {
-      const resultado = anovaUmFator(obs, delineamento, { metodo: metodo ?? "Tukey" });
+      const resultado = anovaUmFator(observacoes, delineamento, { metodo: metodo ?? "Tukey" });
       return {
         avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
         delineamento,
-        n: obs.length,
+        n: observacoes.length,
         resultado,
       };
     } catch (e) {

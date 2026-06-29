@@ -17,14 +17,14 @@ export class InstituicaoService {
 
   async atualizar(
     user: UsuarioAtual,
-    dto: { politicaAprovacao?: "TODOS" | "N_DE_M"; nAprovadores?: number },
+    dto: { politicaAprovacao?: "TODOS" | "N_DE_M"; numeroAprovadores?: number },
   ) {
     this.exigirAdmin(user);
     return this.prisma.instituicao.update({
       where: { id: user.instituicaoId },
       data: {
         politicaAprovacao: dto.politicaAprovacao,
-        nAprovadores: dto.nAprovadores != null ? Math.max(1, dto.nAprovadores) : undefined,
+        numeroAprovadores: dto.numeroAprovadores != null ? Math.max(1, dto.numeroAprovadores) : undefined,
       },
     });
   }

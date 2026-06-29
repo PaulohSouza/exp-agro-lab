@@ -5,7 +5,7 @@ import { ExperimentosService } from "../experimentos/experimentos.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 export interface ColetaPush extends ColetaOffline {
-  obs?: string;
+  observacoes?: string;
   dispositivoId?: string;
 }
 
@@ -28,7 +28,7 @@ export class SyncService {
         ensaio: true,
         status: true,
         espacamentoLinhasM: true,
-        numRepeticoes: true,
+        numeroRepeticoes: true,
         delineamento: { select: { nome: true } },
         tratamentos: {
           orderBy: { numeroRef: "asc" },
@@ -40,8 +40,8 @@ export class SyncService {
             id: true,
             numero: true,
             bloco: true,
-            posLinha: true,
-            posColuna: true,
+            posicaoLinha: true,
+            posicaoColuna: true,
             isInicio: true,
             tratamentoId: true,
           },
@@ -68,7 +68,7 @@ export class SyncService {
       select: {
         avaliacaoId: true,
         parcelaId: true,
-        numAmostra: true,
+        numeroAmostra: true,
         valorColetado: true,
         updatedAt: true,
       },
@@ -109,10 +109,10 @@ export class SyncService {
 
       const existente = await this.prisma.avaliacaoDado.findUnique({
         where: {
-          avaliacaoId_parcelaId_numAmostra: {
+          avaliacaoId_parcelaId_numeroAmostra: {
             avaliacaoId: c.avaliacaoId,
             parcelaId: c.parcelaId,
-            numAmostra: c.numAmostra,
+            numeroAmostra: c.numeroAmostra,
           },
         },
         select: { id: true, updatedAt: true },
@@ -126,25 +126,25 @@ export class SyncService {
 
       await this.prisma.avaliacaoDado.upsert({
         where: {
-          avaliacaoId_parcelaId_numAmostra: {
+          avaliacaoId_parcelaId_numeroAmostra: {
             avaliacaoId: c.avaliacaoId,
             parcelaId: c.parcelaId,
-            numAmostra: c.numAmostra,
+            numeroAmostra: c.numeroAmostra,
           },
         },
         create: {
           avaliacaoId: c.avaliacaoId,
           parcelaId: c.parcelaId,
-          numAmostra: c.numAmostra,
+          numeroAmostra: c.numeroAmostra,
           valorColetado: c.valorColetado,
-          obs: c.obs,
+          observacoes: c.observacoes,
           origem: "MOBILE",
           dispositivoId: c.dispositivoId,
           syncedAt: new Date(),
         },
         update: {
           valorColetado: c.valorColetado,
-          obs: c.obs,
+          observacoes: c.observacoes,
           dispositivoId: c.dispositivoId,
           syncedAt: new Date(),
         },

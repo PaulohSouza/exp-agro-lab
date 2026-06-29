@@ -113,10 +113,10 @@ async function main() {
       tipoExecucao: "Plataforma",
       parcelaLarguraM: 4.05,
       parcelaComprimentoM: 7,
-      parcelaNumLinhas: 9,
+      parcelaNumeroLinhas: 9,
       espacamentoLinhasM: 0.45,
-      numRepeticoes: 4,
-      numTratamentos: 5,
+      numeroRepeticoes: 4,
+      numeroTratamentos: 5,
       totalParcelas: 20,
     },
   });
@@ -158,7 +158,7 @@ async function main() {
     await prisma.tratamentoProduto.create({
       data: {
         tratamentoId: t.id,
-        seq: 1,
+        sequencia: 1,
         produtoId,
         modoAplicacao: "Pulverização",
         dose,
@@ -179,8 +179,8 @@ async function main() {
         tratamentoId: p.tratamentoId,
         bloco: p.bloco,
         numero: p.numero,
-        posLinha: p.posLinha,
-        posColuna: p.posColuna,
+        posicaoLinha: p.posicaoLinha,
+        posicaoColuna: p.posicaoColuna,
         isInicio: p.isInicio,
       },
     });
@@ -305,7 +305,7 @@ async function main() {
       titulo: "SIM 2-Fatores — Cultivar x Dose (desfolha)",
       ensaio: "INTERNO",
       espacamentoLinhasM: 0.45,
-      numRepeticoes: 4,
+      numeroRepeticoes: 4,
       instituicaoId: inst.id,
       ownerId: admin.id,
     },

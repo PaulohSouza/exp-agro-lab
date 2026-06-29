@@ -15,7 +15,7 @@ export class InstituicaoController {
   @Put()
   atualizar(
     @CurrentUser() user: UsuarioAtual,
-    @Body() dto: { politicaAprovacao?: "TODOS" | "N_DE_M"; nAprovadores?: number },
+    @Body() dto: { politicaAprovacao?: "TODOS" | "N_DE_M"; numeroAprovadores?: number },
   ) {
     return this.service.atualizar(user, dto);
   }

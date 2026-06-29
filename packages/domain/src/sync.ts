@@ -6,7 +6,7 @@
 export interface ColetaOffline {
   avaliacaoId: string;
   parcelaId: string;
-  numAmostra: number;
+  numeroAmostra: number;
   valorColetado?: number;
   /** epoch ms da última edição local (base para resolução de conflito). */
   clientUpdatedAt: number;
@@ -16,9 +16,9 @@ export interface ColetaOffline {
 export function chaveColeta(c: {
   avaliacaoId: string;
   parcelaId: string;
-  numAmostra: number;
+  numeroAmostra: number;
 }): string {
-  return `${c.avaliacaoId}:${c.parcelaId}:${c.numAmostra}`;
+  return `${c.avaliacaoId}:${c.parcelaId}:${c.numeroAmostra}`;
 }
 
 export type ResultadoColeta = "aplicar" | "conflito";

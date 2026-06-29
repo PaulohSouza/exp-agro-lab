@@ -42,8 +42,8 @@ export interface Parcela {
   bloco: number;
   tratamentoId: string;
   tratamentoNumeroRef: number;
-  posLinha: number;
-  posColuna: number;
+  posicaoLinha: number;
+  posicaoColuna: number;
   isInicio: boolean;
   /**
    * Split-plot: id da **parcela principal** (whole-plot) a que a subparcela

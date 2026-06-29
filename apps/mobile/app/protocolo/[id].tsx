@@ -48,7 +48,7 @@ export default function Protocolo() {
     const coleta: ColetaOffline = {
       avaliacaoId: avalId,
       parcelaId,
-      numAmostra: 1,
+      numeroAmostra: 1,
       valorColetado: num,
       clientUpdatedAt: Date.now(),
       dispositivoId: (await getUser())?.id,

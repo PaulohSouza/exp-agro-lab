@@ -28,7 +28,7 @@ export default function ExperimentosPage() {
     e.preventDefault();
     if (!titulo.trim()) return;
     try {
-      await api.criar({ titulo, ensaio: "INTERNO", espacamentoLinhasM: 0.45, numRepeticoes: 4 });
+      await api.criar({ titulo, ensaio: "INTERNO", espacamentoLinhasM: 0.45, numeroRepeticoes: 4 });
       setTitulo("");
       await recarregar();
     } catch (e) {
@@ -121,7 +121,7 @@ export default function ExperimentosPage() {
                     </td>
                     <td style={td}>{e.ensaio}</td>
                     <td style={td}>{e.status}</td>
-                    <td style={td}>{e._count?.tratamentos ?? e.numTratamentos ?? 0}</td>
+                    <td style={td}>{e._count?.tratamentos ?? e.numeroTratamentos ?? 0}</td>
                     <td style={td}>{e._count?.parcelas ?? e.totalParcelas ?? 0}</td>
                     <td style={td}>
                       <Link href={`/experimentos/${e.id}`} style={{ color: "#2D6CDF" }}>

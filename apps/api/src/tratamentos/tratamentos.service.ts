@@ -5,7 +5,7 @@ import type { UsuarioAtual } from "../auth/jwt.strategy";
 
 export interface ProdutoLinhaDto {
   produtoId: string;
-  seq?: number;
+  sequencia?: number;
   modoAplicacao?: string;
   dose?: number;
   unidadeDose?: string;
@@ -54,10 +54,10 @@ export class TratamentosService {
       user,
       "EDIT",
     );
-    const seq =
-      dto.seq ?? (await this.prisma.tratamentoProduto.count({ where: { tratamentoId } })) + 1;
+    const sequencia =
+      dto.sequencia ?? (await this.prisma.tratamentoProduto.count({ where: { tratamentoId } })) + 1;
     return this.prisma.tratamentoProduto.create({
-      data: { tratamentoId, seq, produtoId: dto.produtoId, ...this.normalizar(dto) },
+      data: { tratamentoId, sequencia, produtoId: dto.produtoId, ...this.normalizar(dto) },
       include: { produto: true, timing: true, atividade: true },
     });
   }

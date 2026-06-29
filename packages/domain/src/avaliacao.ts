@@ -53,7 +53,7 @@ export function calcularSaida(input: {
 export interface LancamentoLote {
   avaliacaoId: string;
   parcelaId: string;
-  numAmostra?: number;
+  numeroAmostra?: number;
   valorColetado?: number | null;
 }
 
@@ -64,7 +64,7 @@ export interface LancamentoLote {
  */
 export function dedupLancamentos(items: LancamentoLote[]): LancamentoLote[] {
   const m = new Map<string, LancamentoLote>();
-  for (const it of items) m.set(`${it.avaliacaoId}|${it.parcelaId}|${it.numAmostra ?? 1}`, it);
+  for (const it of items) m.set(`${it.avaliacaoId}|${it.parcelaId}|${it.numeroAmostra ?? 1}`, it);
   return [...m.values()];
 }
 

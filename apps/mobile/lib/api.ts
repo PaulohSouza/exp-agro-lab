@@ -76,7 +76,7 @@ export interface BundleOffline {
     avaliacoes: { id: string; nome: string; unidadeColeta: string | null; unidadeSaida: string | null; formula: string | null; timingId?: string | null; grupoColetaId?: string | null }[];
     timings?: { id: string; nome: string }[];
   };
-  dados: { avaliacaoId: string; parcelaId: string; numAmostra: number; valorColetado: number | null }[];
+  dados: { avaliacaoId: string; parcelaId: string; numeroAmostra: number; valorColetado: number | null }[];
   serverTime: number;
 }
 

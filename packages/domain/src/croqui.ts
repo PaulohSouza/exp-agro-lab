@@ -64,8 +64,8 @@ export function gerarCroqui(
         bloco: c + 1,
         tratamentoId: t.id,
         tratamentoNumeroRef: t.numeroRef,
-        posLinha: l,
-        posColuna: c,
+        posicaoLinha: l,
+        posicaoColuna: c,
         // ponto de início no canto inferior-esquerdo (como no SISTEMA-base).
         isInicio: c === 0 && l === numLinhas - 1,
       });
@@ -137,8 +137,8 @@ export function gerarParcelaSubdividida(
     const ordemA = shuffle(niveisA, rand); // casualização das parcelas principais
     for (let wp = 0; wp < a; wp++) {
       const nivelA = ordemA[wp];
-      const posLinha = bloco * a + wp;
-      const grupoPrincipal = posLinha; // id único da parcela principal no croqui
+      const posicaoLinha = bloco * a + wp;
+      const grupoPrincipal = posicaoLinha; // id único da parcela principal no croqui
       const ordemB = shuffle(niveisB, rand); // casualização das subparcelas
       for (let sp = 0; sp < b; sp++) {
         const nivelB = ordemB[sp];
@@ -148,8 +148,8 @@ export function gerarParcelaSubdividida(
           bloco: bloco + 1,
           tratamentoId: t.id,
           tratamentoNumeroRef: t.numeroRef,
-          posLinha,
-          posColuna: sp,
+          posicaoLinha,
+          posicaoColuna: sp,
           isInicio: bloco === 0 && wp === a - 1 && sp === 0,
           grupoPrincipal,
           nivelPrincipal: nivelA,
@@ -170,12 +170,12 @@ export function gerarParcelaSubdividida(
 
 /** As subparcelas ocupam um retângulo cheio (sem buracos nem espalhamento)? */
 function ehRetanguloContiguo(sub: readonly Parcela[]): boolean {
-  const linhas = sub.map((p) => p.posLinha);
-  const cols = sub.map((p) => p.posColuna);
+  const linhas = sub.map((p) => p.posicaoLinha);
+  const cols = sub.map((p) => p.posicaoColuna);
   const area =
     (Math.max(...linhas) - Math.min(...linhas) + 1) * (Math.max(...cols) - Math.min(...cols) + 1);
   if (area !== sub.length) return false;
-  return new Set(sub.map((p) => `${p.posLinha}:${p.posColuna}`)).size === sub.length;
+  return new Set(sub.map((p) => `${p.posicaoLinha}:${p.posicaoColuna}`)).size === sub.length;
 }
 
 /**
@@ -292,10 +292,10 @@ export function trocarParcelaPrincipal(croqui: Croqui, grupoA: number, grupoB: n
   if (subA.length !== subB.length)
     throw new Error("Parcelas principais com número de subparcelas diferente.");
 
-  const aByCol = new Map(subA.map((p) => [p.posColuna, p]));
-  const bByCol = new Map(subB.map((p) => [p.posColuna, p]));
+  const aByCol = new Map(subA.map((p) => [p.posicaoColuna, p]));
+  const bByCol = new Map(subB.map((p) => [p.posicaoColuna, p]));
   const mover = (origem: Map<number, Parcela>, p: Parcela): Parcela => {
-    const c = origem.get(p.posColuna);
+    const c = origem.get(p.posicaoColuna);
     if (!c) throw new Error("Subparcelas das parcelas principais não alinham por coluna.");
     return {
       ...p,

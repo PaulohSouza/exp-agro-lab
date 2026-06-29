@@ -32,19 +32,19 @@ const media = (xs: number[]) => soma(xs) / xs.length;
  * DBC assume balanceado (cada tratamento uma vez por bloco).
  */
 export function anovaUmFator(
-  obs: Observacao[],
+  observacoes: Observacao[],
   delineamento: Delineamento,
   opcoes: { metodo?: MetodoComparacao; alpha?: number } = {},
 ): ResultadoAnova {
   const metodo: MetodoComparacao = opcoes.metodo ?? "Tukey";
   const alpha = opcoes.alpha ?? 0.05;
-  if (obs.length < 3) throw new Error("Dados insuficientes para ANOVA.");
-  const valores = obs.map((o) => o.valor);
+  if (observacoes.length < 3) throw new Error("Dados insuficientes para ANOVA.");
+  const valores = observacoes.map((o) => o.valor);
   const N = valores.length;
   const mediaGeral = media(valores);
   const sqTotal = soma(valores.map((v) => (v - mediaGeral) ** 2));
 
-  const porTrat = agrupar(obs, (o) => o.tratamento);
+  const porTrat = agrupar(observacoes, (o) => o.tratamento);
   const tratamentos = [...porTrat.keys()];
   const k = tratamentos.length;
   if (k < 2) throw new Error("São necessários ao menos 2 tratamentos.");
@@ -61,7 +61,7 @@ export function anovaUmFator(
   let sqBloco = 0;
   let glBloco = 0;
   if (delineamento === "DBC") {
-    const porBloco = agrupar(obs, (o) => String(o.bloco));
+    const porBloco = agrupar(observacoes, (o) => String(o.bloco));
     const blocos = [...porBloco.keys()];
     glBloco = blocos.length - 1;
     sqBloco = soma(

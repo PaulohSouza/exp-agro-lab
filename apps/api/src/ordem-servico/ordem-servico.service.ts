@@ -150,7 +150,7 @@ export class OrdemServicoService {
 
     const satisfeito =
       inst?.politicaAprovacao === "N_DE_M"
-        ? aprovados.size >= (inst?.nAprovadores ?? 1)
+        ? aprovados.size >= (inst?.numeroAprovadores ?? 1)
         : ativosIds.size > 0 && aprovados.size >= ativosIds.size;
 
     if (satisfeito) {

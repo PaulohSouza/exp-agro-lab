@@ -4,14 +4,14 @@
 export interface ColetaOffline {
   avaliacaoId: string;
   parcelaId: string;
-  numAmostra: number;
+  numeroAmostra: number;
   valorColetado?: number;
   clientUpdatedAt: number;
   dispositivoId?: string;
 }
 
-export function chaveColeta(c: { avaliacaoId: string; parcelaId: string; numAmostra: number }): string {
-  return `${c.avaliacaoId}:${c.parcelaId}:${c.numAmostra}`;
+export function chaveColeta(c: { avaliacaoId: string; parcelaId: string; numeroAmostra: number }): string {
+  return `${c.avaliacaoId}:${c.parcelaId}:${c.numeroAmostra}`;
 }
 
 export function dedupLote<T extends ColetaOffline>(coletas: readonly T[]): T[] {

@@ -87,8 +87,8 @@ export class CompartilhamentoService {
       html: `<h2 style="color:#1F2940">Convite de colaboração</h2>
         <p>Você foi convidado a colaborar no experimento <strong>${exp.titulo}</strong> (nível: ${nivel}).</p>
         <p><a href="${base}/convite/${token}" style="background:#6FA830;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Aceitar convite</a></p>`,
-      refTipo: "ExperimentoCompartilhamento",
-      refId: share.id,
+      referenciaTipo: "ExperimentoCompartilhamento",
+      referenciaId: share.id,
     });
     return share;
   }
