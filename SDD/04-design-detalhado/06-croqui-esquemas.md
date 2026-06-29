@@ -1,5 +1,7 @@
 # 06 — Croqui de 2+ fatores: esquema fatorial × parcela subdividida
 
+> **Estado: ✅ implementado (29/06/2026)** — domínio, schema (`EsquemaCroqui` + campos da parcela), API (geração + validação 422), web (arraste em 2 níveis) e ANOVA de dois erros (`anovaSplitPlot`). PRs #16–#18. Ver STATUS §3.1. Follow-up: comparação de médias por fator; strip-plot (§6).
+>
 > Quando o experimento tem **≥2 fatores**, o croqui precisa saber o **esquema** de
 > arranjo. O esquema muda a casualização, a interação de arraste, as regras de
 > validação e — importante — o **modelo de erro da ANOVA**. Fonte da verdade:

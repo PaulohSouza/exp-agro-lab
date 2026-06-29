@@ -3,7 +3,7 @@
 > **Handoff para retomar em nova conversa.** Última atualização: 29/06/2026 (fim do dia).
 > **Onde estamos:** catálogo de avaliações/atividades + período/marcos + coleta agrupada **mergeado** (PR #1, tag **v0.7.0**). Em seguida, **iniciativa de padronização de código concluída** (ver §0) — CI no GitHub + padrão de desenvolvimento documentado + 6 temas de schema + validação Zod. **`main` 100% no padrão.**
 > **Comece por aqui:** §0 (padronização) e §8 (próximos passos). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
-> Testes: **domain 59** + **analytics 24** + **5 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+> Testes: **domain 59** + **analytics 30** + **6 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 ## 0. Padronização de código (concluída em 29/06/2026)
 Iniciativa para alinhar todo o código a um padrão único — ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** (§12 = progresso). Tudo mergeado na `main`, cada etapa verificada (typecheck + 59+24 testes + build + reseed + 5 e2e):
@@ -21,7 +21,7 @@ Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de
 ## 2. Stack
 Monorepo TypeScript (pnpm + Turborepo):
 - `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **59 testes**.
-- `packages/analytics` — estatística pura: ANOVA, CV, Bartlett, **Tukey/Scott-Knott/LSD** (amplitude estudentizada `ptukey`/`qtukey`), distribuições F/t/χ². **24 testes**.
+- `packages/analytics` — estatística pura: ANOVA (1 fator + **split-plot 2 erros**), CV, Bartlett, **Tukey/Scott-Knott/LSD** (`ptukey`/`qtukey`), distribuições F/t/χ². **30 testes**.
 - `apps/api` — NestJS + Prisma + **MySQL** (`expagrolab_dev`). JWT/bcrypt.
 - `apps/web` — Next.js (App Router), tema azul do TCC.
 - `apps/mobile` — Expo + expo-router (offline-first). **Fora do workspace pnpm** (usa npm).
@@ -69,11 +69,17 @@ Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para mu
   - **B5 mobile** ✅ (compila; falta device) — sync pull expõe `timingId`/`grupoColetaId` + timings; app ganhou **filtro por timing** nos chips de coleta. O lote offline já funcionava (fila por célula sobre várias avaliações + push unificado).
 - **Status geral:** A ✅ · C ✅ (incl. C5) · B ✅ (B5 mobile pendente). Pré-requisitos cruzam avaliações **e** atividades. Testes: **domain 59** + **5 suites e2e** (Playwright Python em `e2e/`, todas passando).
 
-## 3.1 Em andamento — croqui de 2+ fatores (esquema)
-Distinção **fatorial × parcela subdividida (split-plot)**. Domínio implementado e testado em `packages/domain/croqui.ts` (`gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal`) — coberto pelos **59 testes** do domain. Design em [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md). **Falta:** campos `esquema`/`grupoPrincipal` no schema Prisma + API, UX de arraste em 2 níveis no web, e ramificação da ANOVA (split-plot tem 2 erros → liga com analytics fase B).
+## 3.1 Croqui de 2+ fatores (split-plot) — ✅ implementado (29/06/2026)
+Distinção **fatorial × parcela subdividida (split-plot)**, completo nas 4 fatias (PRs #16, #17, #18). Design: [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md).
+- **Domínio** (`packages/domain/croqui.ts`): `gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal` (coberto pelos 59 testes).
+- **Schema** (fatia 1): enum `EsquemaCroqui` + `Experimento.esquema`/`fatorPrincipalOrdem` + `Parcela.grupoPrincipal`/`nivelPrincipal`/`nivelSub` (nullable; `EsquemaCroqui` no `DominioValor`).
+- **API** (fatia 2): `gerarCroqui` ramifica (mapeia tratamentos→`TratamentoFatorial`); `salvarCroqui` revalida → **422**.
+- **Web** (fatia 3): seletor de esquema + fator principal; render agrupado (borda grossa); arraste em 2 níveis (sub no grupo, principal no bloco).
+- **ANOVA** (fatia 4): `anovaSplitPlot` com **dois erros** (Erro(a) testa A; Erro(b) testa B e A×B), 6 testes golden (analytics **30**); `analise` ramifica por `esquema`; web e PPTX renderizam a tabela de 2 erros. e2e `test_split_plot.py`.
+- **Follow-up:** comparação de médias por fator no split-plot; strip-plot (SDD 06 §6).
 
 ## 4. Pendências / limitações conhecidas
-- **Analytics fase B parcial:** **Tukey (HSD)**, **Scott-Knott** e LSD já implementados (default Tukey, como o SAGRE) com `ptukey`/`qtukey` validados vs tabela de Tukey. **Falta:** fatorial 2–3 + desdobramento, **split-plot (2 erros)** — liga com o croqui [[06]], transformações (Box-Cox/log/√), não-paramétrico (Kruskal/Friedman + post-hoc), análise conjunta, e **golden tests vs SAGRE** (rodar os mesmos dados no R e comparar com tolerância — pendente por não ter o ambiente R aqui).
+- **Analytics fase B parcial:** **Tukey (HSD)**, **Scott-Knott**, LSD (default Tukey) e **split-plot (2 erros)** ✅ implementados. **Falta:** fatorial 2–3 + desdobramento, transformações (Box-Cox/log/√), não-paramétrico (Kruskal/Friedman + post-hoc), análise conjunta, comparação de médias por fator no split-plot, e **golden tests vs SAGRE** (pendente por não ter o ambiente R aqui).
 - **PPTX fase A** tem layout próprio; falta aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx`.
 - **App mobile não foi rodado** (sem device/emulador no ambiente). Compila por `tsc`. Validar com Expo Go.
 - E-mails em modo **SIMULATE** (arquivos em `apps/api/email-previews/`), não envia de verdade.
@@ -107,11 +113,11 @@ Ver o checklist completo em **[TESTES.md](TESTES.md)**.
 - [x] **Padronização de código completa** — ver **§0**. `main` 100% no padrão (booleanos/enums/timestamps/abreviações/`Usuario`/`DominioValor`/Zod).
 - [x] **B5** mobile (filtro por timing nos chips; validar em device).
 
-### 8.1 Croqui de 2+ fatores (split-plot) — domínio pronto, falta o resto
-Campos `esquema`/`grupoPrincipal` no schema+API · UX de arraste em 2 níveis na web · ramificação da ANOVA (2 erros → liga com analytics). Design: [SDD 06](SDD/04-design-detalhado/06-croqui-esquemas.md).
+### 8.1 Croqui de 2+ fatores (split-plot) — ✅ feito (ver §3.1, PRs #16–#18)
+Implementado nas 4 fatias (schema, API, web, ANOVA 2 erros). Follow-up: comparação de médias por fator no split-plot; strip-plot (SDD 06 §6).
 
 ### 8.2 Analytics fase B (completar) — `packages/analytics`
-Fatorial 2–3 + desdobramento · split-plot (2 erros) · transformações (Box-Cox/log/√) · não-paramétrico (Kruskal/Friedman + post-hoc) · análise conjunta · **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
+**Split-plot (2 erros) ✅ feito.** Falta: fatorial 2–3 + desdobramento · transformações (Box-Cox/log/√) · não-paramétrico (Kruskal/Friedman + post-hoc) · análise conjunta · **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
 
 ### 8.3 Relatório PPTX fase B
 Aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (layout fiel).
@@ -125,7 +131,7 @@ Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de cole
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
 
-> **Prioridade sugerida:** (1) croqui split-plot + analytics fase B (andam juntos) → (2) golden vs SAGRE → (3) PPTX fiel → (4) mobile em device (rodar `npm ci` em `apps/mobile` antes). Padronização e CI já fechados.
+> **Prioridade sugerida:** (1) golden tests vs SAGRE (validar a estatística, incl. split-plot) → (2) analytics fase B restante (fatorial/desdobramento, transformações, não-paramétrico) → (3) PPTX fiel → (4) mobile em device (rodar `npm ci` em `apps/mobile` antes). Padronização, CI e croqui split-plot já fechados.
 
 ## 9. Releases
 `v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · **`v0.7.0`** (catálogo de avaliações/atividades + período/marcos + coleta agrupada — mergeado, **Latest**). Depois do v0.7.0: CI + **padronização de código** (PRs #2–#14, ainda sem tag — candidata a `v0.8.0`). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
