@@ -6,11 +6,11 @@ export type Delineamento = "DIC" | "DBC" | "FATORIAL";
 
 /**
  * Esquema de arranjo dos fatores (relevante quando há ≥2 fatores).
- * - `fatorial`: cada combinação é um tratamento, casualizado livremente no bloco.
- * - `parcela_subdividida` (split-plot): fator principal na parcela principal,
+ * - `FATORIAL`: cada combinação é um tratamento, casualizado livremente no bloco.
+ * - `PARCELA_SUBDIVIDIDA` (split-plot): fator principal na parcela principal,
  *   subfator na subparcela, com casualização **restrita** e dois erros experimentais.
  */
-export type Esquema = "fatorial" | "parcela_subdividida";
+export type Esquema = "FATORIAL" | "PARCELA_SUBDIVIDIDA";
 
 export type StatusExperimento =
   "INSERINDO" | "APROVADO_CAD" | "RECUSADO_CAD" | "EM_CONDUCAO" | "CONCLUIDO";
