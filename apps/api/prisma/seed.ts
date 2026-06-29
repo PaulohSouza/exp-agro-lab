@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { gerarCroqui, calcularAreaUtilColhida, calcularProdutividadeKgHa } from "@exp/domain";
 import bcrypt from "bcryptjs";
+import { DOMINIOS, validarCobertura } from "../src/dominios/dominios.data";
 
 const prisma = new PrismaClient();
 const hash = (s: string) => bcrypt.hashSync(s, 10);
@@ -311,9 +312,25 @@ async function main() {
     },
   });
 
+  // Dicionário de valores enumerados (D6 / §4.9): significado de cada código no banco.
+  validarCobertura(); // falha o seed se algum valor de enum não tiver rótulo
+  await prisma.dominioValor.deleteMany();
+  for (const [dominio, valores] of Object.entries(DOMINIOS)) {
+    await prisma.dominioValor.createMany({
+      data: valores.map((v, i) => ({
+        dominio,
+        codigo: v.codigo,
+        rotulo: v.rotulo,
+        descricao: v.descricao ?? null,
+        ordem: i,
+      })),
+    });
+  }
+  const nDominios = await prisma.dominioValor.count();
+
   const nParcelas = await prisma.parcela.count({ where: { experimentoId: exp.id } });
   console.log(
-    `Seed concluído: experimento ${exp.codigo}, ${nParcelas} parcelas, croqui ${croqui.numLinhas}×${croqui.numColunas}.`,
+    `Seed concluído: experimento ${exp.codigo}, ${nParcelas} parcelas, croqui ${croqui.numLinhas}×${croqui.numColunas}, ${nDominios} valores de domínio.`,
   );
 }
 
