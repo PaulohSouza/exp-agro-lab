@@ -51,7 +51,7 @@ Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para mu
   - **C2 domínio** ✅ — `packages/domain/atividade.ts`: `validarApontamento` (obrigatórios, tipo do slot, rótulo desconhecido) + `apontamentoEsperado`; escopo reaproveita `podeGerenciarEscopo`. **+7 testes** (domain agora **51**).
   - **C3 API** ✅ — módulo `atividades`: `ModeloAtividadeService`/`/modelos-atividade` (CRUD c/ campos + RBAC por escopo) e `AtividadeExperimentoService` (`/experimentos/:id/atividades`, `/atividades/:id/apontamento`, DELETE). Criar-do-modelo herda nome/tipo e pré-cria valores; apontamento validado pelo domínio (smoke: faltando obrigatório → 400; válido → grava).
   - **C4 web** ✅ — `/catalogo` ganhou subabas **Avaliações | Atividades**; catálogo de atividades com filtro por escopo, editor de campos parametrizados (rótulo/tipo/unidade/obrigatório) e CRUD por papel. Nova aba **Atividades** no experimento: adicionar do catálogo, preencher apontamento (validado) e remover. e2e `e2e/test_atividades.py` (passa).
-  - **Falta C:** **C5 refatorar a colheita** (mover nº linhas/comprimento/área de `AvaliacaoDado` p/ Atividade-Colheita; toca RN-PROD/seed/analytics) — última etapa de C, propositalmente.
+  - **Falta C:** **C5 refatorar a colheita** (mover nº linhas/comprimento/área de `AvaliacaoDado` p/ Atividade-Colheita; toca RN-PROD/seed/analytics) — última etapa de C, propositalmente. **Plano de migração pronto:** [SDD/04-design-detalhado/08-c5-plano-colheita.md](SDD/04-design-detalhado/08-c5-plano-colheita.md).
 - **Depois (B):** coleta agrupada (filtro + grupos salvos + lote web/mobile). Ordem confirmada: **A → C → B**. Testes e2e (Playwright Python) em `e2e/`.
 
 ## 3.1 Em andamento — croqui de 2+ fatores (esquema)
