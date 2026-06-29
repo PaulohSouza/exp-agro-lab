@@ -90,6 +90,67 @@ export interface ModeloAvaliacaoInput {
   prerequisitoIds?: string[];
 }
 
+// ---- Atividades (Macro C) ----
+export type TipoAtividade = "acao" | "apontamento";
+export type TipoCampo = "numero" | "texto" | "data" | "booleano";
+export interface ModeloAtividadeCampo {
+  id?: string;
+  rotulo: string;
+  tipo: TipoCampo;
+  unidade?: string | null;
+  obrigatorio: boolean;
+  ordem: number;
+}
+export interface ModeloAtividade {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  tipo: TipoAtividade;
+  metodologiaRelatorio: string | null;
+  escopo: EscopoModelo;
+  instituicaoId: string | null;
+  departamentoId: string | null;
+  ativo: boolean;
+  campos?: ModeloAtividadeCampo[];
+  _count?: { atividades: number };
+}
+export interface ModeloAtividadeInput {
+  nome: string;
+  descricao?: string;
+  tipo: TipoAtividade;
+  metodologiaRelatorio?: string;
+  escopo: EscopoModelo;
+  departamentoId?: string;
+  campos?: { rotulo: string; tipo?: TipoCampo; unidade?: string; obrigatorio?: boolean; ordem?: number }[];
+}
+export interface AtividadeApontamentoValor {
+  id: string;
+  rotulo: string;
+  valorNum: number | null;
+  valorTexto: string | null;
+  valorData: string | null;
+  valorBool: boolean | null;
+}
+export interface ValorApontamentoInput {
+  rotulo: string;
+  valorNum?: number | null;
+  valorTexto?: string | null;
+  valorData?: string | null;
+  valorBool?: boolean | null;
+}
+export interface AtividadeExperimento {
+  id: string;
+  nome: string;
+  tipo: TipoAtividade;
+  data: string | null;
+  responsavel: string | null;
+  obs: string | null;
+  ordem: number;
+  modeloId: string | null;
+  valores: AtividadeApontamentoValor[];
+  modelo?: ModeloAtividade | null;
+}
+
 export interface AvaliacaoDado {
   id: string;
   parcelaId: string;
@@ -283,6 +344,22 @@ export const api = {
   atualizarModelo: (id: string, body: Partial<ModeloAvaliacaoInput>) =>
     req<ModeloAvaliacao>(`/modelos-avaliacao/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   removerModelo: (id: string) => req<{ ok: boolean }>(`/modelos-avaliacao/${id}`, { method: "DELETE" }),
+
+  // catálogo de modelos de atividade (multi-escopo)
+  listarModelosAtividade: () => req<ModeloAtividade[]>("/modelos-atividade"),
+  criarModeloAtividade: (body: ModeloAtividadeInput) =>
+    req<ModeloAtividade>("/modelos-atividade", { method: "POST", body: JSON.stringify(body) }),
+  atualizarModeloAtividade: (id: string, body: Partial<ModeloAtividadeInput>) =>
+    req<ModeloAtividade>(`/modelos-atividade/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  removerModeloAtividade: (id: string) => req<{ ok: boolean }>(`/modelos-atividade/${id}`, { method: "DELETE" }),
+
+  // atividades do experimento
+  listarAtividadesExp: (expId: string) => req<AtividadeExperimento[]>(`/experimentos/${expId}/atividades`),
+  criarAtividadeExp: (expId: string, body: { modeloId?: string; nome?: string; tipo?: TipoAtividade; data?: string; responsavel?: string; obs?: string }) =>
+    req<AtividadeExperimento>(`/experimentos/${expId}/atividades`, { method: "POST", body: JSON.stringify(body) }),
+  registrarApontamento: (atividadeId: string, valores: ValorApontamentoInput[]) =>
+    req<AtividadeExperimento>(`/atividades/${atividadeId}/apontamento`, { method: "POST", body: JSON.stringify({ valores }) }),
+  removerAtividadeExp: (atividadeId: string) => req<{ ok: boolean }>(`/atividades/${atividadeId}`, { method: "DELETE" }),
   analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
     req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
 

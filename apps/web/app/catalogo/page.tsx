@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { api, type Departamento, type EscopoModelo, type ModeloAvaliacao, type ModeloAvaliacaoInput, type Papel } from "../../lib/api";
+import { api, type Departamento, type EscopoModelo, type ModeloAvaliacao, type ModeloAvaliacaoInput, type ModeloAtividade, type ModeloAtividadeInput, type Papel, type TipoCampo } from "../../lib/api";
 import { Protected } from "../../components/Protected";
 import { getUser } from "../../lib/auth";
 
@@ -26,20 +26,29 @@ const VAZIO: ModeloAvaliacaoInput = {
 };
 
 export default function CatalogoPage() {
+  const [vista, setVista] = useState<"avaliacoes" | "atividades">("avaliacoes");
   return (
     <Protected>
       <main style={{ maxWidth: 1100, margin: "32px auto", padding: 24 }}>
         <div style={{ background: "#1F2940", color: "#fff", padding: "16px 20px", borderRadius: 10 }}>
           <Link href="/cadastros" style={{ color: "#4EC2F0", fontSize: 13 }}>← Cadastros</Link>
-          <h1 style={{ margin: "6px 0 0", fontSize: 22 }}>Catálogo de avaliações</h1>
+          <h1 style={{ margin: "6px 0 0", fontSize: 22 }}>Catálogo</h1>
           <p style={{ margin: "6px 0 0", color: "#9BD2F5", fontSize: 13 }}>
-            Modelos reutilizáveis por escopo. A mesma medida pode existir no padrão do sistema, da instituição e do departamento.
+            Modelos reutilizáveis por escopo (sistema / instituição / departamento). Avaliações são coletadas por parcela; atividades são registros gerais do experimento.
           </p>
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button onClick={() => setVista("avaliacoes")} style={subtab(vista === "avaliacoes")}>Avaliações</button>
+            <button onClick={() => setVista("atividades")} style={subtab(vista === "atividades")}>Atividades</button>
+          </div>
         </div>
-        <Catalogo />
+        {vista === "avaliacoes" ? <Catalogo /> : <CatalogoAtividades />}
       </main>
     </Protected>
   );
+}
+
+function subtab(on: boolean): React.CSSProperties {
+  return { background: on ? "#4EC2F0" : "transparent", color: on ? "#1F2940" : "#cfe6f7", border: "1px solid #4EC2F0", borderRadius: 8, padding: "5px 14px", cursor: "pointer", fontSize: 13, fontWeight: on ? 600 : 400 };
 }
 
 function Catalogo() {
@@ -206,6 +215,182 @@ function Catalogo() {
               );
             })}
             {visiveis.length === 0 && <tr><td style={td} colSpan={7}><span style={{ color: "#a9abbd" }}>Nenhum modelo neste escopo.</span></td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------- Catálogo de atividades ----------------------------- */
+
+interface CampoForm { rotulo: string; tipo: TipoCampo; unidade: string; obrigatorio: boolean }
+const ATV_VAZIO: ModeloAtividadeInput & { camposForm: CampoForm[] } = {
+  nome: "", descricao: "", tipo: "acao", metodologiaRelatorio: "", escopo: "instituicao", departamentoId: "", camposForm: [],
+};
+
+function CatalogoAtividades() {
+  const papel = getUser()?.papel;
+  const [modelos, setModelos] = useState<ModeloAtividade[]>([]);
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+  const [filtro, setFiltro] = useState<EscopoModelo | "todos">("todos");
+  const [form, setForm] = useState<ModeloAtividadeInput & { camposForm: CampoForm[] }>(ATV_VAZIO);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const escoposGerenciaveis = ESCOPOS.filter((e) => podeGerenciar(papel, e.value));
+
+  async function recarregar() { setModelos(await api.listarModelosAtividade()); }
+  useEffect(() => {
+    recarregar().catch((e) => setErro(e instanceof Error ? e.message : "Falha ao carregar"));
+    if (podeGerenciar(papel, "departamento")) api.departamentos().then(setDepartamentos).catch(() => {});
+    setForm((f) => ({ ...f, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const visiveis = useMemo(
+    () => (filtro === "todos" ? modelos : modelos.filter((m) => m.escopo === filtro)),
+    [modelos, filtro],
+  );
+
+  function reset() { setForm({ ...ATV_VAZIO, escopo: escoposGerenciaveis[0]?.value ?? "instituicao" }); setEditId(null); }
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(null); setMsg(null);
+    if (!form.nome.trim()) return;
+    try {
+      const body: ModeloAtividadeInput = {
+        nome: form.nome, descricao: form.descricao, tipo: form.tipo, metodologiaRelatorio: form.metodologiaRelatorio,
+        escopo: form.escopo, departamentoId: form.escopo === "departamento" ? form.departamentoId || undefined : undefined,
+        campos: form.tipo === "apontamento" ? form.camposForm.filter((c) => c.rotulo.trim()).map((c, i) => ({ ...c, unidade: c.unidade || undefined, ordem: i })) : [],
+      };
+      if (editId) await api.atualizarModeloAtividade(editId, body);
+      else await api.criarModeloAtividade(body);
+      setMsg(editId ? "Atividade atualizada." : "Atividade criada.");
+      reset();
+      recarregar();
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Falha ao salvar");
+    }
+  }
+
+  function editar(m: ModeloAtividade) {
+    setEditId(m.id);
+    setForm({
+      nome: m.nome, descricao: m.descricao ?? "", tipo: m.tipo, metodologiaRelatorio: m.metodologiaRelatorio ?? "",
+      escopo: m.escopo, departamentoId: m.departamentoId ?? "",
+      camposForm: (m.campos ?? []).map((c) => ({ rotulo: c.rotulo, tipo: c.tipo, unidade: c.unidade ?? "", obrigatorio: c.obrigatorio })),
+    });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function excluir(m: ModeloAtividade) {
+    if (!confirm(`Remover a atividade "${m.nome}"?`)) return;
+    try { await api.removerModeloAtividade(m.id); recarregar(); }
+    catch (err) { setErro(err instanceof Error ? err.message : "Falha ao remover"); }
+  }
+
+  function setCampo(i: number, patch: Partial<CampoForm>) {
+    setForm({ ...form, camposForm: form.camposForm.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, margin: "20px 0 12px", flexWrap: "wrap" }}>
+        {(["todos", "sistema", "instituicao", "departamento"] as const).map((f) => (
+          <button key={f} onClick={() => setFiltro(f)} style={chip(filtro === f)}>
+            {f === "todos" ? "Todos" : ESCOPOS.find((e) => e.value === f)!.label}
+          </button>
+        ))}
+      </div>
+
+      {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
+      {msg && <p style={{ color: "#1F2940" }}>{msg}</p>}
+
+      {escoposGerenciaveis.length > 0 && (
+        <form onSubmit={salvar} style={{ background: "#f9f9fb", padding: 16, borderRadius: 10, marginBottom: 20 }}>
+          <strong style={{ color: "#1F2940" }}>{editId ? "Editar atividade" : "Nova atividade"}</strong>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 10 }}>
+            <input data-testid="atv-nome" placeholder="Nome (ex.: Aplicação via CO2)" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} style={inp} />
+            <select data-testid="atv-tipo" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value as ModeloAtividade["tipo"] })} style={inp}>
+              <option value="acao">ação (sem coleta)</option>
+              <option value="apontamento">com apontamento</option>
+            </select>
+            <select data-testid="atv-escopo" value={form.escopo} onChange={(e) => setForm({ ...form, escopo: e.target.value as EscopoModelo })} style={inp} disabled={!!editId}>
+              {escoposGerenciaveis.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
+            </select>
+            {form.escopo === "departamento" && (
+              <select value={form.departamentoId} onChange={(e) => setForm({ ...form, departamentoId: e.target.value })} style={inp}>
+                <option value="">— departamento —</option>
+                {departamentos.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </select>
+            )}
+          </div>
+          <textarea placeholder="Descrição" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} style={{ ...inp, width: "100%", marginTop: 10, minHeight: 40 }} />
+          <textarea placeholder="Metodologia p/ relatório (base para a IA)" value={form.metodologiaRelatorio} onChange={(e) => setForm({ ...form, metodologiaRelatorio: e.target.value })} style={{ ...inp, width: "100%", marginTop: 10, minHeight: 40 }} />
+
+          {form.tipo === "apontamento" && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 6 }}>Campos do apontamento (parametrizados):</div>
+              {form.camposForm.map((c, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  <input placeholder="rótulo" value={c.rotulo} onChange={(e) => setCampo(i, { rotulo: e.target.value })} style={{ ...inp, width: 140 }} />
+                  <select value={c.tipo} onChange={(e) => setCampo(i, { tipo: e.target.value as TipoCampo })} style={inp}>
+                    <option value="numero">número</option>
+                    <option value="texto">texto</option>
+                    <option value="data">data</option>
+                    <option value="booleano">sim/não</option>
+                  </select>
+                  <input placeholder="unidade" value={c.unidade} onChange={(e) => setCampo(i, { unidade: e.target.value })} style={{ ...inp, width: 90 }} />
+                  <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
+                    <input type="checkbox" checked={c.obrigatorio} onChange={(e) => setCampo(i, { obrigatorio: e.target.checked })} /> obrigatório
+                  </label>
+                  <button type="button" onClick={() => setForm({ ...form, camposForm: form.camposForm.filter((_, j) => j !== i) })} style={mini("#F34343")}>x</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => setForm({ ...form, camposForm: [...form.camposForm, { rotulo: "", tipo: "numero", unidade: "", obrigatorio: false }] })} style={mini("#4EC2F0")}>+ campo</button>
+            </div>
+          )}
+
+          <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+            <button type="submit" data-testid="atv-salvar" style={btn("#1F2940")}>{editId ? "Salvar" : "Criar atividade"}</button>
+            {editId && <button type="button" onClick={reset} style={btn("#a9abbd")}>cancelar</button>}
+          </div>
+        </form>
+      )}
+
+      <div className="tabela-scroll">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: "#1F2940", color: "#fff", textAlign: "left" }}>
+              {["Atividade", "Escopo", "Tipo", "Campos", "Usos", "Ações"].map((h) => <th key={h} style={th}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {visiveis.map((m) => {
+              const podeEditar = podeGerenciar(papel, m.escopo);
+              const esc = ESCOPOS.find((e) => e.value === m.escopo)!;
+              return (
+                <tr key={m.id} style={{ borderBottom: "1px solid #eaecf3" }}>
+                  <td style={td}><strong>{m.nome}</strong>{m.descricao ? <div style={{ fontSize: 11, color: "#7987A1" }}>{m.descricao}</div> : null}</td>
+                  <td style={td}><span style={{ background: esc.cor, color: esc.value === "departamento" ? "#1F2940" : "#fff", borderRadius: 6, padding: "2px 8px", fontSize: 11 }}>{esc.label}</span></td>
+                  <td style={td}>{m.tipo === "apontamento" ? "apontamento" : "ação"}</td>
+                  <td style={td}>{m.tipo === "apontamento" ? (m.campos ?? []).map((c) => c.rotulo).join(", ") || "—" : "—"}</td>
+                  <td style={td}>{m._count?.atividades ?? 0}</td>
+                  <td style={td}>
+                    {podeEditar ? (
+                      <>
+                        <button onClick={() => editar(m)} style={mini("#4EC2F0")}>editar</button>{" "}
+                        <button onClick={() => excluir(m)} style={mini("#F34343")}>x</button>
+                      </>
+                    ) : <span style={{ color: "#a9abbd", fontSize: 12 }}>leitura</span>}
+                  </td>
+                </tr>
+              );
+            })}
+            {visiveis.length === 0 && <tr><td style={td} colSpan={6}><span style={{ color: "#a9abbd" }}>Nenhuma atividade neste escopo.</span></td></tr>}
           </tbody>
         </table>
       </div>

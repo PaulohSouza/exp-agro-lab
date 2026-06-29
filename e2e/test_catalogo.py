@@ -31,9 +31,10 @@ def run() -> int:
         page.wait_for_url("**/experimentos")
         print("✓ login OK")
 
-        # 2) catálogo
+        # 2) catálogo (aba Avaliações ativa por padrão)
         page.goto(f"{BASE}/catalogo")
-        expect(page.get_by_role("heading", name="Catálogo de avaliações")).to_be_visible()
+        expect(page.get_by_role("heading", name="Catálogo")).to_be_visible()
+        expect(page.locator('[data-testid="modelo-nome"]')).to_be_visible()
         print("✓ /catalogo carregou")
 
         # 3) gating de escopo: admin da instituição NÃO pode criar escopo 'sistema'
