@@ -11,7 +11,8 @@ EXP-AGROLAB: sistema de gestão de experimentos agronômicos e laboratoriais. Ca
 - Banco: **MySQL** (instância local do SAGRE-app pode ser usada para dev; credenciais no `.env` do sagre-app).
 
 ## Convenções
-- **Idioma:** documentação, nomes de domínio e UI em **português**; identificadores de código em inglês quando padrão da lib, mas termos de domínio (parcela, bloco, tratamento, croqui, avaliação) podem ficar em PT para clareza. Seguir o estilo do código vizinho.
+- **Padrão de desenvolvimento (obrigatório):** ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** — nomenclatura, banco (PK/FK/atributos/enums), camadas (controller fino → service → domínio), validação Zod e ferramental. Código novo nasce nesse padrão; legado é refatorado de forma incremental (§12 do doc).
+- **Idioma:** documentação, UI e termos de **domínio** em **português** (parcela, bloco, tratamento, croqui, avaliação); termos **técnicos/estruturais** em inglês (Service, Controller, createdAt); **UI/output sempre PT**. Detalhe e exceções no padrão (§2). Seguir o estilo do código vizinho.
 - **Tema azul do TCC:** navy `#1F2940`, sidebar `#141B2D`, accent sky `#4EC2F0`. Ver [SDD/04-design-detalhado/05-design-system.md](SDD/04-design-detalhado/05-design-system.md).
 - **Domínio é a fonte da verdade:** regras (geração de croqui, cálculo de unidade de saída, condições de avaliação) vivem em `packages/domain`, não nas telas.
 - Datas relativas → absolutas nos docs. Hoje a referência do projeto é 28/06/2026.

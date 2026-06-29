@@ -14,7 +14,7 @@ Plataforma para cadastrar e gerir **experimentos de 1 a 3 fatores** com **tratam
 |---|---|
 | [01-visao-geral/](01-visao-geral/) | Contexto, objetivos e roadmap |
 | [02-requisitos/](02-requisitos/) | Requisitos funcionais, não funcionais e regras de negócio |
-| [03-arquitetura/](03-arquitetura/) | Visão arquitetural, diagramas e tecnologias |
+| [03-arquitetura/](03-arquitetura/) | Visão arquitetural, diagramas, tecnologias e **[padrão de desenvolvimento](03-arquitetura/04-padroes-desenvolvimento.md)** |
 | [04-design-detalhado/](04-design-detalhado/) | Modelo de dados, módulos, interfaces, fluxos e design system |
 | [05-seguranca/](05-seguranca/) | Autenticação, autorização e controles |
 | [06-testes/](06-testes/) | Estratégia de testes e cenário E2E "criar experimento" |
