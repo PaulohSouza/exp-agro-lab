@@ -65,6 +65,10 @@ export interface Parcela {
   posicaoLinha: number;
   posicaoColuna: number;
   isInicio: boolean;
+  // Split-plot (PARCELA_SUBDIVIDIDA): grupo da parcela principal + níveis. Nulos no fatorial.
+  grupoPrincipal?: number | null;
+  nivelPrincipal?: number | null;
+  nivelSub?: number | null;
 }
 export interface Avaliacao {
   id: string;
@@ -317,6 +321,8 @@ export interface Experimento {
   numeroRepeticoes: number | null;
   totalParcelas: number | null;
   espacamentoLinhasM: number | null;
+  esquema?: "FATORIAL" | "PARCELA_SUBDIVIDIDA" | null;
+  fatorPrincipalOrdem?: number | null;
   objetoEstudo?: Ref | null;
   local?: Ref | null;
   safra?: Ref | null;
@@ -446,7 +452,14 @@ export const api = {
     }),
   gerarCroqui: (
     id: string,
-    body: { delineamento?: string; blocos?: number; seed?: number; numeroInicial?: number },
+    body: {
+      delineamento?: string;
+      blocos?: number;
+      seed?: number;
+      numeroInicial?: number;
+      esquema?: "FATORIAL" | "PARCELA_SUBDIVIDIDA";
+      fatorPrincipalOrdem?: number;
+    },
   ) =>
     req<Experimento>(`/experimentos/${id}/croqui/gerar`, {
       method: "POST",
