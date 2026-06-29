@@ -153,7 +153,7 @@ export class ExperimentosService {
       where: { id },
       select: { instituicaoId: true },
     });
-    const alvo = await this.prisma.user.findUnique({
+    const alvo = await this.prisma.usuario.findUnique({
       where: { id: userId },
       select: { instituicaoId: true },
     });

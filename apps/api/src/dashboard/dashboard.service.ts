@@ -67,7 +67,7 @@ export class DashboardService {
   }
 
   async resumo(user: UsuarioAtual) {
-    const me = await this.prisma.user.findUnique({
+    const me = await this.prisma.usuario.findUnique({
       where: { id: user.userId },
       select: { departamentoId: true, unidadeId: true },
     });

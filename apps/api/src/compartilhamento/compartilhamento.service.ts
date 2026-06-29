@@ -55,7 +55,7 @@ export class CompartilhamentoService {
       throw new ForbiddenException("Apenas o dono ou admin compartilha.");
     const nivel = dto.nivel === "EDIT" ? "EDIT" : "INPUT";
 
-    const alvo = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const alvo = await this.prisma.usuario.findUnique({ where: { email: dto.email } });
     if (alvo) {
       if (alvo.id === exp.ownerId) throw new BadRequestException("Este usuário já é o dono.");
       const existente = await this.prisma.experimentoCompartilhamento.findFirst({

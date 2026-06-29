@@ -28,7 +28,7 @@ async function main() {
   await prisma.modeloAvaliacao.deleteMany();
   await prisma.modeloAtividade.deleteMany();
   await prisma.aprovadorInstituicao.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.usuario.deleteMany();
   await prisma.unidade.deleteMany();
   await prisma.departamento.deleteMany();
   await prisma.instituicao.deleteMany();
@@ -44,7 +44,7 @@ async function main() {
   const unidade = await prisma.unidade.create({
     data: { instituicaoId: inst.id, nome: "CAD Primavera", tipo: "UNIDADE" },
   });
-  const admin = await prisma.user.create({
+  const admin = await prisma.usuario.create({
     data: {
       instituicaoId: inst.id,
       unidadeId: unidade.id,
@@ -56,7 +56,7 @@ async function main() {
     },
   });
   // segundo usuário da mesma instituição (para testar compartilhamento)
-  await prisma.user.create({
+  await prisma.usuario.create({
     data: {
       instituicaoId: inst.id,
       unidadeId: unidade.id,
@@ -69,7 +69,7 @@ async function main() {
   });
   // super-admin GLOBAL (cross-institution) — opera o SaaS. Tem instituição "casa"
   // mas o escopo ignora o tenant (RN-RBAC).
-  await prisma.user.create({
+  await prisma.usuario.create({
     data: {
       instituicaoId: inst.id,
       nome: "Root Sistema",

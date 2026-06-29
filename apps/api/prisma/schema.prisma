@@ -24,7 +24,7 @@ model Instituicao {
 
   unidades     Unidade[]
   departamentos Departamento[]
-  usuarios     User[]
+  usuarios     Usuario[]
   experimentos Experimento[]
   aprovadores  AprovadorInstituicao[]
   modelosAvaliacao ModeloAvaliacao[]
@@ -46,7 +46,7 @@ model Departamento {
   createdAt     DateTime @default(now())
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   unidades      Unidade[]
-  usuarios      User[]
+  usuarios      Usuario[]
   modelosAvaliacao ModeloAvaliacao[]
   gruposColeta  GrupoColeta[]
   modelosAtividade ModeloAtividade[]
@@ -63,7 +63,7 @@ model Unidade {
   isAtivo         Boolean  @default(true)
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
   departamento  Departamento? @relation(fields: [departamentoId], references: [id])
-  usuarios      User[]
+  usuarios      Usuario[]
   experimentos  Experimento[]
 }
 
@@ -72,7 +72,7 @@ enum TipoUnidade {
   LABORATORIO
 }
 
-model User {
+model Usuario {
   id                 String   @id @default(cuid())
   instituicaoId      String
   unidadeId          String?
@@ -207,7 +207,7 @@ model Experimento {
 
   instituicao   Instituicao   @relation(fields: [instituicaoId], references: [id])
   unidade       Unidade?      @relation(fields: [unidadeId], references: [id])
-  owner         User          @relation("ExperimentoOwner", fields: [ownerId], references: [id])
+  owner         Usuario          @relation("ExperimentoOwner", fields: [ownerId], references: [id])
   objetoEstudo  ObjetoEstudo? @relation(fields: [objetoEstudoId], references: [id])
   local         Local?        @relation(fields: [localId], references: [id])
   safra         Safra?        @relation(fields: [safraId], references: [id])
@@ -237,7 +237,7 @@ model ExperimentoResponsavel {
   userId        String
   createdAt     DateTime @default(now())
   experimento   Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
-  user          User        @relation("ResponsavelColeta", fields: [userId], references: [id])
+  user          Usuario        @relation("ResponsavelColeta", fields: [userId], references: [id])
 
   @@unique([experimentoId, userId])
   @@index([userId])
@@ -644,7 +644,7 @@ model ExperimentoCompartilhamento {
   token          String? @unique
   createdAt      DateTime @default(now())
   experimento    Experimento @relation(fields: [experimentoId], references: [id], onDelete: Cascade)
-  user           User?       @relation("CompartilhadoCom", fields: [userId], references: [id])
+  user           Usuario?       @relation("CompartilhadoCom", fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -678,7 +678,7 @@ model AprovadorInstituicao {
   userId        String
   isAtivo         Boolean @default(true)
   instituicao   Instituicao @relation(fields: [instituicaoId], references: [id])
-  user          User        @relation(fields: [userId], references: [id])
+  user          Usuario        @relation(fields: [userId], references: [id])
 
   @@unique([instituicaoId, userId])
 }
