@@ -46,6 +46,8 @@ export const gerarCroquiSchema = z.object({
   blocos: z.number().int().optional(),
   seed: z.number().optional(),
   numeroInicial: z.number().int().optional(),
+  esquema: z.enum(["FATORIAL", "PARCELA_SUBDIVIDIDA"]).optional(),
+  fatorPrincipalOrdem: z.number().int().optional(),
 });
 
 export const salvarCroquiSchema = z.object({
@@ -58,6 +60,9 @@ export const salvarCroquiSchema = z.object({
       posicaoColuna: z.number().int(),
       numero: z.number().int(),
       isInicio: z.boolean().optional(),
+      grupoPrincipal: z.number().int().nullable().optional(),
+      nivelPrincipal: z.number().int().nullable().optional(),
+      nivelSub: z.number().int().nullable().optional(),
     }),
   ),
 });
