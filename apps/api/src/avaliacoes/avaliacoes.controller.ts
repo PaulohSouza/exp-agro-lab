@@ -44,6 +44,10 @@ const coletaLoteSchema = z.object({
     }),
   ),
 });
+const conjuntaSchema = z.object({
+  experimentoIds: z.array(z.string()).min(2),
+  avaliacaoNome: z.string().min(1),
+});
 
 @Controller()
 export class AvaliacoesController {
@@ -136,7 +140,18 @@ export class AvaliacoesController {
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
     @Query("metodo") metodo?: "LSD" | "Tukey" | "ScottKnott",
+    @Query("transformacao") transformacao?: "nenhuma" | "raiz" | "log" | "boxcox",
+    @Query("naoParametrico") naoParametrico?: string,
   ) {
-    return this.service.analise(id, user, metodo);
+    return this.service.analise(id, user, metodo, transformacao, naoParametrico === "true");
+  }
+
+  @Post("analise/conjunta")
+  analiseConjunta(
+    @CurrentUser() user: UsuarioAtual,
+    @Body(new ZodValidationPipe(conjuntaSchema))
+    body: { experimentoIds: string[]; avaliacaoNome: string },
+  ) {
+    return this.service.analiseConjunta(body.experimentoIds, body.avaliacaoNome, user);
   }
 }

@@ -9,8 +9,22 @@ import {
 import {
   anovaUmFator,
   anovaSplitPlot,
+  anovaFatorial,
+  aplicarTransformacao,
+  boxCoxLambda,
+  retroTransformar,
+  kruskalWallis,
+  friedman,
+  sugerirRota,
+  anovaConjunta,
+  type RotaSugerida,
+  type ObservacaoConjunta,
   type Observacao,
   type ObservacaoSplit,
+  type ObservacaoFatorial,
+  type ObservacaoModelo,
+  type ObservacaoNP,
+  type Transformacao,
   type Delineamento,
 } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
@@ -370,11 +384,24 @@ export class AvaliacoesService {
    * ANÁLISE estatística (ANOVA 1 fator) sobre os valores de saída coletados.
    * Usa o delineamento do experimento (DIC/DBC). Port do SAGRE — fase A.
    */
-  async analise(avaliacaoId: string, user: UsuarioAtual, metodo?: "LSD" | "Tukey" | "ScottKnott") {
+  async analise(
+    avaliacaoId: string,
+    user: UsuarioAtual,
+    metodo?: "LSD" | "Tukey" | "ScottKnott",
+    transformacao?: Transformacao,
+    naoParametrico?: boolean,
+  ) {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     const aval = await this.prisma.avaliacao.findUnique({
       where: { id: avaliacaoId },
-      include: { experimento: { include: { delineamento: true } } },
+      include: {
+        experimento: {
+          include: {
+            delineamento: true,
+            fatores: { include: { niveis: true }, orderBy: { ordem: "asc" } },
+          },
+        },
+      },
     });
     if (!aval) throw new NotFoundException("Avaliação não encontrada.");
     const dados = await this.prisma.avaliacaoDado.findMany({
@@ -396,6 +423,83 @@ export class AvaliacoesService {
       }
     };
 
+    const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
+    const delineamento: Delineamento =
+      nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
+    // bloco entra no modelo (ANOVA e Box-Cox) só quando há blocos de fato:
+    // DBC ou split-plot. Em DIC, as repetições não são bloco.
+    const temBloco = delineamento === "DBC" || aval.experimento.esquema === "PARCELA_SUBDIVIDIDA";
+
+    // Transformação (ROTA 2): aplica antes da ANOVA; médias retro-transformadas
+    // na apresentação. Box-Cox estima λ pelo modelo aditivo (tratamento[+bloco]).
+    const valorMap = new Map(dados.map((d) => [d.id, valorDe(d)]));
+    let info: {
+      tipo: Transformacao;
+      constante: number;
+      lambda?: number;
+      descricao: string;
+    } | null = null;
+    if (transformacao && transformacao !== "nenhuma") {
+      try {
+        const obsModelo: ObservacaoModelo[] = dados.map((d) => ({
+          grupo: d.parcela.tratamento?.tag ?? d.parcela.tratamentoId,
+          bloco: temBloco ? d.parcela.bloco : undefined,
+          valor: valorMap.get(d.id) as number,
+        }));
+        const lambda = transformacao === "boxcox" ? boxCoxLambda(obsModelo).lambda : undefined;
+        const aplicada = aplicarTransformacao(
+          dados.map((d) => valorMap.get(d.id) as number),
+          transformacao,
+          { lambda },
+        );
+        dados.forEach((d, i) => valorMap.set(d.id, aplicada.valores[i]));
+        info = {
+          tipo: aplicada.tipo,
+          constante: aplicada.constante,
+          lambda: aplicada.lambda,
+          descricao: aplicada.descricao,
+        };
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : "Não foi possível transformar os dados.",
+        );
+      }
+    }
+    const valor = (d: (typeof dados)[number]): number => valorMap.get(d.id) as number;
+    const retro = (m: number): number =>
+      info ? retroTransformar(m, info.tipo, { lambda: info.lambda, constante: info.constante }) : m;
+    const retroMedias = <T extends { media: number }>(arr: T[]): T[] =>
+      info ? arr.map((m) => ({ ...m, media: retro(m.media) })) : arr;
+
+    // Não-paramétrico (ROTA 3): Kruskal-Wallis (DIC) ou Friedman (DBC), por
+    // tratamento. Rank-invariante a transformações monotônicas, então usa o
+    // valor de saída direto. Não se aplica a parcela subdividida.
+    if (naoParametrico) {
+      if (aval.experimento.esquema === "PARCELA_SUBDIVIDIDA") {
+        throw new BadRequestException("Teste não-paramétrico não se aplica a parcela subdividida.");
+      }
+      const obsNP: ObservacaoNP[] = dados.map((d) => ({
+        grupo: d.parcela.tratamento?.tag ?? "?",
+        bloco: d.parcela.bloco,
+        valor: valorDe(d),
+      }));
+      try {
+        const resultado = delineamento === "DBC" ? friedman(obsNP) : kruskalWallis(obsNP);
+        return {
+          avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
+          esquema: null,
+          teste: "naoParametrico" as const,
+          delineamento,
+          n: obsNP.length,
+          resultado,
+        };
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : "Não foi possível analisar.",
+        );
+      }
+    }
+
     // Split-plot: ANOVA com DOIS erros (Erro(a) testa A; Erro(b) testa B e A×B).
     if (aval.experimento.esquema === "PARCELA_SUBDIVIDIDA") {
       const obs: ObservacaoSplit[] = dados
@@ -404,7 +508,7 @@ export class AvaliacoesService {
           bloco: d.parcela.bloco,
           fatorA: `A${(d.parcela.nivelPrincipal as number) + 1}`,
           fatorB: `B${(d.parcela.nivelSub as number) + 1}`,
-          valor: valorDe(d),
+          valor: valor(d),
         }));
       try {
         const resultado = anovaSplitPlot(obs);
@@ -412,7 +516,56 @@ export class AvaliacoesService {
           avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
           esquema: "PARCELA_SUBDIVIDIDA" as const,
           n: obs.length,
-          resultado,
+          resultado: {
+            ...resultado,
+            mediasA: retroMedias(resultado.mediasA),
+            mediasB: retroMedias(resultado.mediasB),
+          },
+          transformacao: info,
+        };
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : "Não foi possível analisar.",
+        );
+      }
+    }
+
+    // Fatorial 2–3 fatores: ANOVA com erro ÚNICO + desdobramento da interação.
+    if (aval.experimento.esquema === "FATORIAL") {
+      const fatores = aval.experimento.fatores;
+      if (fatores.length < 2 || fatores.length > 3) {
+        throw new BadRequestException("Análise fatorial exige 2 ou 3 fatores.");
+      }
+      // reconstrói o produto cartesiano (mesma ordem usada na geração dos
+      // tratamentos) para mapear numeroRef → nível de cada fator.
+      const combos = cartesianoNiveis(fatores.map((f) => f.niveis.map((nv) => nv.valor)));
+      const observacoes: ObservacaoFatorial[] = dados
+        .map((d) => ({ combo: combos[(d.parcela.tratamento?.numeroRef ?? 0) - 1], d }))
+        .filter((x) => x.combo != null)
+        .map((x) => ({ bloco: x.d.parcela.bloco, fatores: x.combo, valor: valor(x.d) }));
+      try {
+        const resultado = anovaFatorial(observacoes, {
+          delineamento,
+          metodo: metodo ?? "Tukey",
+          rotulos: fatores.map((f) => f.nome),
+        });
+        return {
+          avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
+          esquema: "FATORIAL" as const,
+          delineamento,
+          n: observacoes.length,
+          resultado: {
+            ...resultado,
+            efeitosPrincipais: resultado.efeitosPrincipais.map((e) => ({
+              ...e,
+              medias: retroMedias(e.medias),
+            })),
+            desdobramentos: resultado.desdobramentos.map((d) => ({
+              ...d,
+              efeitos: d.efeitos.map((ef) => ({ ...ef, medias: retroMedias(ef.medias) })),
+            })),
+          },
+          transformacao: info,
         };
       } catch (e) {
         throw new BadRequestException(
@@ -424,12 +577,23 @@ export class AvaliacoesService {
     const observacoes: Observacao[] = dados.map((d) => ({
       tratamento: d.parcela.tratamento?.tag ?? "?",
       bloco: d.parcela.bloco,
-      valor: valorDe(d),
+      valor: valor(d),
     }));
 
-    const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
-    const delineamento: Delineamento =
-      nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
+    // Seleção de rota pelos pressupostos (Shapiro nos resíduos + Bartlett),
+    // sobre os dados na escala original — advisory para o usuário.
+    let rotaSugerida: RotaSugerida | null = null;
+    try {
+      rotaSugerida = sugerirRota(
+        dados.map((d) => ({
+          grupo: d.parcela.tratamento?.tag ?? "?",
+          bloco: temBloco ? d.parcela.bloco : undefined,
+          valor: valorDe(d),
+        })),
+      );
+    } catch {
+      rotaSugerida = null; // n insuficiente p/ Shapiro
+    }
 
     try {
       const resultado = anovaUmFator(observacoes, delineamento, { metodo: metodo ?? "Tukey" });
@@ -438,8 +602,66 @@ export class AvaliacoesService {
         esquema: null,
         delineamento,
         n: observacoes.length,
-        resultado,
+        resultado: { ...resultado, medias: retroMedias(resultado.medias) },
+        transformacao: info,
+        rotaSugerida,
       };
+    } catch (e) {
+      throw new BadRequestException(e instanceof Error ? e.message : "Não foi possível analisar.");
+    }
+  }
+
+  /**
+   * ANÁLISE CONJUNTA multi-local: combina N experimentos (mesmos tratamentos,
+   * DBC) por uma avaliação de mesmo nome. Cada experimento é um "local".
+   */
+  async analiseConjunta(experimentoIds: string[], avaliacaoNome: string, user: UsuarioAtual) {
+    const ids = [...new Set(experimentoIds)];
+    if (ids.length < 2) throw new BadRequestException("Selecione ao menos 2 experimentos.");
+    const obs: ObservacaoConjunta[] = [];
+    for (const eid of ids) {
+      await this.experimentos.garantirAcesso(eid, user);
+      const exp = await this.prisma.experimento.findUnique({
+        where: { id: eid },
+        include: { local: true },
+      });
+      if (!exp) throw new NotFoundException(`Experimento ${eid} não encontrado.`);
+      const aval = await this.prisma.avaliacao.findFirst({
+        where: { experimentoId: eid, nome: avaliacaoNome },
+      });
+      if (!aval) {
+        throw new BadRequestException(`"${exp.titulo}" não tem a avaliação "${avaliacaoNome}".`);
+      }
+      const dados = await this.prisma.avaliacaoDado.findMany({
+        where: { avaliacaoId: aval.id, deletedAt: null, valorColetado: { not: null } },
+        include: { parcela: { include: { tratamento: true } } },
+      });
+      const areaUtil = await this.areaUtilDoExperimento(eid);
+      const local = exp.local?.nome ?? exp.titulo ?? eid;
+      for (const d of dados) {
+        let v = d.valorColetado as number;
+        if (aval.formula) {
+          try {
+            v = calcularSaida({
+              valorColetado: d.valorColetado as number,
+              formula: aval.formula,
+              params: areaUtil ? { areaUtil } : {},
+            });
+          } catch {
+            v = d.valorColetado as number;
+          }
+        }
+        obs.push({
+          local,
+          bloco: d.parcela.bloco,
+          tratamento: d.parcela.tratamento?.tag ?? "?",
+          valor: v,
+        });
+      }
+    }
+    try {
+      const resultado = anovaConjunta(obs);
+      return { avaliacaoNome, n: obs.length, resultado };
     } catch (e) {
       throw new BadRequestException(e instanceof Error ? e.message : "Não foi possível analisar.");
     }
@@ -507,4 +729,13 @@ export class AvaliacoesService {
       medias,
     };
   }
+}
+
+/** Produto cartesiano dos níveis (último fator varia mais rápido) — espelha a
+ * geração dos tratamentos em ExperimentosService, para mapear numeroRef→níveis. */
+function cartesianoNiveis(listas: string[][]): string[][] {
+  return listas.reduce<string[][]>(
+    (acc, lista) => acc.flatMap((pref) => lista.map((v) => [...pref, v])),
+    [[]],
+  );
 }

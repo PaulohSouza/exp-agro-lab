@@ -5,3 +5,7 @@ export * from "./pressupostos.js";
 export * from "./comparacao.js";
 export * from "./anova.js";
 export * from "./splitPlot.js";
+export * from "./factorial.js";
+export * from "./transform.js";
+export * from "./naoParametrico.js";
+export * from "./conjunta.js";

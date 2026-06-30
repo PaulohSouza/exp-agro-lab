@@ -309,7 +309,98 @@ export interface AnaliseSplit {
   mediasA: { nivel: string; media: number; n: number }[];
   mediasB: { nivel: string; media: number; n: number }[];
 }
+interface MediaFator {
+  nivel: string;
+  media: number;
+  n: number;
+  letra?: string;
+}
+export interface EfeitoSimples {
+  nivelCondicao: string;
+  gl: number;
+  sq: number;
+  qm: number;
+  f: number;
+  p: number;
+  significativo: boolean;
+  medias: MediaFator[];
+}
+export interface AnaliseFatorial {
+  esquema: "FATORIAL";
+  delineamento: "DIC" | "DBC";
+  rotulosFatores: string[];
+  tabela: LinhaAnova[];
+  mediaGeral: number;
+  cv: number;
+  glResiduo: number;
+  qmResiduo: number;
+  efeitosPrincipais: {
+    fator: string;
+    f: number;
+    p: number;
+    significativo: boolean;
+    medias: MediaFator[];
+  }[];
+  interacoes: {
+    fonte: string;
+    fatores: string[];
+    gl: number;
+    f: number;
+    p: number;
+    significativo: boolean;
+  }[];
+  desdobramentos: {
+    fatorAlvo: string;
+    fatorCondicao: string;
+    descricao: string;
+    efeitos: EfeitoSimples[];
+  }[];
+  comparacao: { metodo: string; alpha: number };
+}
 type AvaliacaoRef = { nome: string; unidadeSaida: string | null };
+export type TipoTransformacao = "nenhuma" | "raiz" | "log" | "boxcox";
+export interface TransformacaoInfo {
+  tipo: TipoTransformacao;
+  constante: number;
+  lambda?: number;
+  descricao: string;
+}
+interface RankGrupo {
+  grupo: string;
+  somaRanks: number;
+  mediaRank: number;
+  n: number;
+  letra?: string;
+}
+export interface AnaliseKruskal {
+  metodo: "Kruskal-Wallis";
+  H: number;
+  gl: number;
+  p: number;
+  significativo: boolean;
+  correcaoEmpates: number;
+  grupos: RankGrupo[];
+  postHoc: { metodo: "Dunn"; ajuste: "Bonferroni" };
+}
+export interface AnaliseFriedman {
+  metodo: "Friedman";
+  qui2: number;
+  gl: number;
+  p: number;
+  significativo: boolean;
+  blocos: number;
+  tratamentos: number;
+  correcaoEmpates: number;
+  grupos: RankGrupo[];
+  postHoc: { metodo: "Nemenyi"; cd: number };
+}
+export interface RotaSugerida {
+  normalidade: { W: number; p: number };
+  homogeneidade: { estatistica: number; gl: number; p: number } | null;
+  rota: "parametrica" | "transformacao" | "naoParametrico";
+  transformacaoSugerida?: TipoTransformacao;
+  justificativa: string;
+}
 export type AnaliseResultado =
   | {
       avaliacao: AvaliacaoRef;
@@ -317,8 +408,52 @@ export type AnaliseResultado =
       delineamento: string;
       n: number;
       resultado: AnaliseUmFator;
+      transformacao?: TransformacaoInfo | null;
+      rotaSugerida?: RotaSugerida | null;
     }
-  | { avaliacao: AvaliacaoRef; esquema: "PARCELA_SUBDIVIDIDA"; n: number; resultado: AnaliseSplit };
+  | {
+      avaliacao: AvaliacaoRef;
+      esquema: "PARCELA_SUBDIVIDIDA";
+      n: number;
+      resultado: AnaliseSplit;
+      transformacao?: TransformacaoInfo | null;
+    }
+  | {
+      avaliacao: AvaliacaoRef;
+      esquema: "FATORIAL";
+      delineamento: string;
+      n: number;
+      resultado: AnaliseFatorial;
+      transformacao?: TransformacaoInfo | null;
+    }
+  | {
+      avaliacao: AvaliacaoRef;
+      teste: "naoParametrico";
+      delineamento: string;
+      n: number;
+      resultado: AnaliseKruskal | AnaliseFriedman;
+    };
+export interface AnaliseConjunta {
+  metodo: "Conjunta";
+  locais: number;
+  blocos: number;
+  tratamentos: number;
+  tabela: LinhaAnova[];
+  mediaGeral: number;
+  cv: number;
+  fLocal: { f: number; p: number; significativo: boolean };
+  fTratamento: { f: number; p: number; significativo: boolean };
+  fInteracao: { f: number; p: number; significativo: boolean };
+  razaoQMResiduo: number;
+  homogeneo: boolean;
+  medias: { tratamento: string; media: number; n: number; letra?: string }[];
+  comparacao: { metodo: string; alpha: number };
+}
+export interface ConjuntaResposta {
+  avaliacaoNome: string;
+  n: number;
+  resultado: AnaliseConjunta;
+}
 export interface Experimento {
   id: string;
   codigo: string | null;
@@ -619,8 +754,24 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ lancamentos }),
     }),
-  analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
-    req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
+  analiseAvaliacao: (
+    avaliacaoId: string,
+    metodo?: "LSD" | "Tukey" | "ScottKnott",
+    transformacao?: TipoTransformacao,
+    naoParametrico?: boolean,
+  ) => {
+    const qs = new URLSearchParams();
+    if (metodo) qs.set("metodo", metodo);
+    if (transformacao && transformacao !== "nenhuma") qs.set("transformacao", transformacao);
+    if (naoParametrico) qs.set("naoParametrico", "true");
+    const s = qs.toString();
+    return req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${s ? `?${s}` : ""}`);
+  },
+  analiseConjunta: (experimentoIds: string[], avaliacaoNome: string) =>
+    req<ConjuntaResposta>(`/analise/conjunta`, {
+      method: "POST",
+      body: JSON.stringify({ experimentoIds, avaliacaoNome }),
+    }),
 
   // cadastros gerais
   locais: () => req<Ref[]>("/cadastros/locais"),
