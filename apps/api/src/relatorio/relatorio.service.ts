@@ -139,6 +139,75 @@ export class RelatorioService {
         continue;
       }
 
+      // Fatorial: tabela de erro único + médias por fator e desdobramento.
+      if (analise.esquema === "FATORIAL") {
+        const rf = analise.resultado;
+        const slideF = pptx.addSlide();
+        this.titulo(
+          slideF,
+          `Análise (fatorial) — ${aval.nome}${aval.unidadeSaida ? ` (${aval.unidadeSaida})` : ""}`,
+        );
+        const headF = ["Fonte", "GL", "SQ", "QM", "F", "p"].map((t) => ({
+          text: t,
+          options: { bold: true, color: "FFFFFF", fill: { color: NAVY } },
+        }));
+        const linhasF = rf.tabela.map((l) => [
+          { text: l.fonte },
+          { text: String(l.gl) },
+          { text: l.sq.toFixed(2) },
+          { text: l.qm != null ? l.qm.toFixed(2) : "—" },
+          { text: l.f != null ? l.f.toFixed(2) : "—" },
+          { text: l.p != null ? (l.p < 0.001 ? "<0.001" : l.p.toFixed(3)) : "—" },
+        ]);
+        slideF.addTable([headF, ...linhasF], {
+          x: 0.7,
+          y: 1.4,
+          w: 6.6,
+          fontSize: 12,
+          border: { type: "solid", color: "E1E1EF", pt: 1 },
+          rowH: 0.3,
+        });
+        const resumoInteracoes = rf.interacoes
+          .map((i) => `${i.fonte} ${i.significativo ? "signif." : "n.s."}`)
+          .join("   ·   ");
+        slideF.addText(
+          `CV = ${rf.cv.toFixed(2)}%   ·   ${resumoInteracoes}   ·   ${rf.comparacao.metodo}`,
+          { x: 0.7, y: 4.6, w: 6.6, fontSize: 11, color: "555555" },
+        );
+        // Médias por fator (efeito principal) com letras, empilhadas à direita.
+        let yEf = 1.4;
+        for (const ef of rf.efeitosPrincipais) {
+          const headEf = [
+            { text: ef.fator, options: { bold: true, color: "FFFFFF", fill: { color: GREEN } } },
+            { text: "Média", options: { bold: true, color: "FFFFFF", fill: { color: GREEN } } },
+            { text: "", options: { bold: true, color: "FFFFFF", fill: { color: GREEN } } },
+          ];
+          const linhasEf = ef.medias.map((m) => [
+            { text: m.nivel, options: { bold: true } },
+            { text: m.media.toFixed(1) },
+            { text: m.letra ?? "", options: { bold: true, color: "2D6CDF" } },
+          ]);
+          slideF.addTable([headEf, ...linhasEf], {
+            x: 7.7,
+            y: yEf,
+            w: 2.8,
+            fontSize: 11,
+            border: { type: "solid", color: "E1E1EF", pt: 1 },
+            rowH: 0.28,
+          });
+          yEf += 0.28 * (ef.medias.length + 1) + 0.3;
+        }
+        if (rf.desdobramentos.length) {
+          slideF.addText(
+            `Interação significativa → desdobramento em efeitos simples (${rf.desdobramentos
+              .map((d) => d.descricao)
+              .join("; ")}).`,
+            { x: 0.7, y: 5.1, w: 6.6, fontSize: 10, italic: true, color: "555555" },
+          );
+        }
+        continue;
+      }
+
       const r = analise.resultado;
       const slide = pptx.addSlide();
       this.titulo(

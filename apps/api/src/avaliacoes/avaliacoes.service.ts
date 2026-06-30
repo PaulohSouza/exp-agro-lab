@@ -9,8 +9,10 @@ import {
 import {
   anovaUmFator,
   anovaSplitPlot,
+  anovaFatorial,
   type Observacao,
   type ObservacaoSplit,
+  type ObservacaoFatorial,
   type Delineamento,
 } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
@@ -374,7 +376,14 @@ export class AvaliacoesService {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     const aval = await this.prisma.avaliacao.findUnique({
       where: { id: avaliacaoId },
-      include: { experimento: { include: { delineamento: true } } },
+      include: {
+        experimento: {
+          include: {
+            delineamento: true,
+            fatores: { include: { niveis: true }, orderBy: { ordem: "asc" } },
+          },
+        },
+      },
     });
     if (!aval) throw new NotFoundException("Avaliação não encontrada.");
     const dados = await this.prisma.avaliacaoDado.findMany({
@@ -421,15 +430,48 @@ export class AvaliacoesService {
       }
     }
 
+    const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
+    const delineamento: Delineamento =
+      nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
+
+    // Fatorial 2–3 fatores: ANOVA com erro ÚNICO + desdobramento da interação.
+    if (aval.experimento.esquema === "FATORIAL") {
+      const fatores = aval.experimento.fatores;
+      if (fatores.length < 2 || fatores.length > 3) {
+        throw new BadRequestException("Análise fatorial exige 2 ou 3 fatores.");
+      }
+      // reconstrói o produto cartesiano (mesma ordem usada na geração dos
+      // tratamentos) para mapear numeroRef → nível de cada fator.
+      const combos = cartesianoNiveis(fatores.map((f) => f.niveis.map((nv) => nv.valor)));
+      const observacoes: ObservacaoFatorial[] = dados
+        .map((d) => ({ combo: combos[(d.parcela.tratamento?.numeroRef ?? 0) - 1], d }))
+        .filter((x) => x.combo != null)
+        .map((x) => ({ bloco: x.d.parcela.bloco, fatores: x.combo, valor: valorDe(x.d) }));
+      try {
+        const resultado = anovaFatorial(observacoes, {
+          delineamento,
+          metodo: metodo ?? "Tukey",
+          rotulos: fatores.map((f) => f.nome),
+        });
+        return {
+          avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
+          esquema: "FATORIAL" as const,
+          delineamento,
+          n: observacoes.length,
+          resultado,
+        };
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : "Não foi possível analisar.",
+        );
+      }
+    }
+
     const observacoes: Observacao[] = dados.map((d) => ({
       tratamento: d.parcela.tratamento?.tag ?? "?",
       bloco: d.parcela.bloco,
       valor: valorDe(d),
     }));
-
-    const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
-    const delineamento: Delineamento =
-      nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
 
     try {
       const resultado = anovaUmFator(observacoes, delineamento, { metodo: metodo ?? "Tukey" });
@@ -507,4 +549,13 @@ export class AvaliacoesService {
       medias,
     };
   }
+}
+
+/** Produto cartesiano dos níveis (último fator varia mais rápido) — espelha a
+ * geração dos tratamentos em ExperimentosService, para mapear numeroRef→níveis. */
+function cartesianoNiveis(listas: string[][]): string[][] {
+  return listas.reduce<string[][]>(
+    (acc, lista) => acc.flatMap((pref) => lista.map((v) => [...pref, v])),
+    [[]],
+  );
 }
