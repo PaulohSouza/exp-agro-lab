@@ -132,7 +132,9 @@ describe("anovaFatorial 2×2×2 (3 fatores)", () => {
       linha(r, "Total").sq,
       6,
     );
-    expect(efeitos.map((f) => linha(r, f).gl).reduce((a, b) => a + b, 0)).toBe(linha(r, "Total").gl);
+    expect(efeitos.map((f) => linha(r, f).gl).reduce((a, b) => a + b, 0)).toBe(
+      linha(r, "Total").gl,
+    );
     expect(r.glResiduo).toBe(8); // 15 − 7 efeitos
   });
 });

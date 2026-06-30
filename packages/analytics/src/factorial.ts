@@ -1,9 +1,5 @@
 import { fSf } from "./stats.js";
-import {
-  compararMediasLSD,
-  compararMediasTukey,
-  compararMediasScottKnott,
-} from "./comparacao.js";
+import { compararMediasLSD, compararMediasTukey, compararMediasScottKnott } from "./comparacao.js";
 import type { Delineamento, MetodoComparacao, MediaTratamento } from "./types.js";
 
 /**
@@ -210,7 +206,8 @@ export function anovaFatorial(
   const somaGlEfeitos = [...glEfeito.values()].reduce((a, b) => a + b, 0);
   const sqResiduo = sqTotal - somaSqEfeitos - sqBloco;
   const glResiduo = N - 1 - somaGlEfeitos - glBloco;
-  if (glResiduo < 1) throw new Error("Graus de liberdade do resíduo insuficientes (repita o experimento).");
+  if (glResiduo < 1)
+    throw new Error("Graus de liberdade do resíduo insuficientes (repita o experimento).");
   const qmResiduo = sqResiduo / glResiduo;
 
   // ordem de exibição: efeitos por tamanho crescente, depois ordem dos fatores.

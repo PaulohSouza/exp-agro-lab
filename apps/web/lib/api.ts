@@ -341,7 +341,14 @@ export interface AnaliseFatorial {
     significativo: boolean;
     medias: MediaFator[];
   }[];
-  interacoes: { fonte: string; fatores: string[]; gl: number; f: number; p: number; significativo: boolean }[];
+  interacoes: {
+    fonte: string;
+    fatores: string[];
+    gl: number;
+    f: number;
+    p: number;
+    significativo: boolean;
+  }[];
   desdobramentos: {
     fatorAlvo: string;
     fatorCondicao: string;

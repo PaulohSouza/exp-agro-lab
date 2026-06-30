@@ -1195,7 +1195,8 @@ function AnaliseFatorialView({ a }: { a: { n: number; resultado: AnaliseFatorial
                   {d.efeitos.map((e) => (
                     <div key={e.nivelCondicao}>
                       <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>
-                        {d.fatorCondicao}={e.nivelCondicao} · F={e.f.toFixed(2)} · {sig(e.significativo)}
+                        {d.fatorCondicao}={e.nivelCondicao} · F={e.f.toFixed(2)} ·{" "}
+                        {sig(e.significativo)}
                       </div>
                       {tabelaMedias(e.medias)}
                     </div>
