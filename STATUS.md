@@ -1,8 +1,8 @@
 # STATUS do projeto — EXP-AGROLAB
 
 > **Handoff para retomar em nova conversa.** Última atualização: 30/06/2026.
-> **Onde estamos:** catálogo de avaliações/atividades + período/marcos + coleta agrupada **mergeado** (PR #1, tag **v0.7.0**). Em seguida, **iniciativa de padronização de código concluída** (ver §0) — CI no GitHub + padrão de desenvolvimento documentado + 6 temas de schema + validação Zod. **`main` 100% no padrão.**
-> **Comece por aqui:** §0 (padronização) e §8 (próximos passos). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
+> **Onde estamos:** **analytics fase B/C concluída e mergeada** (PR #20, tag **v0.10.0**) — ANOVA fatorial 2–3 + desdobramento, transformações √/log/Box-Cox, não-paramétrico Kruskal/Friedman, análise conjunta multi-local (G×A) e Shapiro-Wilk + seleção de rota. Antes: croqui split-plot (v0.9.0), padronização de código + CI (v0.8.0, ver §0), catálogo/coleta (v0.7.0). **`main` no padrão.**
+> **Comece por aqui:** §3.1–3.6 (analytics) e §8 (próximos passos — agora o gargalo é **golden tests vs SAGRE**). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
 > Testes: **domain 59** + **analytics 75** + **10 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 ## 0. Padronização de código (concluída em 29/06/2026)
@@ -169,7 +169,7 @@ UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `u
 > **Prioridade sugerida:** (1) **golden tests vs SAGRE** — validar toda a estatística (split-plot/fatorial/transformações/não-paramétrico/conjunta/Shapiro) contra o R; é o que falta para fechar a fase B/C → (2) **PPTX fiel** ao modelo do SAGRE → (3) mobile em device (rodar `npm ci` em `apps/mobile` antes) → (4) endurecimento/infra (§8.5). Analytics fase B/C praticamente completo; sobram só desdobramento da interação tripla e aplicar a rota sugerida em 1 clique.
 
 ## 9. Releases
-`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · **`v0.7.0`** (catálogo de avaliações/atividades + período/marcos + coleta agrupada — mergeado, **Latest**). Depois do v0.7.0: CI + **padronização de código** (PRs #2–#14, ainda sem tag — candidata a `v0.8.0`). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
+`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · **`v0.10.0`** (PR #20 — **analytics fase B/C**: ANOVA fatorial 2–3 + desdobramento · transformações √/log/Box-Cox · não-paramétrico Kruskal/Friedman · análise conjunta multi-local G×A · Shapiro-Wilk + seleção de rota; analytics **75 testes**, **10 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
 
 ## 10. Infra / notas de ambiente
 - `pnpm` symlinkado em `~/.local/bin`. MySQL local: root via socket (`mysql -u root`); app usa user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar schema `sagre`).
