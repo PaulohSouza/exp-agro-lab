@@ -156,7 +156,8 @@ export function boxCoxLambda(
 
   const logL = (lambda: number) => {
     const z = xs.map((x) => boxCox(x, lambda));
-    const rss = rssAditivo(obs, z);
+    // piso evita ln(0)/NaN quando o modelo ajusta quase perfeitamente (RSS→0).
+    const rss = Math.max(rssAditivo(obs, z), 1e-12);
     return -(n / 2) * Math.log(rss / n) + (lambda - 1) * somaLog;
   };
 

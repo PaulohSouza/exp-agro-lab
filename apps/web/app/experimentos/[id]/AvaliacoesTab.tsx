@@ -5,6 +5,7 @@ import {
   type AnaliseResultado,
   type AnaliseSplit,
   type AnaliseFatorial,
+  type TipoTransformacao,
   type Avaliacao,
   type AvaliacaoDado,
   type EscopoModelo,
@@ -893,14 +894,16 @@ function Relatorio({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
 function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
   const [a, setA] = useState<AnaliseResultado | null>(null);
   const [metodo, setMetodo] = useState<"Tukey" | "ScottKnott" | "LSD">("Tukey");
+  const [transf, setTransf] = useState<TipoTransformacao>("nenhuma");
   const [erro, setErro] = useState<string | null>(null);
   useEffect(() => {
     setA(null);
+    setErro(null);
     api
-      .analiseAvaliacao(aval.id, metodo)
+      .analiseAvaliacao(aval.id, metodo, transf)
       .then(setA)
       .catch((e) => setErro(e instanceof Error ? e.message : "falha"));
-  }, [aval.id, metodo]);
+  }, [aval.id, metodo, transf]);
 
   return (
     <div>
@@ -918,6 +921,19 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
         </button>
         <strong>Análise: {aval.nome}</strong>
         <label style={{ marginLeft: "auto", fontSize: 13, color: "#1F2940" }}>
+          Transformação:{" "}
+          <select
+            value={transf}
+            onChange={(e) => setTransf(e.target.value as TipoTransformacao)}
+            style={{ padding: 5, borderRadius: 6, border: "1px solid #d6d6e6" }}
+          >
+            <option value="nenhuma">nenhuma</option>
+            <option value="raiz">√x (raiz)</option>
+            <option value="log">log(x+1)</option>
+            <option value="boxcox">Box-Cox (λ auto)</option>
+          </select>
+        </label>
+        <label style={{ fontSize: 13, color: "#1F2940" }}>
           Comparação:{" "}
           <select
             value={metodo}
@@ -931,6 +947,23 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
         </label>
       </div>
       {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
+      {a?.transformacao && (
+        <p
+          style={{
+            fontSize: 12,
+            color: "#1F2940",
+            background: "#EAF6FD",
+            border: "1px solid #BfE3F6",
+            borderRadius: 6,
+            padding: "6px 10px",
+            marginBottom: 10,
+          }}
+        >
+          Análise na escala <strong>transformada</strong>: {a.transformacao.descricao}. ANOVA, CV e
+          p-valores referem-se aos dados transformados; as <strong>médias</strong> exibidas são
+          retro-transformadas para a escala original.
+        </p>
+      )}
       {!a ? (
         !erro && <p style={{ color: "#7987A1" }}>Calculando…</p>
       ) : a.esquema === "PARCELA_SUBDIVIDIDA" ? (

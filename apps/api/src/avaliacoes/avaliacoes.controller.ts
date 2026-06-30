@@ -136,7 +136,8 @@ export class AvaliacoesController {
     @CurrentUser() user: UsuarioAtual,
     @Param("id") id: string,
     @Query("metodo") metodo?: "LSD" | "Tukey" | "ScottKnott",
+    @Query("transformacao") transformacao?: "nenhuma" | "raiz" | "log" | "boxcox",
   ) {
-    return this.service.analise(id, user, metodo);
+    return this.service.analise(id, user, metodo, transformacao);
   }
 }

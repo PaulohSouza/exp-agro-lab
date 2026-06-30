@@ -358,6 +358,13 @@ export interface AnaliseFatorial {
   comparacao: { metodo: string; alpha: number };
 }
 type AvaliacaoRef = { nome: string; unidadeSaida: string | null };
+export type TipoTransformacao = "nenhuma" | "raiz" | "log" | "boxcox";
+export interface TransformacaoInfo {
+  tipo: TipoTransformacao;
+  constante: number;
+  lambda?: number;
+  descricao: string;
+}
 export type AnaliseResultado =
   | {
       avaliacao: AvaliacaoRef;
@@ -365,14 +372,22 @@ export type AnaliseResultado =
       delineamento: string;
       n: number;
       resultado: AnaliseUmFator;
+      transformacao?: TransformacaoInfo | null;
     }
-  | { avaliacao: AvaliacaoRef; esquema: "PARCELA_SUBDIVIDIDA"; n: number; resultado: AnaliseSplit }
+  | {
+      avaliacao: AvaliacaoRef;
+      esquema: "PARCELA_SUBDIVIDIDA";
+      n: number;
+      resultado: AnaliseSplit;
+      transformacao?: TransformacaoInfo | null;
+    }
   | {
       avaliacao: AvaliacaoRef;
       esquema: "FATORIAL";
       delineamento: string;
       n: number;
       resultado: AnaliseFatorial;
+      transformacao?: TransformacaoInfo | null;
     };
 export interface Experimento {
   id: string;
@@ -674,8 +689,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ lancamentos }),
     }),
-  analiseAvaliacao: (avaliacaoId: string, metodo?: "LSD" | "Tukey" | "ScottKnott") =>
-    req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${metodo ? `?metodo=${metodo}` : ""}`),
+  analiseAvaliacao: (
+    avaliacaoId: string,
+    metodo?: "LSD" | "Tukey" | "ScottKnott",
+    transformacao?: TipoTransformacao,
+  ) => {
+    const qs = new URLSearchParams();
+    if (metodo) qs.set("metodo", metodo);
+    if (transformacao && transformacao !== "nenhuma") qs.set("transformacao", transformacao);
+    const s = qs.toString();
+    return req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${s ? `?${s}` : ""}`);
+  },
 
   // cadastros gerais
   locais: () => req<Ref[]>("/cadastros/locais"),

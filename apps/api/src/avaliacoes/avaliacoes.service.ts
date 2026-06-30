@@ -10,9 +10,14 @@ import {
   anovaUmFator,
   anovaSplitPlot,
   anovaFatorial,
+  aplicarTransformacao,
+  boxCoxLambda,
+  retroTransformar,
   type Observacao,
   type ObservacaoSplit,
   type ObservacaoFatorial,
+  type ObservacaoModelo,
+  type Transformacao,
   type Delineamento,
 } from "@exp/analytics";
 import { PrismaService } from "../prisma/prisma.service";
@@ -372,7 +377,12 @@ export class AvaliacoesService {
    * ANÁLISE estatística (ANOVA 1 fator) sobre os valores de saída coletados.
    * Usa o delineamento do experimento (DIC/DBC). Port do SAGRE — fase A.
    */
-  async analise(avaliacaoId: string, user: UsuarioAtual, metodo?: "LSD" | "Tukey" | "ScottKnott") {
+  async analise(
+    avaliacaoId: string,
+    user: UsuarioAtual,
+    metodo?: "LSD" | "Tukey" | "ScottKnott",
+    transformacao?: Transformacao,
+  ) {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     const aval = await this.prisma.avaliacao.findUnique({
       where: { id: avaliacaoId },
@@ -405,6 +415,54 @@ export class AvaliacoesService {
       }
     };
 
+    const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
+    const delineamento: Delineamento =
+      nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
+    // bloco entra no modelo (ANOVA e Box-Cox) só quando há blocos de fato:
+    // DBC ou split-plot. Em DIC, as repetições não são bloco.
+    const temBloco = delineamento === "DBC" || aval.experimento.esquema === "PARCELA_SUBDIVIDIDA";
+
+    // Transformação (ROTA 2): aplica antes da ANOVA; médias retro-transformadas
+    // na apresentação. Box-Cox estima λ pelo modelo aditivo (tratamento[+bloco]).
+    const valorMap = new Map(dados.map((d) => [d.id, valorDe(d)]));
+    let info: {
+      tipo: Transformacao;
+      constante: number;
+      lambda?: number;
+      descricao: string;
+    } | null = null;
+    if (transformacao && transformacao !== "nenhuma") {
+      try {
+        const obsModelo: ObservacaoModelo[] = dados.map((d) => ({
+          grupo: d.parcela.tratamento?.tag ?? d.parcela.tratamentoId,
+          bloco: temBloco ? d.parcela.bloco : undefined,
+          valor: valorMap.get(d.id) as number,
+        }));
+        const lambda = transformacao === "boxcox" ? boxCoxLambda(obsModelo).lambda : undefined;
+        const aplicada = aplicarTransformacao(
+          dados.map((d) => valorMap.get(d.id) as number),
+          transformacao,
+          { lambda },
+        );
+        dados.forEach((d, i) => valorMap.set(d.id, aplicada.valores[i]));
+        info = {
+          tipo: aplicada.tipo,
+          constante: aplicada.constante,
+          lambda: aplicada.lambda,
+          descricao: aplicada.descricao,
+        };
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : "Não foi possível transformar os dados.",
+        );
+      }
+    }
+    const valor = (d: (typeof dados)[number]): number => valorMap.get(d.id) as number;
+    const retro = (m: number): number =>
+      info ? retroTransformar(m, info.tipo, { lambda: info.lambda, constante: info.constante }) : m;
+    const retroMedias = <T extends { media: number }>(arr: T[]): T[] =>
+      info ? arr.map((m) => ({ ...m, media: retro(m.media) })) : arr;
+
     // Split-plot: ANOVA com DOIS erros (Erro(a) testa A; Erro(b) testa B e A×B).
     if (aval.experimento.esquema === "PARCELA_SUBDIVIDIDA") {
       const obs: ObservacaoSplit[] = dados
@@ -413,7 +471,7 @@ export class AvaliacoesService {
           bloco: d.parcela.bloco,
           fatorA: `A${(d.parcela.nivelPrincipal as number) + 1}`,
           fatorB: `B${(d.parcela.nivelSub as number) + 1}`,
-          valor: valorDe(d),
+          valor: valor(d),
         }));
       try {
         const resultado = anovaSplitPlot(obs);
@@ -421,7 +479,12 @@ export class AvaliacoesService {
           avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
           esquema: "PARCELA_SUBDIVIDIDA" as const,
           n: obs.length,
-          resultado,
+          resultado: {
+            ...resultado,
+            mediasA: retroMedias(resultado.mediasA),
+            mediasB: retroMedias(resultado.mediasB),
+          },
+          transformacao: info,
         };
       } catch (e) {
         throw new BadRequestException(
@@ -429,10 +492,6 @@ export class AvaliacoesService {
         );
       }
     }
-
-    const nome = (aval.experimento.delineamento?.nome ?? "").toUpperCase();
-    const delineamento: Delineamento =
-      nome.includes("DBC") || nome.includes("BLOCO") ? "DBC" : "DIC";
 
     // Fatorial 2–3 fatores: ANOVA com erro ÚNICO + desdobramento da interação.
     if (aval.experimento.esquema === "FATORIAL") {
@@ -446,7 +505,7 @@ export class AvaliacoesService {
       const observacoes: ObservacaoFatorial[] = dados
         .map((d) => ({ combo: combos[(d.parcela.tratamento?.numeroRef ?? 0) - 1], d }))
         .filter((x) => x.combo != null)
-        .map((x) => ({ bloco: x.d.parcela.bloco, fatores: x.combo, valor: valorDe(x.d) }));
+        .map((x) => ({ bloco: x.d.parcela.bloco, fatores: x.combo, valor: valor(x.d) }));
       try {
         const resultado = anovaFatorial(observacoes, {
           delineamento,
@@ -458,7 +517,18 @@ export class AvaliacoesService {
           esquema: "FATORIAL" as const,
           delineamento,
           n: observacoes.length,
-          resultado,
+          resultado: {
+            ...resultado,
+            efeitosPrincipais: resultado.efeitosPrincipais.map((e) => ({
+              ...e,
+              medias: retroMedias(e.medias),
+            })),
+            desdobramentos: resultado.desdobramentos.map((d) => ({
+              ...d,
+              efeitos: d.efeitos.map((ef) => ({ ...ef, medias: retroMedias(ef.medias) })),
+            })),
+          },
+          transformacao: info,
         };
       } catch (e) {
         throw new BadRequestException(
@@ -470,7 +540,7 @@ export class AvaliacoesService {
     const observacoes: Observacao[] = dados.map((d) => ({
       tratamento: d.parcela.tratamento?.tag ?? "?",
       bloco: d.parcela.bloco,
-      valor: valorDe(d),
+      valor: valor(d),
     }));
 
     try {
@@ -480,7 +550,8 @@ export class AvaliacoesService {
         esquema: null,
         delineamento,
         n: observacoes.length,
-        resultado,
+        resultado: { ...resultado, medias: retroMedias(resultado.medias) },
+        transformacao: info,
       };
     } catch (e) {
       throw new BadRequestException(e instanceof Error ? e.message : "Não foi possível analisar.");
