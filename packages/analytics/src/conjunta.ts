@@ -79,6 +79,13 @@ export function anovaConjunta(
   if (N !== L * b * t) {
     throw new Error("Análise conjunta exige dados balanceados (L × b × t, sem faltas).");
   }
+  // RCBD: cada (local, bloco, tratamento) deve ocorrer exatamente uma vez.
+  const celulas = new Set(observacoes.map((o) => `${o.local}|${o.bloco}|${o.tratamento}`));
+  if (celulas.size !== N) {
+    throw new Error(
+      "Análise conjunta exige blocos completos (cada tratamento uma vez por bloco em cada local).",
+    );
+  }
 
   const valores = observacoes.map((o) => o.valor);
   const g = media(valores);

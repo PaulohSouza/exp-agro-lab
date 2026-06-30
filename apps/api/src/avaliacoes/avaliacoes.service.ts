@@ -15,6 +15,10 @@ import {
   retroTransformar,
   kruskalWallis,
   friedman,
+  sugerirRota,
+  anovaConjunta,
+  type RotaSugerida,
+  type ObservacaoConjunta,
   type Observacao,
   type ObservacaoSplit,
   type ObservacaoFatorial,
@@ -576,6 +580,21 @@ export class AvaliacoesService {
       valor: valor(d),
     }));
 
+    // Seleção de rota pelos pressupostos (Shapiro nos resíduos + Bartlett),
+    // sobre os dados na escala original — advisory para o usuário.
+    let rotaSugerida: RotaSugerida | null = null;
+    try {
+      rotaSugerida = sugerirRota(
+        dados.map((d) => ({
+          grupo: d.parcela.tratamento?.tag ?? "?",
+          bloco: temBloco ? d.parcela.bloco : undefined,
+          valor: valorDe(d),
+        })),
+      );
+    } catch {
+      rotaSugerida = null; // n insuficiente p/ Shapiro
+    }
+
     try {
       const resultado = anovaUmFator(observacoes, delineamento, { metodo: metodo ?? "Tukey" });
       return {
@@ -585,7 +604,64 @@ export class AvaliacoesService {
         n: observacoes.length,
         resultado: { ...resultado, medias: retroMedias(resultado.medias) },
         transformacao: info,
+        rotaSugerida,
       };
+    } catch (e) {
+      throw new BadRequestException(e instanceof Error ? e.message : "Não foi possível analisar.");
+    }
+  }
+
+  /**
+   * ANÁLISE CONJUNTA multi-local: combina N experimentos (mesmos tratamentos,
+   * DBC) por uma avaliação de mesmo nome. Cada experimento é um "local".
+   */
+  async analiseConjunta(experimentoIds: string[], avaliacaoNome: string, user: UsuarioAtual) {
+    const ids = [...new Set(experimentoIds)];
+    if (ids.length < 2) throw new BadRequestException("Selecione ao menos 2 experimentos.");
+    const obs: ObservacaoConjunta[] = [];
+    for (const eid of ids) {
+      await this.experimentos.garantirAcesso(eid, user);
+      const exp = await this.prisma.experimento.findUnique({
+        where: { id: eid },
+        include: { local: true },
+      });
+      if (!exp) throw new NotFoundException(`Experimento ${eid} não encontrado.`);
+      const aval = await this.prisma.avaliacao.findFirst({
+        where: { experimentoId: eid, nome: avaliacaoNome },
+      });
+      if (!aval) {
+        throw new BadRequestException(`"${exp.titulo}" não tem a avaliação "${avaliacaoNome}".`);
+      }
+      const dados = await this.prisma.avaliacaoDado.findMany({
+        where: { avaliacaoId: aval.id, deletedAt: null, valorColetado: { not: null } },
+        include: { parcela: { include: { tratamento: true } } },
+      });
+      const areaUtil = await this.areaUtilDoExperimento(eid);
+      const local = exp.local?.nome ?? exp.titulo ?? eid;
+      for (const d of dados) {
+        let v = d.valorColetado as number;
+        if (aval.formula) {
+          try {
+            v = calcularSaida({
+              valorColetado: d.valorColetado as number,
+              formula: aval.formula,
+              params: areaUtil ? { areaUtil } : {},
+            });
+          } catch {
+            v = d.valorColetado as number;
+          }
+        }
+        obs.push({
+          local,
+          bloco: d.parcela.bloco,
+          tratamento: d.parcela.tratamento?.tag ?? "?",
+          valor: v,
+        });
+      }
+    }
+    try {
+      const resultado = anovaConjunta(obs);
+      return { avaliacaoNome, n: obs.length, resultado };
     } catch (e) {
       throw new BadRequestException(e instanceof Error ? e.message : "Não foi possível analisar.");
     }

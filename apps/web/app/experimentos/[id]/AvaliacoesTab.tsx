@@ -1037,6 +1037,29 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
               Bartlett p = {a.resultado.pressupostos.bartlettP.toFixed(3)} (
               {a.resultado.pressupostos.homogeneo ? "homogêneo" : "heterogêneo"})
             </p>
+            {a.rotaSugerida && (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#1F2940",
+                  background: a.rotaSugerida.rota === "parametrica" ? "#EAF7EE" : "#FFF6E5",
+                  border: `1px solid ${a.rotaSugerida.rota === "parametrica" ? "#BfE3C6" : "#F0DEB0"}`,
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  marginTop: 6,
+                  maxWidth: 360,
+                }}
+              >
+                Normalidade (Shapiro-Wilk): W = {a.rotaSugerida.normalidade.W.toFixed(3)}, p ={" "}
+                {a.rotaSugerida.normalidade.p.toFixed(3)}. <strong>Rota sugerida:</strong>{" "}
+                {a.rotaSugerida.rota === "parametrica"
+                  ? "ANOVA paramétrica"
+                  : a.rotaSugerida.rota === "transformacao"
+                    ? `transformação (${a.rotaSugerida.transformacaoSugerida})`
+                    : "não-paramétrico"}
+                . <span style={{ color: "#7987A1" }}>{a.rotaSugerida.justificativa}</span>
+              </p>
+            )}
           </div>
           <div>
             <h4 style={{ margin: "0 0 8px" }}>Médias — {a.resultado.comparacao.metodo}</h4>

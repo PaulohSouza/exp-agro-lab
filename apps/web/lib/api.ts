@@ -394,6 +394,13 @@ export interface AnaliseFriedman {
   grupos: RankGrupo[];
   postHoc: { metodo: "Nemenyi"; cd: number };
 }
+export interface RotaSugerida {
+  normalidade: { W: number; p: number };
+  homogeneidade: { estatistica: number; gl: number; p: number } | null;
+  rota: "parametrica" | "transformacao" | "naoParametrico";
+  transformacaoSugerida?: TipoTransformacao;
+  justificativa: string;
+}
 export type AnaliseResultado =
   | {
       avaliacao: AvaliacaoRef;
@@ -402,6 +409,7 @@ export type AnaliseResultado =
       n: number;
       resultado: AnaliseUmFator;
       transformacao?: TransformacaoInfo | null;
+      rotaSugerida?: RotaSugerida | null;
     }
   | {
       avaliacao: AvaliacaoRef;
@@ -425,6 +433,27 @@ export type AnaliseResultado =
       n: number;
       resultado: AnaliseKruskal | AnaliseFriedman;
     };
+export interface AnaliseConjunta {
+  metodo: "Conjunta";
+  locais: number;
+  blocos: number;
+  tratamentos: number;
+  tabela: LinhaAnova[];
+  mediaGeral: number;
+  cv: number;
+  fLocal: { f: number; p: number; significativo: boolean };
+  fTratamento: { f: number; p: number; significativo: boolean };
+  fInteracao: { f: number; p: number; significativo: boolean };
+  razaoQMResiduo: number;
+  homogeneo: boolean;
+  medias: { tratamento: string; media: number; n: number; letra?: string }[];
+  comparacao: { metodo: string; alpha: number };
+}
+export interface ConjuntaResposta {
+  avaliacaoNome: string;
+  n: number;
+  resultado: AnaliseConjunta;
+}
 export interface Experimento {
   id: string;
   codigo: string | null;
@@ -738,6 +767,11 @@ export const api = {
     const s = qs.toString();
     return req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${s ? `?${s}` : ""}`);
   },
+  analiseConjunta: (experimentoIds: string[], avaliacaoNome: string) =>
+    req<ConjuntaResposta>(`/analise/conjunta`, {
+      method: "POST",
+      body: JSON.stringify({ experimentoIds, avaliacaoNome }),
+    }),
 
   // cadastros gerais
   locais: () => req<Ref[]>("/cadastros/locais"),
