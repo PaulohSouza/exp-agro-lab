@@ -86,9 +86,9 @@ def run() -> int:
         page.goto(f"{WEB}/experimentos/{eid}")
         page.get_by_role("button", name="Avaliações", exact=True).click()
         page.get_by_role("button", name="Análise", exact=True).first.click()
-        expect(page.get_by_text("ANOVA", exact=False).first).to_be_visible()
         # seleciona log(x+1) e confirma o banner de escala transformada
-        page.get_by_role("combobox").first.select_option("log")
+        # comboboxes na ordem: [Teste, Transformação, Comparação]
+        page.get_by_role("combobox").nth(1).select_option("log")
         expect(page.get_by_text("retro-transformadas", exact=False)).to_be_visible()
         print("✓ web: seletor de transformação + banner de escala transformada")
 

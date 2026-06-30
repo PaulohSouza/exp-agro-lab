@@ -365,6 +365,35 @@ export interface TransformacaoInfo {
   lambda?: number;
   descricao: string;
 }
+interface RankGrupo {
+  grupo: string;
+  somaRanks: number;
+  mediaRank: number;
+  n: number;
+  letra?: string;
+}
+export interface AnaliseKruskal {
+  metodo: "Kruskal-Wallis";
+  H: number;
+  gl: number;
+  p: number;
+  significativo: boolean;
+  correcaoEmpates: number;
+  grupos: RankGrupo[];
+  postHoc: { metodo: "Dunn"; ajuste: "Bonferroni" };
+}
+export interface AnaliseFriedman {
+  metodo: "Friedman";
+  qui2: number;
+  gl: number;
+  p: number;
+  significativo: boolean;
+  blocos: number;
+  tratamentos: number;
+  correcaoEmpates: number;
+  grupos: RankGrupo[];
+  postHoc: { metodo: "Nemenyi"; cd: number };
+}
 export type AnaliseResultado =
   | {
       avaliacao: AvaliacaoRef;
@@ -388,6 +417,13 @@ export type AnaliseResultado =
       n: number;
       resultado: AnaliseFatorial;
       transformacao?: TransformacaoInfo | null;
+    }
+  | {
+      avaliacao: AvaliacaoRef;
+      teste: "naoParametrico";
+      delineamento: string;
+      n: number;
+      resultado: AnaliseKruskal | AnaliseFriedman;
     };
 export interface Experimento {
   id: string;
@@ -693,10 +729,12 @@ export const api = {
     avaliacaoId: string,
     metodo?: "LSD" | "Tukey" | "ScottKnott",
     transformacao?: TipoTransformacao,
+    naoParametrico?: boolean,
   ) => {
     const qs = new URLSearchParams();
     if (metodo) qs.set("metodo", metodo);
     if (transformacao && transformacao !== "nenhuma") qs.set("transformacao", transformacao);
+    if (naoParametrico) qs.set("naoParametrico", "true");
     const s = qs.toString();
     return req<AnaliseResultado>(`/avaliacoes/${avaliacaoId}/analise${s ? `?${s}` : ""}`);
   },

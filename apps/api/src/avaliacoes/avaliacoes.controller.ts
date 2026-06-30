@@ -137,7 +137,8 @@ export class AvaliacoesController {
     @Param("id") id: string,
     @Query("metodo") metodo?: "LSD" | "Tukey" | "ScottKnott",
     @Query("transformacao") transformacao?: "nenhuma" | "raiz" | "log" | "boxcox",
+    @Query("naoParametrico") naoParametrico?: string,
   ) {
-    return this.service.analise(id, user, metodo, transformacao);
+    return this.service.analise(id, user, metodo, transformacao, naoParametrico === "true");
   }
 }

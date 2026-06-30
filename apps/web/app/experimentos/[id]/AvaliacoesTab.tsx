@@ -5,6 +5,8 @@ import {
   type AnaliseResultado,
   type AnaliseSplit,
   type AnaliseFatorial,
+  type AnaliseKruskal,
+  type AnaliseFriedman,
   type TipoTransformacao,
   type Avaliacao,
   type AvaliacaoDado,
@@ -895,15 +897,16 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
   const [a, setA] = useState<AnaliseResultado | null>(null);
   const [metodo, setMetodo] = useState<"Tukey" | "ScottKnott" | "LSD">("Tukey");
   const [transf, setTransf] = useState<TipoTransformacao>("nenhuma");
+  const [naoParam, setNaoParam] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   useEffect(() => {
     setA(null);
     setErro(null);
     api
-      .analiseAvaliacao(aval.id, metodo, transf)
+      .analiseAvaliacao(aval.id, metodo, transf, naoParam)
       .then(setA)
       .catch((e) => setErro(e instanceof Error ? e.message : "falha"));
-  }, [aval.id, metodo, transf]);
+  }, [aval.id, metodo, transf, naoParam]);
 
   return (
     <div>
@@ -921,33 +924,48 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
         </button>
         <strong>Análise: {aval.nome}</strong>
         <label style={{ marginLeft: "auto", fontSize: 13, color: "#1F2940" }}>
-          Transformação:{" "}
+          Teste:{" "}
           <select
-            value={transf}
-            onChange={(e) => setTransf(e.target.value as TipoTransformacao)}
+            value={naoParam ? "np" : "anova"}
+            onChange={(e) => setNaoParam(e.target.value === "np")}
             style={{ padding: 5, borderRadius: 6, border: "1px solid #d6d6e6" }}
           >
-            <option value="nenhuma">nenhuma</option>
-            <option value="raiz">√x (raiz)</option>
-            <option value="log">log(x+1)</option>
-            <option value="boxcox">Box-Cox (λ auto)</option>
+            <option value="anova">Paramétrico (ANOVA)</option>
+            <option value="np">Não-paramétrico (Kruskal/Friedman)</option>
           </select>
         </label>
-        <label style={{ fontSize: 13, color: "#1F2940" }}>
-          Comparação:{" "}
-          <select
-            value={metodo}
-            onChange={(e) => setMetodo(e.target.value as typeof metodo)}
-            style={{ padding: 5, borderRadius: 6, border: "1px solid #d6d6e6" }}
-          >
-            <option value="Tukey">Tukey (HSD)</option>
-            <option value="ScottKnott">Scott-Knott</option>
-            <option value="LSD">LSD (Fisher)</option>
-          </select>
-        </label>
+        {!naoParam && (
+          <>
+            <label style={{ fontSize: 13, color: "#1F2940" }}>
+              Transformação:{" "}
+              <select
+                value={transf}
+                onChange={(e) => setTransf(e.target.value as TipoTransformacao)}
+                style={{ padding: 5, borderRadius: 6, border: "1px solid #d6d6e6" }}
+              >
+                <option value="nenhuma">nenhuma</option>
+                <option value="raiz">√x (raiz)</option>
+                <option value="log">log(x+1)</option>
+                <option value="boxcox">Box-Cox (λ auto)</option>
+              </select>
+            </label>
+            <label style={{ fontSize: 13, color: "#1F2940" }}>
+              Comparação:{" "}
+              <select
+                value={metodo}
+                onChange={(e) => setMetodo(e.target.value as typeof metodo)}
+                style={{ padding: 5, borderRadius: 6, border: "1px solid #d6d6e6" }}
+              >
+                <option value="Tukey">Tukey (HSD)</option>
+                <option value="ScottKnott">Scott-Knott</option>
+                <option value="LSD">LSD (Fisher)</option>
+              </select>
+            </label>
+          </>
+        )}
       </div>
       {erro && <p style={{ color: "#F34343" }}>{erro}</p>}
-      {a?.transformacao && (
+      {a && "transformacao" in a && a.transformacao && (
         <p
           style={{
             fontSize: 12,
@@ -966,6 +984,8 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
       )}
       {!a ? (
         !erro && <p style={{ color: "#7987A1" }}>Calculando…</p>
+      ) : "teste" in a ? (
+        <AnaliseNaoParamView a={a} />
       ) : a.esquema === "PARCELA_SUBDIVIDIDA" ? (
         <AnaliseSplitView a={a} />
       ) : a.esquema === "FATORIAL" ? (
@@ -1242,6 +1262,74 @@ function AnaliseFatorialView({ a }: { a: { n: number; resultado: AnaliseFatorial
         <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8, maxWidth: 280 }}>
           Fatorial: erro único; a interação significativa é desdobrada em efeitos simples (cada
           fator dentro dos níveis do outro). Port do SAGRE; validação golden vs R pendente.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Render do teste não-paramétrico (Kruskal-Wallis / Friedman) — médias de rank + letras. */
+function AnaliseNaoParamView({
+  a,
+}: {
+  a: { n: number; delineamento: string; resultado: AnaliseKruskal | AnaliseFriedman };
+}) {
+  const r = a.resultado;
+  const friedman = r.metodo === "Friedman";
+  const estat = friedman ? (r as AnaliseFriedman).qui2 : (r as AnaliseKruskal).H;
+  const pFmt = r.p < 0.001 ? "<0.001" : r.p.toFixed(3);
+  return (
+    <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+      <div>
+        <h4 style={{ margin: "0 0 8px" }}>
+          {r.metodo} ({a.delineamento}, n={a.n})
+        </h4>
+        <p style={{ fontSize: 13, color: "#1F2940" }}>
+          {friedman ? "χ²" : "H"} = <strong>{estat.toFixed(3)}</strong> · gl = {r.gl} · p ={" "}
+          <strong>{pFmt}</strong>{" "}
+          {r.significativo ? (
+            <span style={{ color: "#6FA830" }}>significativo</span>
+          ) : (
+            <span style={{ color: "#F34343" }}>não significativo</span>
+          )}
+        </p>
+        <p style={{ fontSize: 12, color: "#7987A1" }}>
+          Correção de empates = {r.correcaoEmpates.toFixed(4)}
+          {friedman
+            ? ` · ${(r as AnaliseFriedman).blocos} blocos × ${(r as AnaliseFriedman).tratamentos} tratamentos`
+            : ""}
+        </p>
+      </div>
+      <div>
+        <h4 style={{ margin: "0 0 8px" }}>Médias de rank — post-hoc {r.postHoc.metodo}</h4>
+        <div className="tabela-scroll">
+          <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ color: "#7987A1", textAlign: "left" }}>
+                <th style={th}>Trat.</th>
+                <th style={th}>Média rank</th>
+                <th style={th}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...r.grupos]
+                .sort((x, y) => y.mediaRank - x.mediaRank)
+                .map((g) => (
+                  <tr key={g.grupo} style={{ borderBottom: "1px solid #f0f0f8" }}>
+                    <td style={td}>
+                      <strong>{g.grupo}</strong>
+                    </td>
+                    <td style={td}>{g.mediaRank.toFixed(2)}</td>
+                    <td style={{ ...td, fontWeight: 700, color: "#2D6CDF" }}>{g.letra}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8, maxWidth: 280 }}>
+          Teste não-paramétrico (rank): {friedman ? "Friedman" : "Kruskal-Wallis"} com post-hoc de{" "}
+          {r.postHoc.metodo}. Letras iguais = sem diferença significativa. Port do SAGRE; golden vs
+          R pendente.
         </p>
       </div>
     </div>

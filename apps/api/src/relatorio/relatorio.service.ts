@@ -102,6 +102,8 @@ export class RelatorioService {
       } catch {
         continue; // sem dados suficientes
       }
+      // o relatório nunca pede o teste não-paramétrico (rota só da tela de Análise)
+      if ("teste" in analise && analise.teste === "naoParametrico") continue;
       // Split-plot: tabela com dois erros (sem comparação de médias única).
       if (analise.esquema === "PARCELA_SUBDIVIDIDA") {
         const rs = analise.resultado;

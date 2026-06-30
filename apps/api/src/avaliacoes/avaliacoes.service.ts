@@ -13,10 +13,13 @@ import {
   aplicarTransformacao,
   boxCoxLambda,
   retroTransformar,
+  kruskalWallis,
+  friedman,
   type Observacao,
   type ObservacaoSplit,
   type ObservacaoFatorial,
   type ObservacaoModelo,
+  type ObservacaoNP,
   type Transformacao,
   type Delineamento,
 } from "@exp/analytics";
@@ -382,6 +385,7 @@ export class AvaliacoesService {
     user: UsuarioAtual,
     metodo?: "LSD" | "Tukey" | "ScottKnott",
     transformacao?: Transformacao,
+    naoParametrico?: boolean,
   ) {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
     const aval = await this.prisma.avaliacao.findUnique({
@@ -462,6 +466,35 @@ export class AvaliacoesService {
       info ? retroTransformar(m, info.tipo, { lambda: info.lambda, constante: info.constante }) : m;
     const retroMedias = <T extends { media: number }>(arr: T[]): T[] =>
       info ? arr.map((m) => ({ ...m, media: retro(m.media) })) : arr;
+
+    // Não-paramétrico (ROTA 3): Kruskal-Wallis (DIC) ou Friedman (DBC), por
+    // tratamento. Rank-invariante a transformações monotônicas, então usa o
+    // valor de saída direto. Não se aplica a parcela subdividida.
+    if (naoParametrico) {
+      if (aval.experimento.esquema === "PARCELA_SUBDIVIDIDA") {
+        throw new BadRequestException("Teste não-paramétrico não se aplica a parcela subdividida.");
+      }
+      const obsNP: ObservacaoNP[] = dados.map((d) => ({
+        grupo: d.parcela.tratamento?.tag ?? "?",
+        bloco: d.parcela.bloco,
+        valor: valorDe(d),
+      }));
+      try {
+        const resultado = delineamento === "DBC" ? friedman(obsNP) : kruskalWallis(obsNP);
+        return {
+          avaliacao: { nome: aval.nome, unidadeSaida: aval.unidadeSaida },
+          esquema: null,
+          teste: "naoParametrico" as const,
+          delineamento,
+          n: obsNP.length,
+          resultado,
+        };
+      } catch (e) {
+        throw new BadRequestException(
+          e instanceof Error ? e.message : "Não foi possível analisar.",
+        );
+      }
+    }
 
     // Split-plot: ANOVA com DOIS erros (Erro(a) testa A; Erro(b) testa B e A×B).
     if (aval.experimento.esquema === "PARCELA_SUBDIVIDIDA") {
