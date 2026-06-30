@@ -3,7 +3,7 @@
 > **Handoff para retomar em nova conversa.** Última atualização: 30/06/2026.
 > **Onde estamos:** catálogo de avaliações/atividades + período/marcos + coleta agrupada **mergeado** (PR #1, tag **v0.7.0**). Em seguida, **iniciativa de padronização de código concluída** (ver §0) — CI no GitHub + padrão de desenvolvimento documentado + 6 temas de schema + validação Zod. **`main` 100% no padrão.**
 > **Comece por aqui:** §0 (padronização) e §8 (próximos passos). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
-> Testes: **domain 59** + **analytics 53** + **8 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+> Testes: **domain 59** + **analytics 60** + **9 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 ## 0. Padronização de código (concluída em 29/06/2026)
 Iniciativa para alinhar todo o código a um padrão único — ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** (§12 = progresso). Tudo mergeado na `main`, cada etapa verificada (typecheck + 59+24 testes + build + reseed + 5 e2e):
@@ -21,7 +21,7 @@ Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de
 ## 2. Stack
 Monorepo TypeScript (pnpm + Turborepo):
 - `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **59 testes**.
-- `packages/analytics` — estatística pura: ANOVA (1 fator + **split-plot 2 erros** + **fatorial 2–3 com desdobramento**), **transformações (√/log/Box-Cox c/ λ por verossimilhança)**, CV, Bartlett, **Tukey/Scott-Knott/LSD** (`ptukey`/`qtukey`), distribuições F/t/χ². **53 testes**.
+- `packages/analytics` — estatística pura: ANOVA (1 fator + **split-plot 2 erros** + **fatorial 2–3 com desdobramento**), **transformações (√/log/Box-Cox c/ λ por verossimilhança)**, **não-paramétrico (Kruskal-Wallis+Dunn / Friedman+Nemenyi)**, CV, Bartlett, **Tukey/Scott-Knott/LSD** (`ptukey`/`qtukey`), distribuições F/t/χ². **60 testes**.
 - `apps/api` — NestJS + Prisma + **MySQL** (`expagrolab_dev`). JWT/bcrypt.
 - `apps/web` — Next.js (App Router), tema azul do TCC.
 - `apps/mobile` — Expo + expo-router (offline-first). **Fora do workspace pnpm** (usa npm).
@@ -93,8 +93,15 @@ ROTA 2 do SAGRE: quando os pressupostos falham, transforma-se a resposta, refaz-
 - **e2e** `test_transformacao.py`: API (metadados + médias retro ≈ originais + λ no interior + CV cai) + browser (seletor + banner). Smoke: nenhuma CV 18,8% → log 4,2%.
 - **Follow-up:** seleção automática da transformação (critério maximin nos p-valores dos pressupostos — falta Shapiro-Wilk); arcseno p/ proporções.
 
+## 3.4 Não-paramétrico (Kruskal-Wallis / Friedman) — ✅ implementado (30/06/2026)
+ROTA 3 do SAGRE: alternativas à ANOVA quando os pressupostos não são corrigíveis por transformação. 2 fatias + e2e (mesma branch). Design: [SDD/08-anexos/sagre-analytics.md](SDD/08-anexos/sagre-analytics.md).
+- **Analytics** (fatia 1, `packages/analytics/naoParametrico.ts`): `kruskalWallis` (H ~ χ²(k−1) com correção de empates + post-hoc de **Dunn**/Bonferroni) e `friedman` (ranqueia dentro do bloco, χ² ~ χ²(k−1) com correção + post-hoc de **Nemenyi** via amplitude estudentizada); ambos com médias de rank e letras. **7 testes golden** (H=7,2; χ²F=8; letras); analytics **53 → 60**.
+- **API + web** (fatia 2): `GET /avaliacoes/:id/analise?naoParametrico=true` → Kruskal (DIC) ou Friedman (DBC) por tratamento; não se aplica a parcela subdividida. Web: seletor de teste (paramétrico/não-paramétrico) na aba Análise + médias de rank com letras (oculta transformação/comparação no modo não-paramétrico).
+- **e2e** `test_naoparametrico.py`: Kruskal-Wallis (API + browser). Friedman validado pelos golden tests (DBC exige cadastro de delineamento, fora do escopo do e2e).
+- **Follow-up:** seleção automática (paramétrico↔não-paramétrico) pelos pressupostos; ART, Conover.
+
 ## 4. Pendências / limitações conhecidas
-- **Analytics fase B parcial:** **Tukey (HSD)**, **Scott-Knott**, LSD (default Tukey), **split-plot (2 erros)**, **fatorial 2–3 + desdobramento** e **transformações (√/log/Box-Cox)** ✅ implementados. **Falta:** desdobramento da interação tripla, não-paramétrico (Kruskal/Friedman + post-hoc), análise conjunta, comparação de médias por fator no split-plot, seleção automática de transformação (precisa de Shapiro-Wilk), e **golden tests vs SAGRE** (pendente por não ter o ambiente R aqui).
+- **Analytics fase B parcial:** **Tukey (HSD)**, **Scott-Knott**, LSD (default Tukey), **split-plot (2 erros)**, **fatorial 2–3 + desdobramento**, **transformações (√/log/Box-Cox)** e **não-paramétrico (Kruskal/Friedman + post-hoc)** ✅ implementados. **Falta:** desdobramento da interação tripla, análise conjunta multi-local, comparação de médias por fator no split-plot, seleção automática de transformação/teste (precisa de Shapiro-Wilk), e **golden tests vs SAGRE** (pendente por não ter o ambiente R aqui).
 - **PPTX fase A** tem layout próprio; falta aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx`.
 - **App mobile não foi rodado** (sem device/emulador no ambiente). Compila por `tsc`. Validar com Expo Go.
 - E-mails em modo **SIMULATE** (arquivos em `apps/api/email-previews/`), não envia de verdade.
@@ -132,7 +139,7 @@ Ver o checklist completo em **[TESTES.md](TESTES.md)**.
 Implementado nas 4 fatias (schema, API, web, ANOVA 2 erros). Follow-up: comparação de médias por fator no split-plot; strip-plot (SDD 06 §6).
 
 ### 8.2 Analytics fase B (completar) — `packages/analytics`
-**Split-plot (2 erros) ✅. Fatorial 2–3 + desdobramento ✅ (§3.2). Transformações √/log/Box-Cox ✅ (§3.3).** Falta: desdobramento da interação tripla · não-paramétrico (Kruskal/Friedman + post-hoc) · análise conjunta · seleção automática de transformação (precisa de Shapiro-Wilk) · **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
+**Split-plot ✅. Fatorial 2–3 + desdobramento ✅ (§3.2). Transformações √/log/Box-Cox ✅ (§3.3). Não-paramétrico Kruskal/Friedman ✅ (§3.4).** Falta: desdobramento da interação tripla · análise conjunta · seleção automática de transformação/teste (precisa de Shapiro-Wilk) · **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
 
 ### 8.3 Relatório PPTX fase B
 Aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (layout fiel).
@@ -146,7 +153,7 @@ Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de cole
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
 
-> **Prioridade sugerida:** (1) golden tests vs SAGRE (validar a estatística, incl. split-plot/fatorial/transformações) → (2) analytics fase B restante (não-paramétrico Kruskal/Friedman, desdobramento da interação tripla, conjunta) → (3) PPTX fiel → (4) mobile em device (rodar `npm ci` em `apps/mobile` antes). Padronização, CI, croqui split-plot, fatorial+desdobramento e transformações já fechados.
+> **Prioridade sugerida:** (1) golden tests vs SAGRE (validar a estatística, incl. split-plot/fatorial/transformações/não-paramétrico) → (2) analytics fase B/C restante (desdobramento da interação tripla, análise conjunta multi-local, seleção automática por pressupostos) → (3) PPTX fiel → (4) mobile em device (rodar `npm ci` em `apps/mobile` antes). Padronização, CI, croqui split-plot, fatorial+desdobramento, transformações e não-paramétrico já fechados.
 
 ## 9. Releases
 `v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · **`v0.7.0`** (catálogo de avaliações/atividades + período/marcos + coleta agrupada — mergeado, **Latest**). Depois do v0.7.0: CI + **padronização de código** (PRs #2–#14, ainda sem tag — candidata a `v0.8.0`). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
