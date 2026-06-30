@@ -309,6 +309,47 @@ export interface AnaliseSplit {
   mediasA: { nivel: string; media: number; n: number }[];
   mediasB: { nivel: string; media: number; n: number }[];
 }
+interface MediaFator {
+  nivel: string;
+  media: number;
+  n: number;
+  letra?: string;
+}
+export interface EfeitoSimples {
+  nivelCondicao: string;
+  gl: number;
+  sq: number;
+  qm: number;
+  f: number;
+  p: number;
+  significativo: boolean;
+  medias: MediaFator[];
+}
+export interface AnaliseFatorial {
+  esquema: "FATORIAL";
+  delineamento: "DIC" | "DBC";
+  rotulosFatores: string[];
+  tabela: LinhaAnova[];
+  mediaGeral: number;
+  cv: number;
+  glResiduo: number;
+  qmResiduo: number;
+  efeitosPrincipais: {
+    fator: string;
+    f: number;
+    p: number;
+    significativo: boolean;
+    medias: MediaFator[];
+  }[];
+  interacoes: { fonte: string; fatores: string[]; gl: number; f: number; p: number; significativo: boolean }[];
+  desdobramentos: {
+    fatorAlvo: string;
+    fatorCondicao: string;
+    descricao: string;
+    efeitos: EfeitoSimples[];
+  }[];
+  comparacao: { metodo: string; alpha: number };
+}
 type AvaliacaoRef = { nome: string; unidadeSaida: string | null };
 export type AnaliseResultado =
   | {
@@ -318,7 +359,14 @@ export type AnaliseResultado =
       n: number;
       resultado: AnaliseUmFator;
     }
-  | { avaliacao: AvaliacaoRef; esquema: "PARCELA_SUBDIVIDIDA"; n: number; resultado: AnaliseSplit };
+  | { avaliacao: AvaliacaoRef; esquema: "PARCELA_SUBDIVIDIDA"; n: number; resultado: AnaliseSplit }
+  | {
+      avaliacao: AvaliacaoRef;
+      esquema: "FATORIAL";
+      delineamento: string;
+      n: number;
+      resultado: AnaliseFatorial;
+    };
 export interface Experimento {
   id: string;
   codigo: string | null;
