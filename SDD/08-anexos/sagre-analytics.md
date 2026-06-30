@@ -55,7 +55,7 @@ Colunas: Tratamento/Fator1, Bloco (DBC), Fator2 (quali/quanti), Variável-respos
 
 ## Plano de port faseado (com golden tests)
 - **Fase A (MVP analítico):** pressupostos (Bartlett) + ANOVA DIC/DBC 1 fator + LSD + tabela de médias/letras. ✅
-- **Fase B (em curso):** ✅ **Tukey (HSD)** e **Scott-Knott** — amplitude estudentizada `ptukey`/`qtukey` (Gauss-Legendre, espelha o R), Tukey-Kramer p/ n desigual, SK recursivo (λ ~ χ², ν=g/(π−2)); **default Tukey** como no SAGRE; seletor de método na API/UI (`?metodo=`). _Validado vs tabela de Tukey (24 testes)._ **Pendente:** fatorial 2 fatores (quali×quali + desdobramento), **split-plot (2 erros)**, transformações, não-paramétrico (Kruskal, Friedman + post-hoc), e **golden vs SAGRE** (rodar no R e comparar com tolerância — falta o ambiente R).
+- **Fase B (em curso):** ✅ **Tukey (HSD)** e **Scott-Knott** — amplitude estudentizada `ptukey`/`qtukey` (Gauss-Legendre, espelha o R), Tukey-Kramer p/ n desigual, SK recursivo (λ ~ χ², ν=g/(π−2)); **default Tukey** como no SAGRE; seletor de método na API/UI (`?metodo=`). _Validado vs tabela de Tukey._ ✅ **split-plot (2 erros)** (`anovaSplitPlot`). ✅ **fatorial 2–3 fatores (quali×quali) + desdobramento** (`anovaFatorial`, erro único; desdobra interação dupla em efeitos simples; balanceado ⇒ Type I = Type II). **Pendente:** desdobramento da interação tripla, transformações, não-paramétrico (Kruskal, Friedman + post-hoc), e **golden vs SAGRE** (rodar no R e comparar com tolerância — falta o ambiente R).
 - **Fase C:** GLM auto-família + HNP, conjunta multi-local, 3 fatores, split-plot, mistos, Tweedie.
 
 ## Riscos
