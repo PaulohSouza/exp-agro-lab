@@ -564,6 +564,10 @@ export class AvaliacoesService {
               ...d,
               efeitos: d.efeitos.map((ef) => ({ ...ef, medias: retroMedias(ef.medias) })),
             })),
+            desdobramentosTriplos: resultado.desdobramentosTriplos.map((d) => ({
+              ...d,
+              efeitos: d.efeitos.map((ef) => ({ ...ef, medias: retroMedias(ef.medias) })),
+            })),
           },
           transformacao: info,
         };

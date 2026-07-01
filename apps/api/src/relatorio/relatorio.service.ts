@@ -199,11 +199,13 @@ export class RelatorioService {
           });
           yEf += 0.28 * (ef.medias.length + 1) + 0.3;
         }
-        if (rf.desdobramentos.length) {
+        const desc = [
+          ...rf.desdobramentos.map((d) => d.descricao),
+          ...rf.desdobramentosTriplos.map((d) => d.descricao),
+        ];
+        if (desc.length) {
           slideF.addText(
-            `Interação significativa → desdobramento em efeitos simples (${rf.desdobramentos
-              .map((d) => d.descricao)
-              .join("; ")}).`,
+            `Interação significativa → desdobramento em efeitos simples (${desc.join("; ")}).`,
             { x: 0.7, y: 5.1, w: 6.6, fontSize: 10, italic: true, color: "555555" },
           );
         }
