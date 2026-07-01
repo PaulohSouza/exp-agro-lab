@@ -3,7 +3,7 @@
 > **Handoff para retomar em nova conversa.** Última atualização: 30/06/2026.
 > **Onde estamos:** **analytics fase B/C concluída e mergeada** (PR #20, tag **v0.10.0**) — ANOVA fatorial 2–3 + desdobramento, transformações √/log/Box-Cox, não-paramétrico Kruskal/Friedman, análise conjunta multi-local (G×A) e Shapiro-Wilk + seleção de rota. Antes: croqui split-plot (v0.9.0), padronização de código + CI (v0.8.0, ver §0), catálogo/coleta (v0.7.0). **`main` no padrão.**
 > **Comece por aqui:** §3.1–3.6 (analytics) e §8 (próximos passos — agora o gargalo é **golden tests vs SAGRE**). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
-> Testes: **domain 59** + **analytics 75** + **10 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+> Testes: **domain 59** + **analytics 80** + **10 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 ## 0. Padronização de código (concluída em 29/06/2026)
 Iniciativa para alinhar todo o código a um padrão único — ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** (§12 = progresso). Tudo mergeado na `main`, cada etapa verificada (typecheck + 59+24 testes + build + reseed + 5 e2e):
@@ -21,7 +21,7 @@ Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de
 ## 2. Stack
 Monorepo TypeScript (pnpm + Turborepo):
 - `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **59 testes**.
-- `packages/analytics` — estatística pura: ANOVA (1 fator + **split-plot 2 erros** + **fatorial 2–3 com desdobramento** + **conjunta multi-local G×A**), **transformações (√/log/Box-Cox c/ λ por verossimilhança)**, **não-paramétrico (Kruskal-Wallis+Dunn / Friedman+Nemenyi)**, pressupostos (**Bartlett + Shapiro-Wilk**) com **seleção de rota**, **Tukey/Scott-Knott/LSD** (`ptukey`/`qtukey`), distribuições F/t/χ² + `normInv`. **75 testes**.
+- `packages/analytics` — estatística pura: ANOVA (1 fator + **split-plot 2 erros** + **fatorial 2–3 com desdobramento** + **conjunta multi-local G×A**), **transformações (√/log/Box-Cox c/ λ por verossimilhança)**, **não-paramétrico (Kruskal-Wallis+Dunn / Friedman+Nemenyi)**, pressupostos (**Bartlett + Shapiro-Wilk**) com **seleção de rota**, **Tukey/Scott-Knott/LSD** (`ptukey`/`qtukey`), distribuições F/t/χ² + `normInv`. **80 testes**.
 - `apps/api` — NestJS + Prisma + **MySQL** (`expagrolab_dev`). JWT/bcrypt.
 - `apps/web` — Next.js (App Router), tema azul do TCC.
 - `apps/mobile` — Expo + expo-router (offline-first). **Fora do workspace pnpm** (usa npm).
@@ -84,7 +84,8 @@ Fatorial 2–3 fatores cruzados em DIC/DBC, **erro único** (≠ split-plot), co
 - **API** (fatia 2): ramo `FATORIAL` em `AvaliacoesService.analise` — reconstrói o produto cartesiano dos níveis (mesma ordem da geração dos tratamentos) p/ mapear `numeroRef`→nível de cada fator; `RelatorioService` ganha slide PPTX do fatorial.
 - **Web** (fatia 3): `AnaliseFatorialView` na aba Avaliações — tabela de erro único, médias por fator e desdobramento por nível.
 - **e2e** `test_fatorial.py`: fluxo completo (API) + render da aba Análise (browser). Smoke validado: 2×2 com interação cruzada → A×B F≈262 signif., desdobramento nos 2 sentidos.
-- **Follow-up:** desdobramento da interação **tripla** (3-way) — hoje só as interações duplas são desdobradas; **golden tests vs SAGRE**.
+- **Desdobramento da interação TRIPLA (3-way)** ✅ (30/06/2026): quando A×B×C é significativa, gera o efeito simples de cada fator dentro de **cada combinação** dos outros dois (`desdobramentosTriplos`, 3 por análise). Fim-a-fim: analytics (`desdobrarTriplo` + **5 golden tests** à mão — SQ/F verificados; analytics **80**), API (retro-transforma médias), web (bloco "Desdobramento da interação tripla" na aba Análise) e nota no PPTX.
+- **Follow-up:** **golden tests vs SAGRE**.
 
 ## 3.3 Transformações (√ / log / Box-Cox) — ✅ implementado (30/06/2026)
 ROTA 2 do SAGRE: quando os pressupostos falham, transforma-se a resposta, refaz-se a ANOVA e as médias são retro-transformadas para apresentação. 2 fatias + e2e (mesma branch). Design: [SDD/08-anexos/sagre-analytics.md](SDD/08-anexos/sagre-analytics.md).
@@ -110,11 +111,12 @@ Combina N experimentos em DBC com os mesmos tratamentos (cada experimento = um l
 ## 3.6 Pressupostos (Shapiro-Wilk) + seleção de rota — ✅ implementado (30/06/2026)
 Destrava a escolha de rota pela checagem de pressupostos. Design: [SDD/08-anexos/sagre-analytics.md](SDD/08-anexos/sagre-analytics.md).
 - **Analytics** (`packages/analytics/pressupostos.ts` + `stats.normInv`): `shapiroWilk` (Royston AS R94, 3≤n≤5000; **validado vs R**: [1,2,3,4] W≈0,9929 p≈0,971) e `sugerirRota` (Shapiro nos resíduos + Bartlett → **paramétrica | transformação | não-paramétrico**, com a transformação sugerida pelo λ de Box-Cox). **9 testes**.
-- **API + web**: a análise 1-fator devolve `rotaSugerida`; banner na aba Análise mostra W, p e a rota recomendada (advisory — a troca de rota continua manual).
-- **Follow-up:** aplicar a rota automaticamente (1 clique); usar Shapiro também em split/fatorial.
+- **API + web**: a análise 1-fator devolve `rotaSugerida`; banner na aba Análise mostra W, p e a rota recomendada.
+- **Aplicar a rota em 1 clique** ✅ (30/06/2026): botão "Aplicar rota sugerida" no banner ajusta os seletores (teste/transformação) para a recomendação — não-paramétrico, transformação sugerida (√/log/Box-Cox) ou paramétrica; quando a seleção já bate, mostra "✓ rota aplicada".
+- **Follow-up:** usar Shapiro também em split/fatorial.
 
 ## 4. Pendências / limitações conhecidas
-- **Analytics fase B/C:** **Tukey (HSD)**, **Scott-Knott**, LSD, **split-plot (2 erros)**, **fatorial 2–3 + desdobramento**, **transformações (√/log/Box-Cox)**, **não-paramétrico (Kruskal/Friedman + post-hoc)**, **conjunta multi-local (G×A)** e **Shapiro-Wilk + seleção de rota** ✅ implementados. **Falta:** desdobramento da interação tripla, comparação de médias por fator no split-plot, aplicar a rota sugerida automaticamente, e **golden tests vs SAGRE** (pendente por não ter o ambiente R aqui).
+- **Analytics fase B/C:** **Tukey (HSD)**, **Scott-Knott**, LSD, **split-plot (2 erros)**, **fatorial 2–3 + desdobramento**, **transformações (√/log/Box-Cox)**, **não-paramétrico (Kruskal/Friedman + post-hoc)**, **conjunta multi-local (G×A)**, **Shapiro-Wilk + seleção de rota**, **desdobramento da interação tripla** e **aplicar a rota em 1 clique** ✅ implementados. **Falta:** comparação de médias por fator no split-plot e **golden tests vs SAGRE** (pendente por não ter o ambiente R aqui).
 - **PPTX fase A** tem layout próprio; falta aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx`.
 - **App mobile não foi rodado** (sem device/emulador no ambiente). Compila por `tsc`. Validar com Expo Go.
 - E-mails em modo **SIMULATE** (arquivos em `apps/api/email-previews/`), não envia de verdade.
@@ -152,7 +154,7 @@ Ver o checklist completo em **[TESTES.md](TESTES.md)**.
 Implementado nas 4 fatias (schema, API, web, ANOVA 2 erros). Follow-up: comparação de médias por fator no split-plot; strip-plot (SDD 06 §6).
 
 ### 8.2 Analytics fase B (completar) — `packages/analytics`
-**Split-plot ✅. Fatorial+desdobramento ✅ (§3.2). Transformações ✅ (§3.3). Não-paramétrico ✅ (§3.4). Conjunta multi-local ✅ (§3.5). Shapiro-Wilk + seleção de rota ✅ (§3.6).** Falta: desdobramento da interação tripla · aplicar a rota sugerida em 1 clique · **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
+**Split-plot ✅. Fatorial+desdobramento ✅ (§3.2). Transformações ✅ (§3.3). Não-paramétrico ✅ (§3.4). Conjunta multi-local ✅ (§3.5). Shapiro-Wilk + seleção de rota ✅ (§3.6). Desdobramento da interação tripla ✅ (§3.2). Aplicar a rota em 1 clique ✅ (§3.6).** Falta: **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
 
 ### 8.3 Relatório PPTX fase B
 Aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (layout fiel).
@@ -166,7 +168,7 @@ Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de cole
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
 
-> **Prioridade sugerida:** (1) **golden tests vs SAGRE** — validar toda a estatística (split-plot/fatorial/transformações/não-paramétrico/conjunta/Shapiro) contra o R; é o que falta para fechar a fase B/C → (2) **PPTX fiel** ao modelo do SAGRE → (3) mobile em device (rodar `npm ci` em `apps/mobile` antes) → (4) endurecimento/infra (§8.5). Analytics fase B/C praticamente completo; sobram só desdobramento da interação tripla e aplicar a rota sugerida em 1 clique.
+> **Prioridade sugerida:** (1) **golden tests vs SAGRE** — validar toda a estatística (split-plot/fatorial/transformações/não-paramétrico/conjunta/Shapiro) contra o R; é o que falta para fechar a fase B/C → (2) **PPTX fiel** ao modelo do SAGRE → (3) mobile em device (rodar `npm ci` em `apps/mobile` antes) → (4) endurecimento/infra (§8.5). **Analytics fase B/C completo** — desdobramento da interação tripla e aplicar a rota em 1 clique ✅; sobra só validar contra o R (golden tests).
 
 ## 9. Releases
 `v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · **`v0.10.0`** (PR #20 — **analytics fase B/C**: ANOVA fatorial 2–3 + desdobramento · transformações √/log/Box-Cox · não-paramétrico Kruskal/Friedman · análise conjunta multi-local G×A · Shapiro-Wilk + seleção de rota; analytics **75 testes**, **10 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases

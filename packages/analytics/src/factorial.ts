@@ -65,6 +65,19 @@ export interface Desdobramento {
   efeitos: EfeitoSimples[];
 }
 
+/**
+ * Desdobramento da interação **tripla** (A×B×C): efeito simples do fator-alvo
+ * dentro de cada **combinação** de níveis dos outros dois fatores. Cada efeito
+ * usa `nivelCondicao` = rótulo combinado (ex.: "B1 × C1").
+ */
+export interface DesdobramentoTriplo {
+  fatorAlvo: string;
+  /** os dois fatores que definem a combinação condicionante. */
+  fatoresCondicao: string[];
+  descricao: string;
+  efeitos: EfeitoSimples[];
+}
+
 export interface ResultadoAnovaFatorial {
   esquema: "FATORIAL";
   delineamento: Delineamento;
@@ -78,6 +91,8 @@ export interface ResultadoAnovaFatorial {
   interacoes: EfeitoInteracao[];
   /** efeitos simples para cada interação dupla significativa. */
   desdobramentos: Desdobramento[];
+  /** efeitos simples dentro de combinações, quando a interação tripla é significativa. */
+  desdobramentosTriplos: DesdobramentoTriplo[];
   comparacao: { metodo: string; alpha: number };
 }
 
@@ -327,6 +342,54 @@ export function anovaFatorial(
     desdobramentos.push(desdobrar(i, j), desdobrar(j, i));
   }
 
+  // efeito simples do fator `alvo` dentro de cada combinação de níveis de
+  // `cond1` × `cond2` — desdobramento da interação tripla.
+  const desdobrarTriplo = (alvo: number, cond1: number, cond2: number): DesdobramentoTriplo => {
+    const efeitos: EfeitoSimples[] = [];
+    for (const nc1 of niveis[cond1]) {
+      for (const nc2 of niveis[cond2]) {
+        const subset = observacoes.filter(
+          (o) => String(o.fatores[cond1]) === nc1 && String(o.fatores[cond2]) === nc2,
+        );
+        if (subset.length === 0) continue;
+        const mediaCombo = media(subset.map((o) => o.valor));
+        const medias = mediasPorNivel(alvo, subset);
+        const sq = soma(medias.map((mm) => mm.n * (mm.media - mediaCombo) ** 2));
+        const gl = nNiveis[alvo] - 1;
+        const qm = sq / gl;
+        const f = qm / qmResiduo;
+        const p = fSf(f, gl, glResiduo);
+        efeitos.push({
+          nivelCondicao: `${nc1} × ${nc2}`,
+          gl,
+          sq,
+          qm,
+          f,
+          p,
+          significativo: p < alpha,
+          medias: comparar(medias),
+        });
+      }
+    }
+    return {
+      fatorAlvo: rotulos[alvo],
+      fatoresCondicao: [rotulos[cond1], rotulos[cond2]],
+      descricao: `${rotulos[alvo]} dentro de cada combinação de ${rotulos[cond1]} × ${rotulos[cond2]}`,
+      efeitos,
+    };
+  };
+
+  // desdobra a interação tripla (se houver e for significativa): cada fator
+  // dentro das combinações dos outros dois.
+  const desdobramentosTriplos: DesdobramentoTriplo[] = [];
+  if (m === 3 && fDe([0, 1, 2]).p < alpha) {
+    desdobramentosTriplos.push(
+      desdobrarTriplo(0, 1, 2),
+      desdobrarTriplo(1, 0, 2),
+      desdobrarTriplo(2, 0, 1),
+    );
+  }
+
   return {
     esquema: "FATORIAL",
     delineamento,
@@ -339,6 +402,7 @@ export function anovaFatorial(
     efeitosPrincipais,
     interacoes,
     desdobramentos,
+    desdobramentosTriplos,
     comparacao: { metodo, alpha },
   };
 }

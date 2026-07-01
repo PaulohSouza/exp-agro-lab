@@ -355,6 +355,12 @@ export interface AnaliseFatorial {
     descricao: string;
     efeitos: EfeitoSimples[];
   }[];
+  desdobramentosTriplos: {
+    fatorAlvo: string;
+    fatoresCondicao: string[];
+    descricao: string;
+    efeitos: EfeitoSimples[];
+  }[];
   comparacao: { metodo: string; alpha: number };
 }
 type AvaliacaoRef = { nome: string; unidadeSaida: string | null };

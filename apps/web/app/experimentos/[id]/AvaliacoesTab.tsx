@@ -16,6 +16,7 @@ import {
   type LancamentoLote,
   type ModeloAvaliacao,
   type RelatorioAvaliacao,
+  type RotaSugerida,
 } from "../../../lib/api";
 
 const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: string }> = {
@@ -908,6 +909,25 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
       .catch((e) => setErro(e instanceof Error ? e.message : "falha"));
   }, [aval.id, metodo, transf, naoParam]);
 
+  // Aplica a rota sugerida pelos pressupostos (Shapiro + Bartlett) em 1 clique.
+  const aplicarRota = (rota: RotaSugerida) => {
+    if (rota.rota === "naoParametrico") {
+      setNaoParam(true);
+    } else {
+      setNaoParam(false);
+      setTransf(
+        rota.rota === "transformacao" ? (rota.transformacaoSugerida ?? "nenhuma") : "nenhuma",
+      );
+    }
+  };
+  // A seleção atual já corresponde à rota sugerida?
+  const rotaAplicada = (rota: RotaSugerida) =>
+    rota.rota === "naoParametrico"
+      ? naoParam
+      : !naoParam &&
+        transf ===
+          (rota.rota === "transformacao" ? (rota.transformacaoSugerida ?? "nenhuma") : "nenhuma");
+
   return (
     <div>
       <div
@@ -1058,6 +1078,24 @@ function Analise({ aval, voltar }: { aval: Avaliacao; voltar: () => void }) {
                     ? `transformação (${a.rotaSugerida.transformacaoSugerida})`
                     : "não-paramétrico"}
                 . <span style={{ color: "#7987A1" }}>{a.rotaSugerida.justificativa}</span>
+                {!rotaAplicada(a.rotaSugerida) ? (
+                  <button
+                    onClick={() => aplicarRota(a.rotaSugerida!)}
+                    style={{
+                      ...mini("#2D6CDF"),
+                      display: "block",
+                      marginTop: 8,
+                    }}
+                  >
+                    Aplicar rota sugerida
+                  </button>
+                ) : (
+                  <span
+                    style={{ display: "block", marginTop: 8, color: "#6FA830", fontWeight: 600 }}
+                  >
+                    ✓ rota aplicada
+                  </span>
+                )}
               </p>
             )}
           </div>
@@ -1282,9 +1320,31 @@ function AnaliseFatorialView({ a }: { a: { n: number; resultado: AnaliseFatorial
             ))}
           </div>
         )}
+        {r.desdobramentosTriplos.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <h4 style={{ margin: "0 0 8px" }}>Desdobramento da interação tripla</h4>
+            {r.desdobramentosTriplos.map((d) => (
+              <div key={d.descricao} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, color: "#1F2940", marginBottom: 4 }}>{d.descricao}</div>
+                <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+                  {d.efeitos.map((e) => (
+                    <div key={e.nivelCondicao}>
+                      <div style={{ fontSize: 12, color: "#7987A1", marginBottom: 4 }}>
+                        {d.fatoresCondicao.join(" × ")}={e.nivelCondicao} · F={e.f.toFixed(2)} ·{" "}
+                        {sig(e.significativo)}
+                      </div>
+                      {tabelaMedias(e.medias)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <p style={{ color: "#a9abbd", fontSize: 11, marginTop: 8, maxWidth: 280 }}>
           Fatorial: erro único; a interação significativa é desdobrada em efeitos simples (cada
-          fator dentro dos níveis do outro). Port do SAGRE; validação golden vs R pendente.
+          fator dentro dos níveis do outro; a tripla, dentro das combinações dos outros dois). Port
+          do SAGRE; validação golden vs R pendente.
         </p>
       </div>
     </div>

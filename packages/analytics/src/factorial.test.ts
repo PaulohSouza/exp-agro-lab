@@ -139,6 +139,72 @@ describe("anovaFatorial 2×2×2 (3 fatores)", () => {
   });
 });
 
+// --- Golden 4: 2×2×2 (DIC, r=2) com interação TRIPLA e desdobramento triplo. ---
+// Médias de célula: o efeito de A é cruzado em C apenas dentro de B1; em B2 é
+// plano → A×B×C significativa. Cada célula tem reps μ−1 e μ+1 (QMresíduo = 2).
+// B1C1: A1=10 A2=20 · B1C2: A1=20 A2=10 · B2*: A1=A2=10
+const CELULAS: Record<string, number> = {
+  "A1|B1|C1": 10,
+  "A2|B1|C1": 20,
+  "A1|B1|C2": 20,
+  "A2|B1|C2": 10,
+  "A1|B2|C1": 10,
+  "A2|B2|C1": 10,
+  "A1|B2|C2": 10,
+  "A2|B2|C2": 10,
+};
+const TRIPLA: ObservacaoFatorial[] = [];
+for (const a of ["A1", "A2"]) {
+  for (const b of ["B1", "B2"]) {
+    for (const c of ["C1", "C2"]) {
+      const mu = CELULAS[`${a}|${b}|${c}`];
+      TRIPLA.push({ fatores: [a, b, c], valor: mu - 1 });
+      TRIPLA.push({ fatores: [a, b, c], valor: mu + 1 });
+    }
+  }
+}
+
+describe("anovaFatorial 2×2×2 — desdobramento da interação tripla", () => {
+  const r = anovaFatorial(TRIPLA, { rotulos: ["A", "B", "C"] });
+
+  it("QMresíduo = 2 e A × B × C significativa", () => {
+    expect(r.qmResiduo).toBeCloseTo(2, 6);
+    expect(r.interacoes.find((i) => i.fonte === "A × B × C")!.significativo).toBe(true);
+  });
+
+  it("gera os 3 desdobramentos triplos (cada fator dentro dos outros dois)", () => {
+    expect(r.desdobramentosTriplos.map((d) => d.descricao)).toEqual([
+      "A dentro de cada combinação de B × C",
+      "B dentro de cada combinação de A × C",
+      "C dentro de cada combinação de A × B",
+    ]);
+    expect(r.desdobramentosTriplos.every((d) => d.efeitos.length === 4)).toBe(true);
+  });
+
+  it("efeito simples de A: SQ=100 F=50 em B1C1/B1C2; SQ=0 em B2", () => {
+    const aEmBC = r.desdobramentosTriplos.find((d) => d.fatorAlvo === "A")!;
+    const emB1C1 = aEmBC.efeitos.find((e) => e.nivelCondicao === "B1 × C1")!;
+    expect(emB1C1.sq).toBeCloseTo(100, 6); // 2·(10−15)² + 2·(20−15)²
+    expect(emB1C1.f).toBeCloseTo(50, 6); // 100 / 2
+    expect(emB1C1.significativo).toBe(true);
+    expect(new Set(emB1C1.medias.map((mm) => mm.letra)).size).toBe(2);
+    const emB2C1 = aEmBC.efeitos.find((e) => e.nivelCondicao === "B2 × C1")!;
+    expect(emB2C1.sq).toBeCloseTo(0, 6);
+    expect(emB2C1.significativo).toBe(false);
+  });
+
+  it("SQ dos efeitos simples de A fecha com SQ(A)+SQ(A×B)+SQ(A×C)+SQ(A×B×C)", () => {
+    const aEmBC = r.desdobramentosTriplos.find((d) => d.fatorAlvo === "A")!;
+    const somaSq = aEmBC.efeitos.reduce((a, e) => a + e.sq, 0);
+    const sqDe = (f: string) => linha(r, f).sq;
+    expect(somaSq).toBeCloseTo(sqDe("A") + sqDe("A × B") + sqDe("A × C") + sqDe("A × B × C"), 6);
+  });
+
+  it("desdobramento triplo só aparece com 3 fatores e interação significativa", () => {
+    expect(anovaFatorial(DIC).desdobramentosTriplos).toEqual([]); // 2 fatores
+  });
+});
+
 describe("anovaFatorial — validações", () => {
   it("rejeita dados desbalanceados (combinação faltando)", () => {
     expect(() => anovaFatorial(DIC.slice(0, 7))).toThrow();
