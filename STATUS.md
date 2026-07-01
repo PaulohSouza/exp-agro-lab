@@ -1,9 +1,9 @@
 # STATUS do projeto — EXP-AGROLAB
 
 > **Handoff para retomar em nova conversa.** Última atualização: 30/06/2026.
-> **Onde estamos:** **analytics fase B/C concluída e mergeada** (PR #20, tag **v0.10.0**) — ANOVA fatorial 2–3 + desdobramento, transformações √/log/Box-Cox, não-paramétrico Kruskal/Friedman, análise conjunta multi-local (G×A) e Shapiro-Wilk + seleção de rota. Antes: croqui split-plot (v0.9.0), padronização de código + CI (v0.8.0, ver §0), catálogo/coleta (v0.7.0). **`main` no padrão.**
-> **Comece por aqui:** §3.1–3.6 (analytics) e §8 (próximos passos — agora o gargalo é **golden tests vs SAGRE**). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
-> Testes: **domain 59** + **analytics 80** + **10 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+> **Onde estamos:** **analytics fase B/C fechada + validada e PPTX fase B** (tag **v0.11.0** — PRs #21, #22, #24). Fechou os follow-ups da analytics (**desdobramento da interação tripla** + **aplicar rota em 1 clique**), montou os **golden tests vs SAGRE** (engine real `ExpDes.pt` + dados reais do SAGRE-app; **27 testes**, casando à última casa decimal) e reescreveu o **relatório PPTX** na linguagem visual do modelo SAGRE (marca dinâmica da instituição). Antes: analytics fase B/C (v0.10.0), croqui split-plot (v0.9.0), padronização + CI (v0.8.0, ver §0), catálogo/coleta (v0.7.0). **`main` no padrão.**
+> **Comece por aqui:** §3.1–3.7 (analytics + golden), §8.3 (PPTX) e §8 (próximos passos — agora o foco é **mobile em device** e **endurecimento/infra**; a única pendência da estatística é a **conjunta multi-local**, bloqueada por falta de dado). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
+> Testes: **domain 59** + **analytics 107** (inclui **27 golden vs SAGRE**) + **10 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 ## 0. Padronização de código (concluída em 29/06/2026)
 Iniciativa para alinhar todo o código a um padrão único — ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** (§12 = progresso). Tudo mergeado na `main`, cada etapa verificada (typecheck + 59+24 testes + build + reseed + 5 e2e):
@@ -21,7 +21,7 @@ Sistema de gestão de experimentos agronômicos e laboratoriais: experimentos de
 ## 2. Stack
 Monorepo TypeScript (pnpm + Turborepo):
 - `packages/domain` — núcleo puro: croqui (DIC/DBC + **split-plot**), RN-PROD (produtividade), fluxo de status, helpers de sync. **59 testes**.
-- `packages/analytics` — estatística pura: ANOVA (1 fator + **split-plot 2 erros** + **fatorial 2–3 com desdobramento** + **conjunta multi-local G×A**), **transformações (√/log/Box-Cox c/ λ por verossimilhança)**, **não-paramétrico (Kruskal-Wallis+Dunn / Friedman+Nemenyi)**, pressupostos (**Bartlett + Shapiro-Wilk**) com **seleção de rota**, **Tukey/Scott-Knott/LSD** (`ptukey`/`qtukey`), distribuições F/t/χ² + `normInv`. **80 testes**.
+- `packages/analytics` — estatística pura: ANOVA (1 fator + **split-plot 2 erros** + **fatorial 2–3 com desdobramento** + **conjunta multi-local G×A**), **transformações (√/log/Box-Cox c/ λ por verossimilhança)**, **não-paramétrico (Kruskal-Wallis+Dunn / Friedman+Nemenyi)**, pressupostos (**Bartlett + Shapiro-Wilk**) com **seleção de rota**, **Tukey/Scott-Knott/LSD** (`ptukey`/`qtukey`), distribuições F/t/χ² + `normInv`. **107 testes** (80 unitários + **27 golden vs SAGRE**, ver §3.7).
 - `apps/api` — NestJS + Prisma + **MySQL** (`expagrolab_dev`). JWT/bcrypt.
 - `apps/web` — Next.js (App Router), tema azul do TCC.
 - `apps/mobile` — Expo + expo-router (offline-first). **Fora do workspace pnpm** (usa npm).
@@ -37,8 +37,8 @@ Monorepo TypeScript (pnpm + Turborepo):
 | Croqui automático (DIC/DBC) + **drag-drop** + recasualizar | ✅ | aba Croqui; `gerarCroqui`/`salvarCroqui` |
 | Avaliações: cadastro + **lançar valor bruto** (web) | ✅ | aba Avaliações → Lançar; `AvaliacoesModule` |
 | Relatório de produtividade (kg/ha no relatório, não na coleta) | ✅ | aba Avaliações → Relatório |
-| **Análise estatística** (ANOVA DIC/DBC, CV, Bartlett, **Tukey/Scott-Knott/LSD**) | ✅ fase B parcial | aba Avaliações → Análise (seletor de método); `GET /avaliacoes/:id/analise?metodo=` |
-| **Relatório PPTX** (capa, resumo, ANOVA+médias+gráfico) | ✅ fase A | botão "Relatório PPTX"; `GET /experimentos/:id/relatorio.pptx` |
+| **Análise estatística** (ANOVA DIC/DBC/split/fatorial 2–3 + desdobramento duplo **e triplo**, CV, Bartlett/Shapiro + rota em 1 clique, transformações, não-paramétrico, conjunta, **Tukey/Scott-Knott/LSD**; **validada por golden vs SAGRE**) | ✅ fase B/C | aba Avaliações → Análise; `GET /avaliacoes/:id/analise?metodo=`; ver §3.1–3.7 |
+| **Relatório PPTX** (capa · info gerais · metodologia · slides de resultado c/ gráfico+letras · fatorial/split · sumarização · rodapé/numeração; marca da instituição) | ✅ fase B | botão "Relatório PPTX"; `GET /experimentos/:id/relatorio.pptx`; ver §8.3 |
 | **Exportação Excel** | ✅ | botão "Excel"; `GET /experimentos/:id/export.xlsx` |
 | **Autenticação** (JWT/bcrypt) + registro de instituição | ✅ | `/login`; `AuthModule` |
 | **Multi-tenancy** (escopo por instituição) + gestão de usuários | ✅ | `/usuarios`; `garantirAcesso` |
@@ -161,8 +161,8 @@ Ver o checklist completo em **[TESTES.md](TESTES.md)**.
 ### 8.1 Croqui de 2+ fatores (split-plot) — ✅ feito (ver §3.1, PRs #16–#18)
 Implementado nas 4 fatias (schema, API, web, ANOVA 2 erros). Follow-up: comparação de médias por fator no split-plot; strip-plot (SDD 06 §6).
 
-### 8.2 Analytics fase B (completar) — `packages/analytics`
-**Split-plot ✅. Fatorial+desdobramento ✅ (§3.2). Transformações ✅ (§3.3). Não-paramétrico ✅ (§3.4). Conjunta multi-local ✅ (§3.5). Shapiro-Wilk + seleção de rota ✅ (§3.6). Desdobramento da interação tripla ✅ (§3.2). Aplicar a rota em 1 clique ✅ (§3.6).** Falta: **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
+### 8.2 Analytics fase B/C — ✅ completo e validado — `packages/analytics`
+**Split-plot ✅ (§3.1). Fatorial+desdobramento ✅ (§3.2). Transformações ✅ (§3.3). Não-paramétrico ✅ (§3.4). Conjunta multi-local ✅ (§3.5). Shapiro-Wilk + seleção de rota ✅ (§3.6). Desdobramento da interação tripla ✅ (§3.2). Aplicar a rota em 1 clique ✅ (§3.6). Golden tests vs SAGRE ✅ (§3.7 — 27 testes).** Único pendente: golden da **conjunta multi-local** (bloqueado por falta de dado multi-local; ver §3.7). Follow-ups menores: comparação de médias por fator no split-plot; médias/letras em fatorial nos golden.
 
 ### 8.3 Relatório PPTX fase B — ✅ implementado (30/06/2026)
 `RelatorioService` reescrito na linguagem visual do modelo `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (subconjunto **data-driven**; slides de conteúdo manual — fotos, meteorologia, conclusões — ficam de fora). **Marca dinâmica da instituição** do experimento (multi-tenant), cores do tema do TCC. Slides: **capa** (org · "Relatório Final: ‹cultura› – ‹período›" · protocolo · mês-ano), **Informações Gerais**, **Análise Estatística** (metodologia), **divisor**, **um slide por variável** (título · gráfico de barras com rótulos · tabela médias+letras · nota de Tukey), **fatorial**/**split-plot** adaptados, e **Sumarização** (tratamentos × variáveis com letras). **Rodapé padrão** (marca + numeração) em todos os slides. Verificado por render (LibreOffice→PDF→PNG). Follow-up: % incremento vs testemunha; placeholders dos slides manuais; logo da instituição.
@@ -176,10 +176,10 @@ Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de cole
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
 
-> **Prioridade sugerida:** (1) **golden tests vs SAGRE** — validar toda a estatística (split-plot/fatorial/transformações/não-paramétrico/conjunta/Shapiro) contra o R; é o que falta para fechar a fase B/C → (2) **PPTX fiel** ao modelo do SAGRE → (3) mobile em device (rodar `npm ci` em `apps/mobile` antes) → (4) endurecimento/infra (§8.5). **Analytics fase B/C completo** — desdobramento da interação tripla e aplicar a rota em 1 clique ✅; sobra só validar contra o R (golden tests).
+> **Prioridade sugerida:** ~~(1) golden tests vs SAGRE~~ ✅ (§3.7) · ~~(2) PPTX fiel~~ ✅ (§8.3) → agora: (1) **mobile em device** (Expo Go; rodar `npm ci` em `apps/mobile` antes) → (2) **endurecimento/infra** (§8.5: refresh-token/senha forte, e-mail real, `lint`/`format:check` no CI, observabilidade) → (3) **conjunta multi-local** — único golden pendente, **bloqueado por dado** (nenhuma planilha do SAGRE-app tem >1 local); precisa de um experimento multi-local real. **Analytics fase B/C completo e validado.**
 
 ## 9. Releases
-`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · **`v0.10.0`** (PR #20 — **analytics fase B/C**: ANOVA fatorial 2–3 + desdobramento · transformações √/log/Box-Cox · não-paramétrico Kruskal/Friedman · análise conjunta multi-local G×A · Shapiro-Wilk + seleção de rota; analytics **75 testes**, **10 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
+`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · `v0.10.0` (PR #20 — **analytics fase B/C**: ANOVA fatorial 2–3 + desdobramento · transformações √/log/Box-Cox · não-paramétrico Kruskal/Friedman · conjunta multi-local G×A · Shapiro-Wilk + rota) · **`v0.11.0`** (PRs #21/#22/#24 — **desdobramento da interação tripla** + **aplicar rota em 1 clique** · **golden tests vs SAGRE** (engine `ExpDes.pt` + dados reais; **27 testes**) · **PPTX fase B** (layout fiel ao modelo, marca da instituição); analytics **107 testes**, **10 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
 
 ## 10. Infra / notas de ambiente
 - `pnpm` symlinkado em `~/.local/bin`. MySQL local: root via socket (`mysql -u root`); app usa user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar schema `sagre`).
