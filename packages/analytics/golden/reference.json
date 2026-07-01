@@ -1,5 +1,5 @@
 {
-  "fonte": "ExpDes.pt / aov() — engine do SAGRE (cross-check fat3.dbc à última casa decimal)",
+  "fonte": "ExpDes.pt / aov() — engine do SAGRE (cross-check fat3.dbc/psub2.dbc à última casa decimal)",
   "geradoPor": "packages/analytics/golden/gen-reference.R",
   "casos": [
     {
@@ -41,6 +41,38 @@
           "qm": 61.081444444445,
           "f": {},
           "p": {}
+        }
+      ],
+      "medias": [
+        {
+          "tratamento": "T06",
+          "media": 209.925,
+          "grupos": "a"
+        },
+        {
+          "tratamento": "T05",
+          "media": 175.275,
+          "grupos": "b"
+        },
+        {
+          "tratamento": "T04",
+          "media": 169.675,
+          "grupos": "b"
+        },
+        {
+          "tratamento": "T02",
+          "media": 139.4,
+          "grupos": "c"
+        },
+        {
+          "tratamento": "T03",
+          "media": 130.4,
+          "grupos": "c"
+        },
+        {
+          "tratamento": "T01",
+          "media": 96.875,
+          "grupos": "d"
         }
       ]
     },
@@ -100,7 +132,8 @@
           "f": {},
           "p": {}
         }
-      ]
+      ],
+      "medias": {}
     },
     {
       "id": "fatorial_dbc_3x4__Altura",
@@ -158,7 +191,8 @@
           "f": {},
           "p": {}
         }
-      ]
+      ],
+      "medias": {}
     },
     {
       "id": "trifatorial_dbc_3x3x2__Produtividade",
@@ -248,7 +282,8 @@
           "f": {},
           "p": {}
         }
-      ]
+      ],
+      "medias": {}
     },
     {
       "id": "trifatorial_dbc_3x3x2__Altura",
@@ -338,7 +373,8 @@
           "f": {},
           "p": {}
         }
-      ]
+      ],
+      "medias": {}
     },
     {
       "id": "trifatorial_triplasig_3x3x2__Produtividade",
@@ -428,7 +464,8 @@
           "f": {},
           "p": {}
         }
-      ]
+      ],
+      "medias": {}
     },
     {
       "id": "trifatorial_triplasig_3x3x2__Altura",
@@ -517,6 +554,127 @@
           "qm": 2.17716503268,
           "f": {},
           "p": {}
+        }
+      ],
+      "medias": {}
+    },
+    {
+      "id": "split_dbc_3x4__Produtividade",
+      "arquivo": "teste_fatorial_dbc_3x4.xlsx",
+      "csv": "fatorial_dbc_3x4.csv",
+      "tipo": "SPLIT",
+      "delineamento": "DBC",
+      "bloco": "Bloco",
+      "fatorA": "Fator1",
+      "fatorB": "Fator2",
+      "resposta": "Produtividade",
+      "n": 48,
+      "cvParcela": 4.148094459763,
+      "cvSubparcela": 3.581182824797,
+      "glResiduoA": 6,
+      "glResiduoB": 27,
+      "anova": [
+        {
+          "fonte": "Bloco",
+          "gl": 3,
+          "sq": 324.792050000001,
+          "qm": 108.264016666667
+        },
+        {
+          "fonte": "Fator A (parcela)",
+          "gl": 2,
+          "sq": 531.610716666665,
+          "qm": 265.805358333332,
+          "f": 64.998355511178,
+          "p": 8.587535292572e-05
+        },
+        {
+          "fonte": "Erro(a)",
+          "gl": 6,
+          "sq": 24.5365,
+          "qm": 4.089416666667
+        },
+        {
+          "fonte": "Fator B (subparcela)",
+          "gl": 3,
+          "sq": 892.758616666665,
+          "qm": 297.586205555555,
+          "f": 97.632794994678,
+          "p": 1.31030007021e-14
+        },
+        {
+          "fonte": "A × B",
+          "gl": 6,
+          "sq": 19.547683333334,
+          "qm": 3.257947222222,
+          "f": 1.06887512698,
+          "p": 0.4051830327672
+        },
+        {
+          "fonte": "Erro(b)",
+          "gl": 27,
+          "sq": 82.2964,
+          "qm": 3.048014814815
+        }
+      ]
+    },
+    {
+      "id": "split_dbc_3x4__Altura",
+      "arquivo": "teste_fatorial_dbc_3x4.xlsx",
+      "csv": "fatorial_dbc_3x4.csv",
+      "tipo": "SPLIT",
+      "delineamento": "DBC",
+      "bloco": "Bloco",
+      "fatorA": "Fator1",
+      "fatorB": "Fator2",
+      "resposta": "Altura",
+      "n": 48,
+      "cvParcela": 3.947242137403,
+      "cvSubparcela": 3.462933527572,
+      "glResiduoA": 6,
+      "glResiduoB": 27,
+      "anova": [
+        {
+          "fonte": "Bloco",
+          "gl": 3,
+          "sq": 4.035625,
+          "qm": 1.345208333333
+        },
+        {
+          "fonte": "Fator A (parcela)",
+          "gl": 2,
+          "sq": 94.50875,
+          "qm": 47.254375,
+          "f": 7.910612771597,
+          "p": 0.02078817368217
+        },
+        {
+          "fonte": "Erro(a)",
+          "gl": 6,
+          "sq": 35.84125,
+          "qm": 5.973541666667
+        },
+        {
+          "fonte": "Fator B (subparcela)",
+          "gl": 3,
+          "sq": 39.755625,
+          "qm": 13.251875,
+          "f": 2.882336355901,
+          "p": 0.05419015297706
+        },
+        {
+          "fonte": "A × B",
+          "gl": 6,
+          "sq": 44.85625,
+          "qm": 7.476041666667,
+          "f": 1.626069268995,
+          "p": 0.1783710366944
+        },
+        {
+          "fonte": "Erro(b)",
+          "gl": 27,
+          "sq": 124.135625,
+          "qm": 4.597615740741
         }
       ]
     }

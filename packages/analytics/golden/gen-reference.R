@@ -17,6 +17,7 @@
 suppressMessages({
   library(readxl)
   library(jsonlite)
+  library(agricolae)
 })
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -75,11 +76,18 @@ for (m in manifest) {
 
   for (resp in m$respostas) {
     respv <- df[[make.names(resp)]]
+    medias <- NULL
     if (m$tipo == "DBC1") {
       trat <- factor(df[[m$trat]]); bloco <- factor(df[[m$bloco]])
       mod <- aov(respv ~ trat + bloco)
       mapa <- function(t) c("trat" = "Tratamento", "bloco" = "Bloco", "Residuals" = "Resíduo")[t]
       rotulos <- NULL
+      # médias + grupos de Tukey (agricolae HSD.test) — valida comparacao.ts
+      h <- HSD.test(mod, "trat", group = TRUE)
+      g <- h$groups
+      medias <- lapply(rownames(g), function(tr) list(
+        tratamento = tr, media = unname(g[tr, 1]), grupos = trimws(as.character(g[tr, "groups"]))
+      ))
     } else {
       bloco <- factor(df[[m$bloco]])
       fs <- lapply(m$fatores, function(f) factor(df[[f]]))
@@ -108,13 +116,57 @@ for (m in manifest) {
       rotulos = rotulos, bloco = m$bloco, trat = if (!is.null(m$trat)) m$trat else NULL,
       resposta = resp,
       n = length(respv), cv = cv, glResiduo = as.integer(glRes), qmResiduo = qmRes,
-      anova = tabela_anova(mod, mapa)
+      anova = tabela_anova(mod, mapa), medias = medias
+    )
+  }
+}
+
+# --- SPLIT-PLOT (parcela subdividida, DBC): reusa layout fatorial 2 como split.
+# Referência independente via aov(y ~ A*B + Error(Bloco/A)) — dois erros —,
+# cruzada com ExpDes.pt::psub2.dbc à última casa decimal (ver STATUS §3.7).
+manifest_split <- list(
+  list(id = "split_dbc_3x4", arquivo = "teste_fatorial_dbc_3x4.xlsx",
+       csv = "fatorial_dbc_3x4.csv", fatorA = "Fator1", fatorB = "Fator2",
+       bloco = "Bloco", respostas = c("Produtividade", "Altura"))
+)
+for (m in manifest_split) {
+  df <- as.data.frame(read_excel(file.path(DADOS, m$arquivo)))
+  names(df) <- make.names(names(df))
+  for (resp in m$respostas) {
+    A <- factor(df[[m$fatorA]]); B <- factor(df[[m$fatorB]])
+    Bl <- factor(df[[m$bloco]]); y <- df[[make.names(resp)]]
+    mod <- aov(y ~ A * B + Error(Bl / A))
+    s <- summary(mod)
+    linha <- function(df_est, termo) {
+      r <- df_est[trimws(rownames(df_est)) == termo, , drop = FALSE]
+      list(gl = as.integer(r[["Df"]]), sq = unname(r[["Sum Sq"]]), qm = unname(r[["Mean Sq"]]),
+           f = if ("F value" %in% colnames(r) && !is.na(r[["F value"]])) unname(r[["F value"]]) else NULL,
+           p = if ("Pr(>F)" %in% colnames(r) && !is.na(r[["Pr(>F)"]])) unname(r[["Pr(>F)"]]) else NULL)
+    }
+    estBloco <- s[["Error: Bl"]][[1]]; estA <- s[["Error: Bl:A"]][[1]]; estW <- s[["Error: Within"]][[1]]
+    bloco <- linha(estBloco, "Residuals"); fatA <- linha(estA, "A"); erroA <- linha(estA, "Residuals")
+    fatB <- linha(estW, "B"); ab <- linha(estW, "A:B"); erroB <- linha(estW, "Residuals")
+    anova <- list(
+      list(fonte = "Bloco", gl = bloco$gl, sq = bloco$sq, qm = bloco$qm),
+      list(fonte = "Fator A (parcela)", gl = fatA$gl, sq = fatA$sq, qm = fatA$qm, f = fatA$f, p = fatA$p),
+      list(fonte = "Erro(a)", gl = erroA$gl, sq = erroA$sq, qm = erroA$qm),
+      list(fonte = "Fator B (subparcela)", gl = fatB$gl, sq = fatB$sq, qm = fatB$qm, f = fatB$f, p = fatB$p),
+      list(fonte = "A × B", gl = ab$gl, sq = ab$sq, qm = ab$qm, f = ab$f, p = ab$p),
+      list(fonte = "Erro(b)", gl = erroB$gl, sq = erroB$sq, qm = erroB$qm)
+    )
+    casos[[length(casos) + 1]] <- list(
+      id = paste0(m$id, "__", make.names(resp)), arquivo = m$arquivo, csv = m$csv,
+      tipo = "SPLIT", delineamento = "DBC", bloco = m$bloco,
+      fatorA = m$fatorA, fatorB = m$fatorB, resposta = resp,
+      n = length(y), cvParcela = sqrt(erroA$qm) / mean(y) * 100,
+      cvSubparcela = sqrt(erroB$qm) / mean(y) * 100,
+      glResiduoA = erroA$gl, glResiduoB = erroB$gl, anova = anova
     )
   }
 }
 
 out <- list(
-  fonte = "ExpDes.pt / aov() — engine do SAGRE (cross-check fat3.dbc à última casa decimal)",
+  fonte = "ExpDes.pt / aov() — engine do SAGRE (cross-check fat3.dbc/psub2.dbc à última casa decimal)",
   geradoPor = "packages/analytics/golden/gen-reference.R",
   casos = casos
 )

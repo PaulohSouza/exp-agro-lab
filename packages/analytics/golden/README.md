@@ -25,16 +25,17 @@ Rscript packages/analytics/golden/gen-reference.R "/caminho/para/sagre-app/BD/da
 
 Depois rode `pnpm --filter @exp/analytics test golden` para conferir.
 
-## Cobertura atual (batch 1)
+## Cobertura atual (batches 1–2)
 
-| caso | delineamento | função TS |
-|---|---|---|
-| `1fator_dbc_6trat` | DBC 1 fator | `anovaUmFator` |
-| `fatorial_dbc_3x4` | DBC fatorial 2 | `anovaFatorial` |
-| `trifatorial_dbc_3x3x2` | DBC fatorial 3 | `anovaFatorial` |
-| `trifatorial_triplasig_3x3x2` | DBC fatorial 3 (tripla signif.) | `anovaFatorial` |
+| caso | delineamento | função TS | o que valida |
+|---|---|---|---|
+| `1fator_dbc_6trat` | DBC 1 fator | `anovaUmFator` | ANOVA + CV + **médias/letras Tukey** (vs `agricolae::HSD.test`) |
+| `fatorial_dbc_3x4` | DBC fatorial 2 | `anovaFatorial` | ANOVA + CV |
+| `trifatorial_dbc_3x3x2` | DBC fatorial 3 | `anovaFatorial` | ANOVA + CV |
+| `trifatorial_triplasig_3x3x2` | DBC fatorial 3 (tripla signif.) | `anovaFatorial` | ANOVA + CV |
+| `split_dbc_3x4` | DBC split-plot | `anovaSplitPlot` | ANOVA **2 erros** + CV1/CV2 (vs `psub2.dbc` / `aov(Error)`) |
 
 Cada caso roda para todas as variáveis-resposta da planilha.
 
-**A fazer:** DIC, split-plot, transformações, não-paramétrico, conjunta,
-comparação de médias (letras), e assertions no nível do desdobramento.
+**A fazer:** DIC, transformações, não-paramétrico, conjunta multi-local,
+médias/letras em fatorial, e assertions no nível do desdobramento (duplo/triplo).

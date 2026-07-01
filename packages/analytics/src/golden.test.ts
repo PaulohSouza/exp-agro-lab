@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { anovaUmFator, type Observacao } from "./anova.js";
 import { anovaFatorial, type ObservacaoFatorial } from "./factorial.js";
+import { anovaSplitPlot, type ObservacaoSplit } from "./splitPlot.js";
 
 /**
  * GOLDEN TESTS vs SAGRE — valida a estatística portada (ANOVA 1 fator, fatorial
@@ -21,20 +22,43 @@ interface LinhaRef {
   f?: number;
   p?: number;
 }
+interface MediaRef {
+  tratamento: string;
+  media: number;
+  grupos: string;
+}
 interface CasoRef {
   id: string;
   csv: string;
-  tipo: "DBC1" | "FAT2" | "FAT3";
+  tipo: "DBC1" | "FAT2" | "FAT3" | "SPLIT";
   delineamento: "DIC" | "DBC";
   rotulos?: string[];
   bloco: string;
   trat?: string;
+  fatorA?: string;
+  fatorB?: string;
   resposta: string;
   n: number;
-  cv: number;
-  glResiduo: number;
-  qmResiduo: number;
+  cv?: number;
+  cvParcela?: number;
+  cvSubparcela?: number;
+  glResiduo?: number;
+  qmResiduo?: number;
   anova: LinhaRef[];
+  medias?: MediaRef[] | null;
+}
+
+/** conjunto de pares {t1,t2} que compartilham ≥1 letra (mesmo grupo). */
+function paresMesmoGrupo(itens: { tratamento: string; grupos: string }[]): Set<string> {
+  const pares = new Set<string>();
+  for (let i = 0; i < itens.length; i++) {
+    for (let j = i + 1; j < itens.length; j++) {
+      const a = new Set(itens[i].grupos.split(""));
+      const compartilha = itens[j].grupos.split("").some((c) => a.has(c));
+      if (compartilha) pares.add([itens[i].tratamento, itens[j].tratamento].sort().join("|"));
+    }
+  }
+  return pares;
 }
 
 const golden = JSON.parse(
@@ -59,8 +83,6 @@ function perto(actual: number, expected: number, rel = 1e-5, abs = 1e-6) {
   expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tol);
 }
 
-const FAT_ROT: Record<string, string[]> = {}; // preenchido por caso
-
 for (const caso of golden.casos) {
   describe(`golden vs SAGRE — ${caso.id}`, () => {
     const rows = lerCsv(caso.csv);
@@ -70,6 +92,33 @@ for (const caso of golden.casos) {
     let cv: number;
     let glResiduo: number;
     let qmResiduo: number;
+    let mediasTS: { tratamento: string; media: number; letra?: string }[] | null = null;
+
+    if (caso.tipo === "SPLIT") {
+      const obs: ObservacaoSplit[] = rows.map((r) => ({
+        bloco: r[caso.bloco],
+        fatorA: r[caso.fatorA!],
+        fatorB: r[caso.fatorB!],
+        valor: Number(r[caso.resposta]),
+      }));
+      const res = anovaSplitPlot(obs);
+      it("CV(parcela) e CV(subparcela) conferem (dois erros)", () => {
+        perto(res.cvParcela, caso.cvParcela!);
+        perto(res.cvSubparcela, caso.cvSubparcela!);
+      });
+      it("tabela ANOVA de split-plot (2 erros) confere com o SAGRE", () => {
+        for (const ref of caso.anova) {
+          const linha = res.tabela.find((l) => l.fonte === ref.fonte);
+          expect(linha, `fonte ausente: ${ref.fonte}`).toBeTruthy();
+          expect(linha!.gl, `GL de ${ref.fonte}`).toBe(ref.gl);
+          perto(linha!.sq, ref.sq);
+          if (linha!.qm != null) perto(linha!.qm, ref.qm);
+          if (ref.f != null && linha!.f != null) perto(linha!.f, ref.f, 1e-4);
+          if (ref.p != null && linha!.p != null) perto(linha!.p, ref.p, 1e-3, 1e-6);
+        }
+      });
+      return;
+    }
 
     if (caso.tipo === "DBC1") {
       const obs: Observacao[] = rows.map((r) => ({
@@ -82,9 +131,9 @@ for (const caso of golden.casos) {
       cv = res.cv;
       glResiduo = res.glResiduo;
       qmResiduo = res.qmResiduo;
+      mediasTS = res.medias;
     } else {
       const fatCols = caso.rotulos!.map((_, i) => `Fator${i + 1}`);
-      FAT_ROT[caso.id] = caso.rotulos!;
       const obs: ObservacaoFatorial[] = rows.map((r) => ({
         bloco: r[caso.bloco],
         fatores: fatCols.map((c) => r[c]),
@@ -114,5 +163,23 @@ for (const caso of golden.casos) {
         if (ref.p != null && linha!.p != null) perto(linha!.p, ref.p, 1e-3, 1e-6);
       }
     });
+
+    if (caso.medias && mediasTS) {
+      const ref = caso.medias;
+      const ts = mediasTS;
+      it("médias e agrupamento de Tukey conferem com agricolae/SAGRE", () => {
+        for (const rm of ref) {
+          const m = ts.find((x) => x.tratamento === rm.tratamento);
+          expect(m, `tratamento ausente: ${rm.tratamento}`).toBeTruthy();
+          perto(m!.media, rm.media);
+        }
+        // agrupamento equivalente: mesmos pares compartilhando letra (rótulos podem diferir)
+        const paresTS = paresMesmoGrupo(
+          ts.map((m) => ({ tratamento: m.tratamento, grupos: m.letra ?? "" })),
+        );
+        const paresRef = paresMesmoGrupo(ref);
+        expect([...paresTS].sort()).toEqual([...paresRef].sort());
+      });
+    }
   });
 }
