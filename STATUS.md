@@ -164,8 +164,8 @@ Implementado nas 4 fatias (schema, API, web, ANOVA 2 erros). Follow-up: compara�
 ### 8.2 Analytics fase B (completar) — `packages/analytics`
 **Split-plot ✅. Fatorial+desdobramento ✅ (§3.2). Transformações ✅ (§3.3). Não-paramétrico ✅ (§3.4). Conjunta multi-local ✅ (§3.5). Shapiro-Wilk + seleção de rota ✅ (§3.6). Desdobramento da interação tripla ✅ (§3.2). Aplicar a rota em 1 clique ✅ (§3.6).** Falta: **golden tests vs SAGRE** (bloqueado: precisa dos outputs do R de 1–2 experimentos).
 
-### 8.3 Relatório PPTX fase B
-Aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (layout fiel).
+### 8.3 Relatório PPTX fase B — ✅ implementado (30/06/2026)
+`RelatorioService` reescrito na linguagem visual do modelo `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (subconjunto **data-driven**; slides de conteúdo manual — fotos, meteorologia, conclusões — ficam de fora). **Marca dinâmica da instituição** do experimento (multi-tenant), cores do tema do TCC. Slides: **capa** (org · "Relatório Final: ‹cultura› – ‹período›" · protocolo · mês-ano), **Informações Gerais**, **Análise Estatística** (metodologia), **divisor**, **um slide por variável** (título · gráfico de barras com rótulos · tabela médias+letras · nota de Tukey), **fatorial**/**split-plot** adaptados, e **Sumarização** (tratamentos × variáveis com letras). **Rodapé padrão** (marca + numeração) em todos os slides. Verificado por render (LibreOffice→PDF→PNG). Follow-up: % incremento vs testemunha; placeholders dos slides manuais; logo da instituição.
 
 ### 8.4 Mobile
 Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de coleta do B5.
