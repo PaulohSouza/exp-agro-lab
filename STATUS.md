@@ -113,6 +113,12 @@ Destrava a escolha de rota pela checagem de pressupostos. Design: [SDD/08-anexos
 - **API + web**: a análise 1-fator devolve `rotaSugerida`; banner na aba Análise mostra W, p e a rota recomendada (advisory — a troca de rota continua manual).
 - **Follow-up:** aplicar a rota automaticamente (1 clique); usar Shapiro também em split/fatorial.
 
+## 3.7 Golden tests vs SAGRE — 🔓 em andamento (30/06/2026)
+**Desbloqueado:** R 4.6.0 está disponível no ambiente com **`ExpDes.pt`/`agricolae`/`MASS`** (a engine do próprio SAGRE) e as planilhas de teste do SAGRE-app estão em `BD/dados`. A referência é gerada da engine real e **versionada** (a CI compara sem R).
+- **Harness** (`packages/analytics/golden/`): `gen-reference.R` lê as planilhas, copia os dados como CSV (`golden/data/`) e grava `golden/reference.json` (ANOVA/CV via `aov()`, cruzado com `ExpDes.pt::fat3.dbc` — casamento à última casa decimal). `src/golden.test.ts` compara o TS contra o JSON.
+- **Batch 1 (família ANOVA/fatorial)** ✅ **14 testes** (analytics **80 → 94**): ANOVA 1 fator DBC (`teste_1fator_dbc_6trat`), fatorial 2×4 DBC (`teste_fatorial_dbc_3x4`) e trifatorial 3×3×2 DBC — incl. **`teste_trifatorial_triplasig_3x3x2`** (interação tripla significativa) — em 2 variáveis-resposta cada. GL/SQ/QM/F/p e CV batem com o SAGRE. O desdobramento triplo foi conferido manualmente contra `fat3.dbc` (SQ/Fc idênticos).
+- **Próximos batches:** DIC (1 fator sem bloco), split-plot (`teste_subsubdividida`), transformações, não-paramétrico, conjunta multi-local, e comparação de médias (letras Tukey/Scott-Knott). Também: assertions no nível do desdobramento (duplo e triplo).
+
 ## 4. Pendências / limitações conhecidas
 - **Analytics fase B/C:** **Tukey (HSD)**, **Scott-Knott**, LSD, **split-plot (2 erros)**, **fatorial 2–3 + desdobramento**, **transformações (√/log/Box-Cox)**, **não-paramétrico (Kruskal/Friedman + post-hoc)**, **conjunta multi-local (G×A)** e **Shapiro-Wilk + seleção de rota** ✅ implementados. **Falta:** desdobramento da interação tripla, comparação de médias por fator no split-plot, aplicar a rota sugerida automaticamente, e **golden tests vs SAGRE** (pendente por não ter o ambiente R aqui).
 - **PPTX fase A** tem layout próprio; falta aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx`.
