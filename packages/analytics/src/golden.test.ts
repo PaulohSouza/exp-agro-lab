@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { anovaUmFator, type Observacao } from "./anova.js";
 import { anovaFatorial, type ObservacaoFatorial } from "./factorial.js";
 import { anovaSplitPlot, type ObservacaoSplit } from "./splitPlot.js";
+import { kruskalWallis, friedman, type ObservacaoNP } from "./naoParametrico.js";
+import { aplicarTransformacao, boxCoxLambda, type ObservacaoModelo } from "./transform.js";
 
 /**
  * GOLDEN TESTS vs SAGRE — valida a estatística portada (ANOVA 1 fator, fatorial
@@ -30,7 +32,7 @@ interface MediaRef {
 interface CasoRef {
   id: string;
   csv: string;
-  tipo: "DBC1" | "FAT2" | "FAT3" | "SPLIT";
+  tipo: "DBC1" | "DIC1" | "FAT2" | "FAT3" | "SPLIT";
   delineamento: "DIC" | "DBC";
   rotulos?: string[];
   bloco: string;
@@ -61,9 +63,31 @@ function paresMesmoGrupo(itens: { tratamento: string; grupos: string }[]): Set<s
   return pares;
 }
 
+interface NaoParamRef {
+  id: string;
+  csv: string;
+  tipo: "kruskal" | "friedman";
+  trat: string;
+  bloco?: string;
+  resposta: string;
+  estatistica: number;
+  gl: number;
+  p: number;
+}
+interface TransfRef {
+  id: string;
+  csv: string;
+  delineamento: "DIC" | "DBC";
+  trat: string;
+  bloco: string;
+  resposta: string;
+  lambdaBoxCox: number;
+  pipelines: { tipo: "log" | "raiz"; constante: number; fTrat: number; cv: number }[];
+}
+
 const golden = JSON.parse(
   readFileSync(new URL("../golden/reference.json", import.meta.url), "utf8"),
-) as { casos: CasoRef[] };
+) as { casos: CasoRef[]; naoParametricos: NaoParamRef[]; transformacoes: TransfRef[] };
 
 /** parser CSV mínimo (dados do SAGRE: sem vírgulas embutidas, aspas opcionais). */
 function lerCsv(nome: string): Record<string, string>[] {
@@ -120,10 +144,10 @@ for (const caso of golden.casos) {
       return;
     }
 
-    if (caso.tipo === "DBC1") {
+    if (caso.tipo === "DBC1" || caso.tipo === "DIC1") {
       const obs: Observacao[] = rows.map((r) => ({
         tratamento: r[caso.trat!],
-        bloco: r[caso.bloco],
+        bloco: caso.bloco ? r[caso.bloco] : 0,
         valor: Number(r[caso.resposta]),
       }));
       const res = anovaUmFator(obs, caso.delineamento);
@@ -179,6 +203,58 @@ for (const caso of golden.casos) {
         );
         const paresRef = paresMesmoGrupo(ref);
         expect([...paresTS].sort()).toEqual([...paresRef].sort());
+      });
+    }
+  });
+}
+
+// --- Não-paramétrico: Kruskal-Wallis / Friedman vs R base (kruskal.test/friedman.test). ---
+for (const np of golden.naoParametricos) {
+  describe(`golden vs R — ${np.id}`, () => {
+    const rows = lerCsv(np.csv);
+    const obs: ObservacaoNP[] = rows.map((r) => ({
+      grupo: r[np.trat],
+      bloco: np.bloco ? r[np.bloco] : undefined,
+      valor: Number(r[np.resposta]),
+    }));
+    it(`estatística, gl e p do teste ${np.tipo} conferem`, () => {
+      const res = np.tipo === "kruskal" ? kruskalWallis(obs) : friedman(obs);
+      const estatistica = "H" in res ? res.H : res.qui2;
+      perto(estatistica, np.estatistica, 1e-4);
+      expect(res.gl).toBe(np.gl);
+      perto(res.p, np.p, 1e-3, 1e-7);
+    });
+  });
+}
+
+// --- Transformações: λ de Box-Cox (vs MASS) + ANOVA na escala transformada (vs aov). ---
+for (const tf of golden.transformacoes) {
+  describe(`golden vs MASS/aov — ${tf.id}`, () => {
+    const rows = lerCsv(tf.csv);
+    const obs: ObservacaoModelo[] = rows.map((r) => ({
+      grupo: r[tf.trat],
+      bloco: r[tf.bloco],
+      valor: Number(r[tf.resposta]),
+    }));
+
+    it("λ de Box-Cox confere com MASS::boxcox", () => {
+      perto(boxCoxLambda(obs).lambda, tf.lambdaBoxCox, 0.02, 0.02);
+    });
+
+    for (const pipe of tf.pipelines) {
+      it(`ANOVA na escala ${pipe.tipo} (F e CV) confere com aov`, () => {
+        const t = aplicarTransformacao(
+          obs.map((o) => o.valor),
+          pipe.tipo,
+          { constante: pipe.constante },
+        );
+        const res = anovaUmFator(
+          obs.map((o, i) => ({ tratamento: String(o.grupo), bloco: o.bloco, valor: t.valores[i] })),
+          tf.delineamento,
+        );
+        const fTrat = res.tabela.find((l) => l.fonte === "Tratamento")!.f!;
+        perto(fTrat, pipe.fTrat, 1e-4);
+        perto(res.cv, pipe.cv, 1e-4);
       });
     }
   });

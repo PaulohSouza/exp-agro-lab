@@ -18,6 +18,7 @@ suppressMessages({
   library(readxl)
   library(jsonlite)
   library(agricolae)
+  library(MASS)
 })
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -35,6 +36,9 @@ manifest <- list(
   list(id = "1fator_dbc_6trat", arquivo = "teste_1fator_dbc_6trat.xlsx",
        csv = "1fator_dbc_6trat.csv", tipo = "DBC1",
        trat = "Tratamento", bloco = "Bloco", respostas = "Produtividade"),
+  list(id = "1fator_dic_grupo", arquivo = "experimento_grupo_teste.xlsx",
+       csv = "experimento_grupo_teste.csv", tipo = "DIC1",
+       trat = "TRAT", respostas = "Severidade"),
   list(id = "fatorial_dbc_3x4", arquivo = "teste_fatorial_dbc_3x4.xlsx",
        csv = "fatorial_dbc_3x4.csv", tipo = "FAT2", delineamento = "DBC",
        fatores = c("Fator1", "Fator2"), rotulos = c("F1", "F2"),
@@ -77,10 +81,16 @@ for (m in manifest) {
   for (resp in m$respostas) {
     respv <- df[[make.names(resp)]]
     medias <- NULL
-    if (m$tipo == "DBC1") {
-      trat <- factor(df[[m$trat]]); bloco <- factor(df[[m$bloco]])
-      mod <- aov(respv ~ trat + bloco)
-      mapa <- function(t) c("trat" = "Tratamento", "bloco" = "Bloco", "Residuals" = "Resíduo")[t]
+    if (m$tipo == "DBC1" || m$tipo == "DIC1") {
+      trat <- factor(df[[m$trat]])
+      if (m$tipo == "DBC1") {
+        bloco <- factor(df[[m$bloco]])
+        mod <- aov(respv ~ trat + bloco)
+        mapa <- function(t) c("trat" = "Tratamento", "bloco" = "Bloco", "Residuals" = "Resíduo")[t]
+      } else {
+        mod <- aov(respv ~ trat)
+        mapa <- function(t) c("trat" = "Tratamento", "Residuals" = "Resíduo")[t]
+      }
       rotulos <- NULL
       # médias + grupos de Tukey (agricolae HSD.test) — valida comparacao.ts
       h <- HSD.test(mod, "trat", group = TRUE)
@@ -111,7 +121,7 @@ for (m in manifest) {
     casos[[length(casos) + 1]] <- list(
       id = paste0(m$id, "__", make.names(resp)),
       arquivo = m$arquivo, csv = m$csv, tipo = m$tipo,
-      delineamento = if (!is.null(m$delineamento)) m$delineamento else "DBC",
+      delineamento = if (!is.null(m$delineamento)) m$delineamento else if (m$tipo == "DIC1") "DIC" else "DBC",
       fatores = if (!is.null(m$fatores)) m$fatores else NULL,
       rotulos = rotulos, bloco = m$bloco, trat = if (!is.null(m$trat)) m$trat else NULL,
       resposta = resp,
@@ -165,10 +175,46 @@ for (m in manifest_split) {
   }
 }
 
+# --- NÃO-PARAMÉTRICO: referência do R base (kruskal.test / friedman.test). ---
+naoParametricos <- list()
+g <- as.data.frame(read_excel(file.path(DADOS, "experimento_grupo_teste.xlsx")))
+kt <- kruskal.test(g$Severidade ~ factor(g$TRAT))
+naoParametricos[[1]] <- list(
+  id = "kruskal_grupo", csv = "experimento_grupo_teste.csv", tipo = "kruskal",
+  trat = "TRAT", resposta = "Severidade",
+  estatistica = unname(kt$statistic), gl = as.integer(kt$parameter), p = kt$p.value
+)
+f6 <- as.data.frame(read_excel(file.path(DADOS, "teste_1fator_dbc_6trat.xlsx")))
+fr <- friedman.test(f6$Produtividade, groups = factor(f6$Tratamento), blocks = factor(f6$Bloco))
+naoParametricos[[2]] <- list(
+  id = "friedman_6trat", csv = "1fator_dbc_6trat.csv", tipo = "friedman",
+  trat = "Tratamento", bloco = "Bloco", resposta = "Produtividade",
+  estatistica = unname(fr$statistic), gl = as.integer(fr$parameter), p = fr$p.value
+)
+
+# --- TRANSFORMAÇÕES: λ de Box-Cox (MASS) + ANOVA na escala transformada (aov). ---
+transformacoes <- list()
+{
+  trat <- factor(f6$Tratamento); bloco <- factor(f6$Bloco); y <- f6$Produtividade
+  bc <- boxcox(lm(y ~ trat + bloco), lambda = seq(-3, 3, 0.001), plotit = FALSE)
+  lambda <- bc$x[which.max(bc$y)]
+  pipeline <- function(tipo, cnst) {
+    z <- if (tipo == "log") log(y + cnst) else sqrt(y + cnst)
+    a <- anova(aov(z ~ trat + bloco))
+    list(tipo = tipo, constante = cnst, fTrat = unname(a["trat", "F value"]),
+         cv = sqrt(a["Residuals", "Mean Sq"]) / mean(z) * 100)
+  }
+  transformacoes[[1]] <- list(
+    id = "transf_6trat", csv = "1fator_dbc_6trat.csv", delineamento = "DBC",
+    trat = "Tratamento", bloco = "Bloco", resposta = "Produtividade",
+    lambdaBoxCox = lambda, pipelines = list(pipeline("log", 1), pipeline("raiz", 0))
+  )
+}
+
 out <- list(
-  fonte = "ExpDes.pt / aov() — engine do SAGRE (cross-check fat3.dbc/psub2.dbc à última casa decimal)",
+  fonte = "ExpDes.pt / aov() / MASS / R base — engine e ferramental do SAGRE",
   geradoPor = "packages/analytics/golden/gen-reference.R",
-  casos = casos
+  casos = casos, naoParametricos = naoParametricos, transformacoes = transformacoes
 )
 write_json(out, file.path(AQUI, "reference.json"), auto_unbox = TRUE, digits = 12, pretty = TRUE)
 cat("OK:", length(casos), "casos →", file.path(AQUI, "reference.json"), "\n")

@@ -1,5 +1,5 @@
 {
-  "fonte": "ExpDes.pt / aov() — engine do SAGRE (cross-check fat3.dbc/psub2.dbc à última casa decimal)",
+  "fonte": "ExpDes.pt / aov() / MASS / R base — engine e ferramental do SAGRE",
   "geradoPor": "packages/analytics/golden/gen-reference.R",
   "casos": [
     {
@@ -73,6 +73,62 @@
           "tratamento": "T01",
           "media": 96.875,
           "grupos": "d"
+        }
+      ]
+    },
+    {
+      "id": "1fator_dic_grupo__Severidade",
+      "arquivo": "experimento_grupo_teste.xlsx",
+      "csv": "experimento_grupo_teste.csv",
+      "tipo": "DIC1",
+      "delineamento": "DIC",
+      "fatores": {},
+      "rotulos": {},
+      "bloco": {},
+      "trat": "TRAT",
+      "resposta": "Severidade",
+      "n": 112,
+      "cv": 53.127720655667,
+      "glResiduo": 108,
+      "qmResiduo": 389.097863756614,
+      "anova": [
+        {
+          "fonte": "Tratamento",
+          "gl": 3,
+          "sq": 16785.819285714268,
+          "qm": 5595.273095238089,
+          "f": 14.380117745231,
+          "p": 5.988395085414e-08
+        },
+        {
+          "fonte": "Resíduo",
+          "gl": 108,
+          "sq": 42022.569285714308,
+          "qm": 389.097863756614,
+          "f": {},
+          "p": {}
+        }
+      ],
+      "medias": [
+        {
+          "tratamento": "T1",
+          "media": 55.667857142857,
+          "grupos": "a"
+        },
+        {
+          "tratamento": "T2",
+          "media": 40.010714285714,
+          "grupos": "b"
+        },
+        {
+          "tratamento": "T3",
+          "media": 29.421428571429,
+          "grupos": "bc"
+        },
+        {
+          "tratamento": "T4",
+          "media": 23.414285714286,
+          "grupos": "c"
         }
       ]
     },
@@ -675,6 +731,54 @@
           "gl": 27,
           "sq": 124.135625,
           "qm": 4.597615740741
+        }
+      ]
+    }
+  ],
+  "naoParametricos": [
+    {
+      "id": "kruskal_grupo",
+      "csv": "experimento_grupo_teste.csv",
+      "tipo": "kruskal",
+      "trat": "TRAT",
+      "resposta": "Severidade",
+      "estatistica": 23.76185640515,
+      "gl": 3,
+      "p": 2.800920250174e-05
+    },
+    {
+      "id": "friedman_6trat",
+      "csv": "1fator_dbc_6trat.csv",
+      "tipo": "friedman",
+      "trat": "Tratamento",
+      "bloco": "Bloco",
+      "resposta": "Produtividade",
+      "estatistica": 19.428571428571,
+      "gl": 5,
+      "p": 0.001598917522052
+    }
+  ],
+  "transformacoes": [
+    {
+      "id": "transf_6trat",
+      "csv": "1fator_dbc_6trat.csv",
+      "delineamento": "DBC",
+      "trat": "Tratamento",
+      "bloco": "Bloco",
+      "resposta": "Produtividade",
+      "lambdaBoxCox": 1.021,
+      "pipelines": [
+        {
+          "tipo": "log",
+          "constante": 1,
+          "fTrat": 88.168624053145,
+          "cv": 1.152438768851
+        },
+        {
+          "tipo": "raiz",
+          "constante": 0,
+          "fTrat": 98.277738430629,
+          "cv": 2.676956216283
         }
       ]
     }
