@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `Avaliacao` ADD COLUMN `natureza` ENUM('NUMERICA', 'FOTO', 'TEXTO') NOT NULL DEFAULT 'NUMERICA';
+
+-- AlterTable
+ALTER TABLE `ModeloAvaliacao` ADD COLUMN `natureza` ENUM('NUMERICA', 'FOTO', 'TEXTO') NOT NULL DEFAULT 'NUMERICA';
