@@ -19,6 +19,7 @@ python3 e2e/test_catalogo_a5.py   # A5: "Adicionar do catálogo" + auto-inclusã
 Saída termina em `PASSOU ✅` (exit 0) ou `FALHOU ❌` (exit 1).
 
 ## Notas
+- `test_pontos_amostrais.py` roda **só via API** (não precisa da web em `:3000`): regressão de M1 — a análise agrega as N amostras por parcela (ex.: 5 plantas) antes da ANOVA, sem pseudorreplicar nem quebrar o balanceamento de fatorial/split.
 - Os testes são **auto-limpantes** (removem o que criam) para não poluir o banco dev.
 - `test_catalogo_a5.py` espera os modelos demo no catálogo (Produtividade com pré-requisito Umidade) e usa a experiência "SIM 2-Fatores".
 - Seletores estáveis via `data-testid` (`modelo-nome`, `modelo-escopo`, `modelo-salvar`, `add-catalogo-select`, `add-catalogo-btn`, `add-catalogo-msg`).

@@ -18,6 +18,7 @@ const criarAvaliacaoSchema = z.object({
   tipo: z.enum(["CALENDARIZADA", "CONDICIONAL"]).optional(),
   isPersonalizada: z.boolean().optional(),
   escala: z.string().optional(),
+  numeroPontos: z.number().int().min(1).optional(),
   timingId: z.string().optional(),
   dataPrevista: z.string().optional(),
 });
