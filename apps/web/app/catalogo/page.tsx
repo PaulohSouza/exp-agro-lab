@@ -784,6 +784,7 @@ function CatalogoAtividades() {
                     <option value="TEXTO">texto</option>
                     <option value="DATA">data</option>
                     <option value="BOOLEANO">sim/não</option>
+                    <option value="ARQUIVO">arquivo (foto)</option>
                   </select>
                   <input
                     placeholder="UNIDADE"

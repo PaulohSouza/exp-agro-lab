@@ -606,6 +606,7 @@ enum TipoCampo {
   TEXTO
   DATA
   BOOLEANO
+  ARQUIVO
 }
 
 // Registro de uma atividade no experimento (nível experimento, não por parcela).

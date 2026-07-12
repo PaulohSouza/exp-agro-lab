@@ -6,6 +6,7 @@ import {
   type Experimento,
   type ModeloAtividade,
   type ValorApontamentoInput,
+  uploadArquivo,
 } from "../../../lib/api";
 
 export function AtividadesTab({ exp }: { exp: Experimento }) {
@@ -353,6 +354,19 @@ function AtividadeCard({
   });
   const [msg, setMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [subindo, setSubindo] = useState<Record<string, boolean>>({});
+
+  async function enviarArquivo(rotulo: string, file: File) {
+    setSubindo((s) => ({ ...s, [rotulo]: true }));
+    try {
+      const { url } = await uploadArquivo(file);
+      setForm((f) => ({ ...f, [rotulo]: url }));
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha no upload.");
+    } finally {
+      setSubindo((s) => ({ ...s, [rotulo]: false }));
+    }
+  }
 
   async function salvar() {
     setMsg(null);
@@ -438,6 +452,30 @@ function AtividadeCard({
                     checked={Boolean(form[c.rotulo])}
                     onChange={(e) => setForm({ ...form, [c.rotulo]: e.target.checked })}
                   />
+                ) : c.tipo === "ARQUIVO" ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {form[c.rotulo] ? (
+                      <a href={String(form[c.rotulo])} target="_blank" rel="noreferrer">
+                        <img
+                          src={String(form[c.rotulo])}
+                          alt="arquivo"
+                          style={{ height: 32, borderRadius: 4, border: "1px solid #eaecf3" }}
+                        />
+                      </a>
+                    ) : null}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) enviarArquivo(c.rotulo, f);
+                      }}
+                      style={{ fontSize: 12 }}
+                    />
+                    {subindo[c.rotulo] && (
+                      <span style={{ fontSize: 11, color: "#7987A1" }}>enviando…</span>
+                    )}
+                  </div>
                 ) : (
                   <input
                     type={c.tipo === "NUMERO" ? "number" : c.tipo === "DATA" ? "date" : "text"}

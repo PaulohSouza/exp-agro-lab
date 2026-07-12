@@ -130,7 +130,7 @@ export interface ModeloAvaliacaoInput {
 
 // ---- Atividades (Macro C) ----
 export type TipoAtividade = "ACAO" | "APONTAMENTO";
-export type TipoCampo = "NUMERO" | "TEXTO" | "DATA" | "BOOLEANO";
+export type TipoCampo = "NUMERO" | "TEXTO" | "DATA" | "BOOLEANO" | "ARQUIVO";
 export interface ModeloAtividadeCampo {
   id?: string;
   rotulo: string;

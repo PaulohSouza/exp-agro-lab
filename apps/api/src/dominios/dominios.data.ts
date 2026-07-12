@@ -89,6 +89,11 @@ export const DOMINIOS: Record<string, ValorDominio[]> = {
     { codigo: "TEXTO", rotulo: "Texto" },
     { codigo: "DATA", rotulo: "Data" },
     { codigo: "BOOLEANO", rotulo: "Booleano" },
+    {
+      codigo: "ARQUIVO",
+      rotulo: "Arquivo",
+      descricao: "URL de arquivo (ex.: foto geral do ensaio).",
+    },
   ],
   OrigemColeta: [
     { codigo: "WEB", rotulo: "Web" },

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `ModeloAtividadeCampo` MODIFY `tipo` ENUM('NUMERO', 'TEXTO', 'DATA', 'BOOLEANO', 'ARQUIVO') NOT NULL DEFAULT 'NUMERO';
