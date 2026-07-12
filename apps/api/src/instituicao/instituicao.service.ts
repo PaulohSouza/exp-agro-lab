@@ -24,7 +24,8 @@ export class InstituicaoService {
       where: { id: user.instituicaoId },
       data: {
         politicaAprovacao: dto.politicaAprovacao,
-        numeroAprovadores: dto.numeroAprovadores != null ? Math.max(1, dto.numeroAprovadores) : undefined,
+        numeroAprovadores:
+          dto.numeroAprovadores != null ? Math.max(1, dto.numeroAprovadores) : undefined,
       },
     });
   }

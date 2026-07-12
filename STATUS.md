@@ -1,9 +1,10 @@
 # STATUS do projeto — EXP-AGROLAB
 
-> **Handoff para retomar em nova conversa.** Última atualização: 30/06/2026.
+> **Handoff para retomar em nova conversa.** Última atualização: 12/07/2026.
+> **Última rodada (12/07/2026, PRs #25/#26):** simulação ponta-a-ponta (4 experimentos Fitopatologia DIC/DBC/Fatorial/Split × Produtividade + **Altura com 5 plantas/parcela**) que levantou e corrigiu **M1** (análise agrega amostras por parcela — antes pseudorreplicava/quebrava; ver [MELHORIAS.md](MELHORIAS.md) e §4) + **endurecimento/infra**: `lint`/`format:check` no CI, observabilidade (request-id + log), SMTP real com fallback, **refresh-token (rotação + reuso) + senha forte** (§8.5).
 > **Onde estamos:** **analytics fase B/C fechada + validada e PPTX fase B** (tag **v0.11.0** — PRs #21, #22, #24). Fechou os follow-ups da analytics (**desdobramento da interação tripla** + **aplicar rota em 1 clique**), montou os **golden tests vs SAGRE** (engine real `ExpDes.pt` + dados reais do SAGRE-app; **27 testes**, casando à última casa decimal) e reescreveu o **relatório PPTX** na linguagem visual do modelo SAGRE (marca dinâmica da instituição). Antes: analytics fase B/C (v0.10.0), croqui split-plot (v0.9.0), padronização + CI (v0.8.0, ver §0), catálogo/coleta (v0.7.0). **`main` no padrão.**
 > **Comece por aqui:** §3.1–3.7 (analytics + golden), §8.3 (PPTX) e §8 (próximos passos — agora o foco é **mobile em device** e **endurecimento/infra**; a única pendência da estatística é a **conjunta multi-local**, bloqueada por falta de dado). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
-> Testes: **domain 59** + **analytics 107** (inclui **27 golden vs SAGRE**) + **10 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+> Testes: **domain 59** + **analytics 107** (inclui **27 golden vs SAGRE**) + **12 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`; inclui `test_pontos_amostrais` e `test_auth_refresh`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)) — job unit agora com **`lint` + `format:check`**.
 
 ## 0. Padronização de código (concluída em 29/06/2026)
 Iniciativa para alinhar todo o código a um padrão único — ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** (§12 = progresso). Tudo mergeado na `main`, cada etapa verificada (typecheck + 59+24 testes + build + reseed + 5 e2e):
@@ -172,12 +173,18 @@ Implementado nas 4 fatias (schema, API, web, ANOVA 2 erros). Follow-up: compara�
 Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de coleta do B5.
 
 ### 8.5 Endurecimento / infra
-~~CI no GitHub~~ ✅ feito. Restam: refresh-token + senha forte · RBAC fino + auditoria · e-mail real (hoje SIMULATE em `email-previews/`) · observabilidade · **CI ganhar `pnpm lint`/`format:check`** no job unit (actions ainda em Node 20 — bumpar quando saírem `@v5`).
+~~CI no GitHub~~ ✅. Rodada 11/07/2026 (branch `feature/endurecimento`):
+- **`pnpm lint` + `format:check` no job unit** ✅ (repo conformado ao Prettier).
+- **Observabilidade** ✅ — `x-request-id` (middleware, ecoado no header) + `LoggingInterceptor` global (método/rota/status/latência/usuário; JSON com `LOG_JSON=true`; ignora `/health`).
+- **E-mail real (SMTP)** ✅ — `secure` por porta (465), `EMAIL_FROM`, transporter em cache, **fallback SIMULATE** quando SMTP incompleto. SIMULATE segue default seguro. Vars em `apps/api/.env.example`.
+- **Refresh-token + senha forte** ✅ — modelo `RefreshToken` (migration `20260712020758`), `/auth/refresh` (rotação + **detecção de reuso** revoga a família) e `/auth/logout`; `login`/registro devolvem `refresh_token`. Senha forte (`assertSenhaForte`: mín. `PASSWORD_MIN_LENGTH`=8 + letra + número) no registro e na criação de usuário. Regressão em `e2e/test_auth_refresh.py`. **Follow-up:** access token curto (hoje default do env) + **adoção do refresh no web** (client ainda usa só o access).
+
+Restam: RBAC fino + auditoria; access token curto de fato + wiring do refresh no front.
 
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
 
-> **Prioridade sugerida:** ~~(1) golden tests vs SAGRE~~ ✅ (§3.7) · ~~(2) PPTX fiel~~ ✅ (§8.3) → agora: (1) **mobile em device** (Expo Go; rodar `npm ci` em `apps/mobile` antes) → (2) **endurecimento/infra** (§8.5: refresh-token/senha forte, e-mail real, `lint`/`format:check` no CI, observabilidade) → (3) **conjunta multi-local** — único golden pendente, **bloqueado por dado** (nenhuma planilha do SAGRE-app tem >1 local); precisa de um experimento multi-local real. **Analytics fase B/C completo e validado.**
+> **Prioridade sugerida:** ~~(1) golden tests vs SAGRE~~ ✅ (§3.7) · ~~(2) PPTX fiel~~ ✅ (§8.3) · ~~(3) endurecimento/infra~~ ✅ (§8.5: lint/format no CI, observabilidade, SMTP, refresh-token+senha forte) → agora: (1) **mobile em device** (Expo Go; rodar `npm ci` em `apps/mobile` antes) → (2) **adoção do refresh-token no web** + access token curto de fato → (3) **RBAC fino + auditoria** → (4) **conjunta multi-local** — único golden pendente, **bloqueado por dado** (nenhuma planilha do SAGRE-app tem >1 local). **Analytics fase B/C completo e validado.**
 
 ## 9. Releases
 `v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · `v0.10.0` (PR #20 — **analytics fase B/C**: ANOVA fatorial 2–3 + desdobramento · transformações √/log/Box-Cox · não-paramétrico Kruskal/Friedman · conjunta multi-local G×A · Shapiro-Wilk + rota) · **`v0.11.0`** (PRs #21/#22/#24 — **desdobramento da interação tripla** + **aplicar rota em 1 clique** · **golden tests vs SAGRE** (engine `ExpDes.pt` + dados reais; **27 testes**) · **PPTX fase B** (layout fiel ao modelo, marca da instituição); analytics **107 testes**, **10 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases

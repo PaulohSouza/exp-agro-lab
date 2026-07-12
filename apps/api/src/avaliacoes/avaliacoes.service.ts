@@ -757,9 +757,9 @@ function cartesianoNiveis(listas: string[][]): string[][] {
  * não são repetições — tratá-las como observações causa pseudorreplicação e
  * quebra o balanceamento de fatorial/split-plot. Preserva o registro
  * representativo da parcela; é identidade quando há 1 amostra/parcela. */
-function agregarAmostrasPorParcela<
-  T extends { parcelaId: string; valorColetado: number | null },
->(dados: T[]): T[] {
+function agregarAmostrasPorParcela<T extends { parcelaId: string; valorColetado: number | null }>(
+  dados: T[],
+): T[] {
   const grupos = new Map<string, { soma: number; n: number; row: T }>();
   for (const d of dados) {
     if (d.valorColetado == null) continue;

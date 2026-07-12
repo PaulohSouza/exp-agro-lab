@@ -8,6 +8,7 @@ import type { Papel } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import type { UsuarioAtual } from "../auth/jwt.strategy";
+import { assertSenhaForte } from "../auth/senha";
 
 /** Papéis que conferem administração da instituição (RN-RBAC). */
 const PAPEIS_ADMIN: Papel[] = ["ADMIN_SISTEMA", "GESTAO_INSTITUICAO"];
@@ -46,6 +47,7 @@ export class UsuariosService {
     if (!user.isAdminInstituicao) {
       throw new ForbiddenException("Apenas o admin da instituição pode cadastrar usuários.");
     }
+    assertSenhaForte(dto.senha);
     const existe = await this.prisma.usuario.findUnique({ where: { email: dto.email } });
     if (existe) throw new ConflictException("E-mail já cadastrado.");
     // papel é a fonte da verdade; isAdminInstituicao é mantido em sincronia (retrocompat).
