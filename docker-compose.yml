@@ -27,7 +27,7 @@ services:
       SHADOW_DATABASE_URL: mysql://root:root@mysql:3306/expagrolab_dev
       PORT: "3001"
       JWT_SECRET: dev-container-secret
-      JWT_EXPIRES: 7d
+      JWT_EXPIRES: 15m
       JWT_REFRESH_EXPIRES: 30d
       EMAIL_ENABLED: "true"
       SIMULATE_SEND: "true"
