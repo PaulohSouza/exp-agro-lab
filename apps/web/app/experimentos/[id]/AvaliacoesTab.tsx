@@ -625,6 +625,7 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
     unidadeSaida: "",
     formula: "",
     tipo: "CALENDARIZADA",
+    numeroPontos: "1",
     timingId: "",
   });
   async function criar(e: React.FormEvent) {
@@ -636,6 +637,7 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
       unidadeSaida: f.unidadeSaida || undefined,
       formula: f.formula || undefined,
       tipo: f.tipo as Avaliacao["tipo"],
+      numeroPontos: Math.max(1, Number(f.numeroPontos) || 1),
       timingId: f.timingId || undefined,
     } as Partial<Avaliacao>);
     setF({
@@ -644,6 +646,7 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
       unidadeSaida: "",
       formula: "",
       tipo: "CALENDARIZADA",
+      numeroPontos: "1",
       timingId: "",
     });
     onCriou();
@@ -689,6 +692,15 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
         <option value="CALENDARIZADA">calendarizada</option>
         <option value="CONDICIONAL">condicional</option>
       </select>
+      <input
+        type="number"
+        min={1}
+        title="Pontos amostrais por parcela (ex.: 5 plantas). Média as amostras na análise."
+        placeholder="pontos/parcela"
+        value={f.numeroPontos}
+        onChange={(e) => setF({ ...f, numeroPontos: e.target.value })}
+        style={{ ...inp, width: 110 }}
+      />
       <select
         value={f.timingId}
         onChange={(e) => setF({ ...f, timingId: e.target.value })}

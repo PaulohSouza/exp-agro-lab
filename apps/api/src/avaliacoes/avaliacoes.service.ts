@@ -40,6 +40,7 @@ export interface CriarAvaliacaoDto {
   tipo?: "CALENDARIZADA" | "CONDICIONAL";
   isPersonalizada?: boolean;
   escala?: string;
+  numeroPontos?: number;
   timingId?: string;
   dataPrevista?: string;
   ordem?: number;
@@ -243,6 +244,7 @@ export class AvaliacoesService {
         tipo: dto.tipo ?? "CALENDARIZADA",
         isPersonalizada: dto.isPersonalizada ?? false,
         escala: dto.escala,
+        numeroPontos: dto.numeroPontos ?? 1,
         timingId: dto.timingId || null,
         dataPrevista: dto.dataPrevista ? new Date(dto.dataPrevista) : null,
         ordem,
@@ -264,6 +266,7 @@ export class AvaliacoesService {
         tipo: dto.tipo,
         isPersonalizada: dto.isPersonalizada,
         escala: dto.escala,
+        numeroPontos: dto.numeroPontos,
         timingId: dto.timingId === undefined ? undefined : dto.timingId || null,
         dataPrevista: dto.dataPrevista ? new Date(dto.dataPrevista) : undefined,
       },
@@ -404,10 +407,15 @@ export class AvaliacoesService {
       },
     });
     if (!aval) throw new NotFoundException("Avaliação não encontrada.");
-    const dados = await this.prisma.avaliacaoDado.findMany({
+    const dadosBrutos = await this.prisma.avaliacaoDado.findMany({
       where: { avaliacaoId, deletedAt: null, valorColetado: { not: null } },
       include: { parcela: { include: { tratamento: true } } },
     });
+    // Pontos amostrais: quando há várias amostras por parcela (ex.: 5 plantas),
+    // a UNIDADE EXPERIMENTAL é a parcela. Agrega (média) as amostras antes da
+    // ANOVA — evita pseudorreplicação (n/GL inflados) e restaura o balanceamento
+    // que fatorial/split-plot exigem (r×a×b). Com 1 amostra/parcela é identidade.
+    const dados = agregarAmostrasPorParcela(dadosBrutos);
 
     const areaUtil = await this.areaUtilDoExperimento(aval.experimentoId);
     const valorDe = (d: (typeof dados)[number]): number => {
@@ -742,4 +750,26 @@ function cartesianoNiveis(listas: string[][]): string[][] {
     (acc, lista) => acc.flatMap((pref) => lista.map((v) => [...pref, v])),
     [[]],
   );
+}
+
+/** Agrega as amostras de uma mesma parcela em UMA observação (média do valor
+ * coletado). A parcela é a unidade experimental; sub-amostras (ex.: 5 plantas)
+ * não são repetições — tratá-las como observações causa pseudorreplicação e
+ * quebra o balanceamento de fatorial/split-plot. Preserva o registro
+ * representativo da parcela; é identidade quando há 1 amostra/parcela. */
+function agregarAmostrasPorParcela<
+  T extends { parcelaId: string; valorColetado: number | null },
+>(dados: T[]): T[] {
+  const grupos = new Map<string, { soma: number; n: number; row: T }>();
+  for (const d of dados) {
+    if (d.valorColetado == null) continue;
+    const g = grupos.get(d.parcelaId);
+    if (g) {
+      g.soma += d.valorColetado;
+      g.n += 1;
+    } else {
+      grupos.set(d.parcelaId, { soma: d.valorColetado, n: 1, row: d });
+    }
+  }
+  return [...grupos.values()].map((g) => ({ ...g.row, valorColetado: g.soma / g.n }));
 }
