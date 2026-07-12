@@ -72,16 +72,27 @@ apenas passa a aceitar registro sem `valorColetado` quando a natureza é documen
 
 ## Demanda F — Escopo de coleta parcial (subconjunto de blocos/parcelas)
 
-Recurso **geral** (não só foto): qualquer avaliação pode ter alvo reduzido.
+> **PRÓXIMA A IMPLEMENTAR.** Recurso **geral** (não só foto): qualquer avaliação pode ter
+> alvo reduzido. O caso canônico é foto documental de "1 ou 2 blocos", mas vale para
+> numérica também. **Ortogonal à Demanda E** (natureza) — uma avaliação FOTO de blocos 1,2 é
+> a combinação natural, mas os dois eixos são independentes.
 
-### Modelo (`Avaliacao`)
+### Problema que resolve
+Hoje a grade de coleta e a contagem de "lançamentos" (`Avaliacao._count.dados`) assumem
+**todas as parcelas**. Uma coleta intencional de 2 de 8 blocos aparece como "incompleta"
+para sempre e polui a grade com parcelas que nunca serão coletadas. F dá um **plano de
+coleta** por avaliação: quais parcelas são **esperadas**.
+
+### Modelo de dados (`Avaliacao` + join)
 ```prisma
+// em model Avaliacao:
 escopoColeta  EscopoColeta @default(TODAS)   // TODAS | BLOCOS | PARCELAS
-blocosAlvo    String?                        // JSON/CSV dos blocos, quando BLOCOS (ex.: "1,2")
+blocosAlvo    String?                        // CSV dos blocos quando BLOCOS (ex.: "1,2")
+parcelasAlvo  AvaliacaoParcelaAlvo[]         // relação inversa (quando PARCELAS)
 
 enum EscopoColeta { TODAS  BLOCOS  PARCELAS }
 
-// Escape hatch para seleção livre de parcelas (escopoColeta = PARCELAS)
+// Escape hatch: seleção livre de parcelas (escopoColeta = PARCELAS)
 model AvaliacaoParcelaAlvo {
   avaliacaoId String
   parcelaId   String
@@ -90,24 +101,100 @@ model AvaliacaoParcelaAlvo {
   @@id([avaliacaoId, parcelaId])
   @@index([parcelaId])
 }
+// Parcela ganha a relação inversa: alvoDe AvaliacaoParcelaAlvo[]
 ```
+**Decisão de armazenamento:** `blocosAlvo` como **CSV** (ex.: `"1,2"`) — simples, casa com o
+mental model "colete os blocos 1 e 2" e evita join no caso comum. Seleção arbitrária de
+parcelas usa o join `AvaliacaoParcelaAlvo`. Migration **aditiva** (default `TODAS` preserva
+tudo).
 
-### Regras (domínio)
-- `parcelasEsperadas(avaliacao, parcelas)`:
-  - `TODAS` → todas as parcelas do experimento;
-  - `BLOCOS` → parcelas cujo `bloco ∈ blocosAlvo`;
-  - `PARCELAS` → parcelas em `AvaliacaoParcelaAlvo`.
-- `completude(avaliacao, dados)` → `coletadas / esperadas` (corrige o "8 de 32" eterno).
-- Guard: `blocosAlvo`/alvos devem existir no experimento (Zod + revalidação na API).
+### Regras (domínio — `packages/domain/src/avaliacao.ts`, puras + testadas)
+```ts
+export type EscopoColeta = "TODAS" | "BLOCOS" | "PARCELAS";
+interface ParcelaRef { id: string; bloco: number }
+interface EscopoColetaRef {
+  escopoColeta?: EscopoColeta | null;
+  blocosAlvo?: string | null;                 // CSV
+  parcelasAlvo?: { parcelaId: string }[];      // quando PARCELAS
+}
 
-### Impacto UI
-- **Aba Avaliações**: editor de escopo por avaliação — *toggle* Todas/Blocos/Parcelas;
-  quando Blocos, checkboxes dos blocos; quando Parcelas, seleção sobre o croqui.
-- **Grade de coleta (web) e chips (mobile)**: renderizam/enfileiram **só as parcelas
-  esperadas**. `coleta-lote`/`dedupLancamentos` intactos (só muda o conjunto de células).
-- **Croqui**: destaca as parcelas-alvo quando a avaliação está selecionada.
-- **Analytics**: natureza documental já sai; numérica parcial ⇒ desbalanceada (sinaliza,
-  fora do escopo da ANOVA balanceada padrão — não é o caso de uso alvo).
+// blocos do CSV → number[] saneado (dedup, ordenado, ignora vazio/NaN)
+export function parseBlocosAlvo(csv?: string | null): number[]
+
+// resolve o conjunto-alvo de parcelas
+export function parcelasEsperadas<T extends ParcelaRef>(aval: EscopoColetaRef, parcelas: T[]): T[]
+//  TODAS    → parcelas
+//  BLOCOS   → parcelas.filter(p => blocos.includes(p.bloco))
+//  PARCELAS → parcelas.filter(p => new Set(parcelasAlvo.map(a=>a.parcelaId)).has(p.id))
+
+// completude p/ a UI: quantas das esperadas já têm dado
+export function completudeColeta(esperadas: {id:string}[], dados: {parcelaId:string; valorColetado?:number|null; fotoUrl?:string|null; observacoes?:string|null}[], natureza: AvaliacaoNatureza): { coletadas: number; esperadas: number }
+//  "coletada" = a parcela esperada tem ao menos 1 dado válido p/ a natureza
+//  (reusa validarColetaPorNatureza para saber o que conta como preenchido)
+
+// validação do plano ao salvar (blocos/parcelas devem existir no experimento)
+export function validarEscopoColeta(aval: EscopoColetaRef, parcelas: ParcelaRef[]): string | null
+//  BLOCOS sem blocos válidos → erro; PARCELAS com id fora do experimento → erro
+```
+Casos de borda: `TODAS` com `blocosAlvo` preenchido → ignora o CSV (escopo manda);
+`BLOCOS` vazio → erro de validação (não vira "nenhuma"); recasualizar o croqui **não**
+invalida `blocosAlvo` (blocos persistem), mas **invalida** `AvaliacaoParcelaAlvo` se
+parcelas forem recriadas — a API deve **repor/limpar** alvos órfãos ao salvar croqui.
+
+### API (`AvaliacoesModule`)
+- `criar`/`atualizar` aceitam `escopoColeta`, `blocosAlvo`, `parcelaIdsAlvo?: string[]`
+  (Zod na borda); no `PARCELAS`, faz `deleteMany`+`createMany` do join numa transação
+  (espelha o padrão de pré-requisitos). Revalida com `validarEscopoColeta` → **400**.
+- `adicionarDoModelo`/`criar` documental: default sensato — **não** força escopo; herda
+  `TODAS` (o usuário reduz na aba). (Opcional: `ModeloAvaliacao` poderia ter um
+  `escopoColetaPadrao`, mas **fora do MVP de F** — decidir depois.)
+- Listagem de avaliações passa a devolver `escopoColeta`/`blocosAlvo`/contagem de alvos e a
+  **completude** (coletadas/esperadas) para a UI (substitui o `_count.dados` cru no rótulo).
+- `coleta-lote` e `lancar`: **sem mudança de contrato** — só recebem menos células. Guard
+  opcional: rejeitar lançamento em parcela **fora** do escopo (400) ou aceitar e avisar
+  (decisão: **aceitar** — o escopo é um filtro de UI, não uma trava rígida; evita travar
+  correções pontuais).
+
+### Impacto UI (web)
+- **Aba Avaliações**: editor de escopo por avaliação (linha da tabela ou no form) — *toggle*
+  Todas / Blocos / Parcelas. `BLOCOS` → checkboxes dos blocos do experimento; `PARCELAS` →
+  seleção clicando no **croqui** (reusa `CroquiEditor` em modo seleção). Mostrar
+  **"coletadas X de Y esperadas"** no lugar do total.
+- **Grade de coleta em lote** (`ColetaLote`) e **`Lançar`**: renderizam **só as parcelas
+  esperadas** de cada avaliação (a grade já é parcela×avaliação; filtrar linhas por
+  `parcelasEsperadas`). `dedupLancamentos` intacto.
+- **Croqui**: destacar as parcelas-alvo quando a avaliação está selecionada (realce).
+
+### Mobile (follow-up, como o B5)
+`sync` pull expõe `escopoColeta`/`blocosAlvo`/alvos; chips de coleta filtram parcelas
+esperadas. Validar em device.
+
+### Analytics
+Documental já sai (E). Numérica **parcial** ⇒ desbalanceada: **fora** do escopo da ANOVA
+balanceada padrão. A análise deve **avisar** (banner) quando a avaliação tem
+`escopoColeta ≠ TODAS`, em vez de rodar uma ANOVA silenciosamente inválida. (Não implementar
+ANOVA desbalanceada agora.)
+
+### Fatias (roadmap de F)
+- **F1 schema** — enum `EscopoColeta` + `blocosAlvo` em `Avaliacao` + `AvaliacaoParcelaAlvo`
+  + relação inversa em `Parcela`; migration aditiva; `DominioValor` (rótulos do enum).
+- **F2 domínio** — `parseBlocosAlvo`, `parcelasEsperadas`, `completudeColeta`,
+  `validarEscopoColeta` + testes (domain).
+- **F3 API** — `criar`/`atualizar` com escopo (Zod + transação do join + revalidação);
+  listagem devolve completude; higiene de alvos órfãos ao salvar croqui.
+- **F4 web** — editor de escopo (toggle + checkboxes de bloco + seleção no croqui);
+  grade/`Lançar` filtram por esperadas; rótulo de completude; realce no croqui.
+- **F5 mobile** — sync + chips por escopo (follow-up, device).
+- **Transversal** — e2e `test_coleta_parcial.py` (cria avaliação BLOCOS "1,2", verifica que
+  `parcelasEsperadas` = só bloco 1,2, coleta-lote grava só nelas, completude 100% sem tocar
+  os outros blocos; e um caso `PARCELAS` livre). Seed opcional.
+
+### Estimativa/risco
+Baixo-médio. Sem dependência externa nova. O ponto de atenção é a **higiene de alvos ao
+recasualizar croqui** (parcelas recriadas invalidam `AvaliacaoParcelaAlvo`) — cobrir no F3 +
+e2e. A seleção no croqui (F4) é a parte mais trabalhosa de front; se faltar tempo, entregar
+**BLOCOS** primeiro (cobre o caso "1 ou 2 blocos") e deixar `PARCELAS`/seleção-no-croqui
+como F4b.
 
 ---
 
