@@ -399,6 +399,9 @@ model Avaliacao {
   metodologia   String? @db.Text
   descricaoColeta String? @db.Text // como a coleta é feita (herdado do modelo, sobreponível)
   numeroPontos  Int     @default(1) // pontos amostrais (sobrepõe o do modelo)
+  // Natureza do dado: NUMERICA (default, entra na ANOVA) vs documental (FOTO/TEXTO,
+  // registro por parcela fora da análise estatística). Herda do modelo, sobreponível.
+  natureza      AvaliacaoNatureza @default(NUMERICA)
   unidadeColeta String?
   unidadeSaida  String?
   formula       String?
@@ -423,6 +426,14 @@ enum TipoAvaliacao {
   CONDICIONAL
 }
 
+// Natureza do dado coletado numa avaliação. Só NUMERICA alimenta analytics/relatório
+// de médias; FOTO/TEXTO são registros documentais por parcela. Ver SDD 09.
+enum AvaliacaoNatureza {
+  NUMERICA
+  FOTO
+  TEXTO
+}
+
 // ----------------------- Catálogo de avaliações (multi-escopo) -----------------------
 // Modelo reutilizável de avaliação. Existe em três escopos: padrão do sistema,
 // padrão da instituição (só admin da instituição cadastra) e metodologia própria
@@ -433,6 +444,7 @@ model ModeloAvaliacao {
   nome                 String
   descricaoColeta      String? @db.Text  // como a coleta é feita
   numeroPontos         Int     @default(1) // pontos amostrais coletados
+  natureza             AvaliacaoNatureza @default(NUMERICA) // numérica × documental (foto/texto)
   metodologiaRelatorio String? @db.Text  // base para a IA redigir o relatório
   unidadeColeta        String?            // ex.: kg
   unidadeSaida         String?            // ex.: sacas/ha
@@ -594,6 +606,7 @@ enum TipoCampo {
   TEXTO
   DATA
   BOOLEANO
+  ARQUIVO
 }
 
 // Registro de uma atividade no experimento (nível experimento, não por parcela).

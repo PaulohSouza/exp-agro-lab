@@ -55,6 +55,15 @@ export const DOMINIOS: Record<string, ValorDominio[]> = {
     { codigo: "CALENDARIZADA", rotulo: "Calendarizada" },
     { codigo: "CONDICIONAL", rotulo: "Condicional" },
   ],
+  AvaliacaoNatureza: [
+    {
+      codigo: "NUMERICA",
+      rotulo: "Numérica",
+      descricao: "Valor numérico; entra na análise estatística.",
+    },
+    { codigo: "FOTO", rotulo: "Foto", descricao: "Registro fotográfico por parcela; documental." },
+    { codigo: "TEXTO", rotulo: "Texto", descricao: "Observação textual por parcela; documental." },
+  ],
   EscopoModelo: [
     { codigo: "SISTEMA", rotulo: "Geral (sistema)" },
     { codigo: "INSTITUICAO", rotulo: "Instituição" },
@@ -80,6 +89,11 @@ export const DOMINIOS: Record<string, ValorDominio[]> = {
     { codigo: "TEXTO", rotulo: "Texto" },
     { codigo: "DATA", rotulo: "Data" },
     { codigo: "BOOLEANO", rotulo: "Booleano" },
+    {
+      codigo: "ARQUIVO",
+      rotulo: "Arquivo",
+      descricao: "URL de arquivo (ex.: foto geral do ensaio).",
+    },
   ],
   OrigemColeta: [
     { codigo: "WEB", rotulo: "Web" },
@@ -129,6 +143,7 @@ const PRISMA_ENUMS: Record<string, Record<string, string>> = {
   TipoUnidade: Prisma.TipoUnidade,
   TipoFator: Prisma.TipoFator,
   TipoAvaliacao: Prisma.TipoAvaliacao,
+  AvaliacaoNatureza: Prisma.AvaliacaoNatureza,
   EscopoModelo: Prisma.EscopoModelo,
   TipoAtividade: Prisma.TipoAtividade,
   TipoPeriodo: Prisma.TipoPeriodo,

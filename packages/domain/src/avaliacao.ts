@@ -5,6 +5,63 @@
 
 const M2_POR_HECTARE = 10_000;
 
+/* ------------------------------------------------------------------ */
+/* Natureza do dado (E2) — numérica × documental (foto/texto).         */
+/* @see SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md    */
+/* ------------------------------------------------------------------ */
+
+export type AvaliacaoNatureza = "NUMERICA" | "FOTO" | "TEXTO";
+
+/**
+ * Só a natureza NUMERICA alimenta analytics/relatório de médias.
+ * FOTO/TEXTO são registros documentais por parcela, fora da ANOVA.
+ */
+export function entraNaAnalise(natureza: AvaliacaoNatureza): boolean {
+  return natureza === "NUMERICA";
+}
+
+/**
+ * Resolve a natureza efetiva de uma avaliação: a da própria avaliação quando
+ * definida, senão a herdada do modelo do catálogo, senão NUMERICA (default).
+ */
+export function resolverNatureza(
+  avaliacao: { natureza?: AvaliacaoNatureza | null },
+  modelo?: { natureza?: AvaliacaoNatureza | null } | null,
+): AvaliacaoNatureza {
+  return avaliacao.natureza ?? modelo?.natureza ?? "NUMERICA";
+}
+
+/** Dado coletado numa parcela (subconjunto relevante à validação por natureza). */
+export interface DadoColeta {
+  valorColetado?: number | null;
+  fotoUrl?: string | null;
+  observacoes?: string | null;
+}
+
+/**
+ * Valida se um dado satisfaz a natureza **documental** da avaliação:
+ * - FOTO exige `fotoUrl`;
+ * - TEXTO exige `observacoes` não-vazio.
+ * NUMERICA não impõe requisito no lançamento (retrocompatível: permite salvar
+ * célula pendente/sem valor, limpar valor, ou só observação — a análise já
+ * ignora valores nulos). Retorna a mensagem de erro (PT) ou `null` quando válido.
+ */
+export function validarColetaPorNatureza(
+  natureza: AvaliacaoNatureza,
+  dado: DadoColeta,
+): string | null {
+  switch (natureza) {
+    case "NUMERICA":
+      return null;
+    case "FOTO":
+      return dado.fotoUrl ? null : "Avaliação de foto exige uma imagem.";
+    case "TEXTO":
+      return dado.observacoes && dado.observacoes.trim().length > 0
+        ? null
+        : "Avaliação de texto exige uma observação.";
+  }
+}
+
 /**
  * Área útil colhida da parcela.
  * RN-PROD: informada na colheita (linhas e comprimento) × espaçamento do cadastro.

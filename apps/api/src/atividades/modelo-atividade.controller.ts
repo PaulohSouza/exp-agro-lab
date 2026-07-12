@@ -8,7 +8,7 @@ import type { EscopoModelo, TipoAtividade, TipoCampo } from "@exp/domain";
 
 const campoSchema = z.object({
   rotulo: z.string().min(1),
-  tipo: z.enum(["NUMERO", "TEXTO", "DATA", "BOOLEANO"]),
+  tipo: z.enum(["NUMERO", "TEXTO", "DATA", "BOOLEANO", "ARQUIVO"]),
   unidade: z.string().optional(),
   isObrigatorio: z.boolean().optional(),
   ordem: z.number().int().optional(),

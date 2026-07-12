@@ -10,6 +10,7 @@ const modeloSchema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
   descricaoColeta: z.string().optional(),
   numeroPontos: z.number().int().optional(),
+  natureza: z.enum(["NUMERICA", "FOTO", "TEXTO"]).optional(),
   metodologiaRelatorio: z.string().optional(),
   unidadeColeta: z.string().optional(),
   unidadeSaida: z.string().optional(),
@@ -26,6 +27,7 @@ interface ModeloBody {
   nome: string;
   descricaoColeta?: string;
   numeroPontos?: number;
+  natureza?: "NUMERICA" | "FOTO" | "TEXTO";
   metodologiaRelatorio?: string;
   unidadeColeta?: string;
   unidadeSaida?: string;

@@ -4,7 +4,10 @@ import {
   resolverPrerequisitos,
   calcularAreaUtilColhida,
   dedupLancamentos,
+  entraNaAnalise,
+  validarColetaPorNatureza,
   type LancamentoLote,
+  type AvaliacaoNatureza,
 } from "@exp/domain";
 import {
   anovaUmFator,
@@ -38,6 +41,7 @@ export interface CriarAvaliacaoDto {
   unidadeSaida?: string;
   formula?: string;
   tipo?: "CALENDARIZADA" | "CONDICIONAL";
+  natureza?: AvaliacaoNatureza;
   isPersonalizada?: boolean;
   escala?: string;
   numeroPontos?: number;
@@ -51,6 +55,7 @@ export interface LancarDadoDto {
   numeroAmostra?: number;
   valorColetado?: number;
   observacoes?: string;
+  fotoUrl?: string;
   origem?: "WEB" | "MOBILE";
 }
 
@@ -155,6 +160,7 @@ export class AvaliacoesService {
             nome: m.nome,
             descricaoColeta: m.descricaoColeta,
             numeroPontos: m.numeroPontos,
+            natureza: m.natureza,
             metodologia: m.metodologiaRelatorio,
             unidadeColeta: m.unidadeColeta,
             unidadeSaida: m.unidadeSaida,
@@ -242,6 +248,7 @@ export class AvaliacoesService {
         unidadeSaida: dto.unidadeSaida,
         formula: dto.formula,
         tipo: dto.tipo ?? "CALENDARIZADA",
+        natureza: dto.natureza ?? "NUMERICA",
         isPersonalizada: dto.isPersonalizada ?? false,
         escala: dto.escala,
         numeroPontos: dto.numeroPontos ?? 1,
@@ -264,6 +271,7 @@ export class AvaliacoesService {
         unidadeSaida: dto.unidadeSaida,
         formula: dto.formula,
         tipo: dto.tipo,
+        natureza: dto.natureza,
         isPersonalizada: dto.isPersonalizada,
         escala: dto.escala,
         numeroPontos: dto.numeroPontos,
@@ -354,8 +362,19 @@ export class AvaliacoesService {
   /** Lança/atualiza o VALOR BRUTO por parcela (acesso >= input). */
   async lancar(avaliacaoId: string, user: UsuarioAtual, dados: LancarDadoDto[]) {
     await this.experimentos.garantirAcesso(await this.expIdDaAvaliacao(avaliacaoId), user);
+    const aval = await this.prisma.avaliacao.findUnique({ where: { id: avaliacaoId } });
+    if (!aval) throw new NotFoundException("Avaliação não encontrada.");
+    const natureza = aval.natureza as AvaliacaoNatureza;
     for (const d of dados) {
       const numeroAmostra = d.numeroAmostra ?? 1;
+      // Valida o dado conforme a natureza (numérica exige valor; foto exige imagem;
+      // texto exige observação). Ver SDD 09 / domínio validarColetaPorNatureza.
+      const erro = validarColetaPorNatureza(natureza, {
+        valorColetado: d.valorColetado ?? null,
+        fotoUrl: d.fotoUrl ?? null,
+        observacoes: d.observacoes ?? null,
+      });
+      if (erro) throw new BadRequestException(erro);
       await this.prisma.avaliacaoDado.upsert({
         where: {
           avaliacaoId_parcelaId_numeroAmostra: {
@@ -370,12 +389,14 @@ export class AvaliacoesService {
           numeroAmostra,
           valorColetado: d.valorColetado,
           observacoes: d.observacoes,
+          fotoUrl: d.fotoUrl,
           origem: d.origem ?? "WEB",
           syncedAt: new Date(),
         },
         update: {
           valorColetado: d.valorColetado,
           observacoes: d.observacoes,
+          fotoUrl: d.fotoUrl,
           syncedAt: new Date(),
         },
       });
@@ -407,6 +428,11 @@ export class AvaliacoesService {
       },
     });
     if (!aval) throw new NotFoundException("Avaliação não encontrada.");
+    if (!entraNaAnalise(aval.natureza as AvaliacaoNatureza)) {
+      throw new BadRequestException(
+        "Avaliação documental (foto/texto) não entra na análise estatística.",
+      );
+    }
     const dadosBrutos = await this.prisma.avaliacaoDado.findMany({
       where: { avaliacaoId, deletedAt: null, valorColetado: { not: null } },
       include: { parcela: { include: { tratamento: true } } },
@@ -687,6 +713,11 @@ export class AvaliacoesService {
       include: { experimento: true },
     });
     if (!aval) throw new NotFoundException("Avaliação não encontrada.");
+    if (!entraNaAnalise(aval.natureza as AvaliacaoNatureza)) {
+      throw new BadRequestException(
+        "Avaliação documental (foto/texto) não gera relatório de médias.",
+      );
+    }
     const dados = await this.prisma.avaliacaoDado.findMany({
       where: { avaliacaoId, deletedAt: null },
       include: { parcela: { include: { tratamento: true } } },

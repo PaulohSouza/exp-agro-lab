@@ -11,12 +11,14 @@ import {
   type Avaliacao,
   type AvaliacaoDado,
   type EscopoModelo,
+  type AvaliacaoNatureza,
   type Experimento,
   type GrupoColeta,
   type LancamentoLote,
   type ModeloAvaliacao,
   type RelatorioAvaliacao,
   type RotaSugerida,
+  uploadArquivo,
 } from "../../../lib/api";
 
 const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: string }> = {
@@ -24,6 +26,38 @@ const ESCOPO_INFO: Record<EscopoModelo, { sigla: string; label: string; cor: str
   INSTITUICAO: { sigla: "INST", label: "Instituição", cor: "#4EC2F0" },
   DEPARTAMENTO: { sigla: "DEP", label: "Departamento", cor: "#C9B3F0" },
 };
+
+/** Foto/texto = registro documental por parcela (fora da análise estatística). */
+function ehDocumental(natureza?: AvaliacaoNatureza | null): boolean {
+  return natureza === "FOTO" || natureza === "TEXTO";
+}
+
+const NATUREZA_INFO: Record<AvaliacaoNatureza, { label: string; cor: string }> = {
+  NUMERICA: { label: "numérica", cor: "#6FA830" },
+  FOTO: { label: "foto", cor: "#C98B2E" },
+  TEXTO: { label: "texto", cor: "#8B6FC9" },
+};
+
+function NaturezaBadge({ natureza }: { natureza?: AvaliacaoNatureza | null }) {
+  const n = natureza ?? "NUMERICA";
+  if (n === "NUMERICA") return null; // numérica é o padrão; só marca documental
+  const info = NATUREZA_INFO[n];
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        fontWeight: 700,
+        color: "#fff",
+        background: info.cor,
+        borderRadius: 4,
+        padding: "1px 5px",
+        verticalAlign: "middle",
+      }}
+    >
+      {info.label}
+    </span>
+  );
+}
 
 export function AvaliacoesTab({
   exp,
@@ -105,7 +139,7 @@ export function AvaliacoesTab({
               <tr key={a.id} style={{ borderBottom: "1px solid #eaecf3" }}>
                 <td style={td}>#{i + 1}</td>
                 <td style={td}>
-                  <strong>{a.nome}</strong>
+                  <strong>{a.nome}</strong> <NaturezaBadge natureza={a.natureza} />
                   {a.formula ? (
                     <div style={{ fontSize: 11, color: "#7987A1" }}>
                       {a.unidadeColeta} → {a.unidadeSaida}
@@ -131,12 +165,14 @@ export function AvaliacoesTab({
                       Relatório
                     </button>
                   )}{" "}
-                  <button
-                    onClick={() => setModo({ tipo: "analise", aval: a })}
-                    style={mini("#2D6CDF")}
-                  >
-                    Análise
-                  </button>{" "}
+                  {ehDocumental(a.natureza) ? null : (
+                    <button
+                      onClick={() => setModo({ tipo: "analise", aval: a })}
+                      style={mini("#2D6CDF")}
+                    >
+                      Análise
+                    </button>
+                  )}{" "}
                   <button
                     onClick={async () => {
                       await api.removerAvaliacao(a.id);
@@ -500,6 +536,7 @@ function ColetaLote({ exp, voltar }: { exp: Experimento; voltar: () => void }) {
 
   const filtradas = avals.filter(
     (a) =>
+      !ehDocumental(a.natureza) && // documental (foto/texto) coleta-se em "Lançar", não na grade
       (timing === "todos" || a.timingId === timing) &&
       (grupo === "todos" || a.grupoColetaId === grupo),
   );
@@ -621,6 +658,7 @@ function ColetaLote({ exp, voltar }: { exp: Experimento; voltar: () => void }) {
 function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void }) {
   const [f, setF] = useState({
     nome: "",
+    natureza: "NUMERICA" as AvaliacaoNatureza,
     unidadeColeta: "",
     unidadeSaida: "",
     formula: "",
@@ -628,20 +666,24 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
     numeroPontos: "1",
     timingId: "",
   });
+  const docNova = ehDocumental(f.natureza);
   async function criar(e: React.FormEvent) {
     e.preventDefault();
     if (!f.nome.trim()) return;
     await api.criarAvaliacao(exp.id, {
       nome: f.nome,
-      unidadeColeta: f.unidadeColeta || undefined,
-      unidadeSaida: f.unidadeSaida || undefined,
-      formula: f.formula || undefined,
+      natureza: f.natureza,
+      // documental não tem unidade/fórmula de saída
+      unidadeColeta: docNova ? undefined : f.unidadeColeta || undefined,
+      unidadeSaida: docNova ? undefined : f.unidadeSaida || undefined,
+      formula: docNova ? undefined : f.formula || undefined,
       tipo: f.tipo as Avaliacao["tipo"],
       numeroPontos: Math.max(1, Number(f.numeroPontos) || 1),
       timingId: f.timingId || undefined,
     } as Partial<Avaliacao>);
     setF({
       nome: "",
+      natureza: "NUMERICA",
       unidadeColeta: "",
       unidadeSaida: "",
       formula: "",
@@ -670,23 +712,36 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
         onChange={(e) => setF({ ...f, nome: e.target.value })}
         style={{ ...inp, minWidth: 180 }}
       />
+      <select
+        value={f.natureza}
+        onChange={(e) => setF({ ...f, natureza: e.target.value as AvaliacaoNatureza })}
+        style={inp}
+        title="Numérica entra na análise; foto/texto são documentais por parcela."
+      >
+        <option value="NUMERICA">numérica</option>
+        <option value="FOTO">foto</option>
+        <option value="TEXTO">texto</option>
+      </select>
       <input
         placeholder="unid. coleta (kg/parcela)"
         value={f.unidadeColeta}
         onChange={(e) => setF({ ...f, unidadeColeta: e.target.value })}
         style={inp}
+        disabled={docNova}
       />
       <input
         placeholder="unid. saída (kg/ha)"
         value={f.unidadeSaida}
         onChange={(e) => setF({ ...f, unidadeSaida: e.target.value })}
         style={inp}
+        disabled={docNova}
       />
       <input
         placeholder="fórmula (ex.: (valor/areaUtil)*10000)"
         value={f.formula}
         onChange={(e) => setF({ ...f, formula: e.target.value })}
         style={{ ...inp, minWidth: 200 }}
+        disabled={docNova}
       />
       <select value={f.tipo} onChange={(e) => setF({ ...f, tipo: e.target.value })} style={inp}>
         <option value="CALENDARIZADA">calendarizada</option>
@@ -721,31 +776,72 @@ function NovaAvaliacao({ exp, onCriou }: { exp: Experimento; onCriou: () => void
 }
 
 function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; voltar: () => void }) {
+  const natureza: AvaliacaoNatureza = aval.natureza ?? "NUMERICA";
   const usaArea = !!aval.formula && /areaUtil/.test(aval.formula);
   const tratPorId = useMemo(
     () => new Map((exp.tratamentos ?? []).map((t) => [t.id, t])),
     [exp.tratamentos],
   );
+  // Guarda o valor por parcela como string genérica: número, observação ou fotoUrl
+  // conforme a natureza.
   const [valores, setValores] = useState<Record<string, string>>({});
+  const [subindo, setSubindo] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     api.listarDados(aval.id).then((dados: AvaliacaoDado[]) => {
       const m: Record<string, string> = {};
-      for (const d of dados) m[d.parcelaId] = d.valorColetado?.toString() ?? "";
+      for (const d of dados) {
+        m[d.parcelaId] =
+          natureza === "FOTO"
+            ? (d.fotoUrl ?? "")
+            : natureza === "TEXTO"
+              ? (d.observacoes ?? "")
+              : (d.valorColetado?.toString() ?? "");
+      }
       setValores(m);
     });
-  }, [aval.id]);
+  }, [aval.id, natureza]);
 
   const parcelas = [...(exp.parcelas ?? [])].sort((a, b) => a.numero - b.numero);
 
   async function salvar() {
     const dados = parcelas
       .filter((p) => valores[p.id])
-      .map((p) => ({ parcelaId: p.id, valorColetado: Number(valores[p.id]) }));
+      .map((p) => {
+        const v = valores[p.id];
+        if (natureza === "FOTO") return { parcelaId: p.id, fotoUrl: v };
+        if (natureza === "TEXTO") return { parcelaId: p.id, observacoes: v };
+        return { parcelaId: p.id, valorColetado: Number(v) };
+      });
     await api.lancarDados(aval.id, dados);
-    setMsg(`${dados.length} lançamento(s) salvos (valor bruto).`);
+    setMsg(`${dados.length} registro(s) salvos.`);
   }
+
+  async function enviarFoto(parcelaId: string, file: File) {
+    setSubindo((s) => ({ ...s, [parcelaId]: true }));
+    try {
+      const { url } = await uploadArquivo(file);
+      setValores((v) => ({ ...v, [parcelaId]: url }));
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Falha no upload.");
+    } finally {
+      setSubindo((s) => ({ ...s, [parcelaId]: false }));
+    }
+  }
+
+  const rotuloColuna =
+    natureza === "FOTO"
+      ? "Foto"
+      : natureza === "TEXTO"
+        ? "Observação"
+        : `Valor (${aval.unidadeColeta ?? "bruto"})`;
+  const dica =
+    natureza === "FOTO"
+      ? "registro fotográfico por parcela"
+      : natureza === "TEXTO"
+        ? "observação textual por parcela"
+        : "valor bruto por parcela";
 
   return (
     <div>
@@ -761,8 +857,8 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
         <button onClick={voltar} style={mini("#a9abbd")}>
           ← voltar
         </button>
-        <strong>Lançar: {aval.nome}</strong>
-        <span style={{ color: "#7987A1", fontSize: 13 }}>valor bruto por parcela</span>
+        <strong>Lançar: {aval.nome}</strong> <NaturezaBadge natureza={natureza} />
+        <span style={{ color: "#7987A1", fontSize: 13 }}>{dica}</span>
         <button onClick={salvar} style={mini("#1F2940")}>
           Salvar
         </button>
@@ -782,6 +878,20 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
           linhas e comprimento) na aba Atividades — não é coletada por parcela.
         </p>
       )}
+      {ehDocumental(natureza) && (
+        <p
+          style={{
+            color: "#7987A1",
+            fontSize: 12,
+            background: "#fff6ec",
+            padding: 8,
+            borderRadius: 6,
+          }}
+        >
+          ℹ️ Avaliação documental: registre apenas as parcelas desejadas (ex.: 1 ou 2 blocos). Não
+          entra na análise estatística.
+        </p>
+      )}
       <div className="tabela-scroll">
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
@@ -789,7 +899,7 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
               <th style={th}>Parcela</th>
               <th style={th}>Bloco</th>
               <th style={th}>Trat.</th>
-              <th style={th}>Valor ({aval.unidadeColeta ?? "bruto"})</th>
+              <th style={th}>{rotuloColuna}</th>
             </tr>
           </thead>
           <tbody>
@@ -802,11 +912,44 @@ function Lancar({ exp, aval, voltar }: { exp: Experimento; aval: Avaliacao; volt
                 <td style={td}>{p.bloco}</td>
                 <td style={td}>{tratPorId.get(p.tratamentoId)?.tag ?? "?"}</td>
                 <td style={td}>
-                  <input
-                    value={valores[p.id] ?? ""}
-                    onChange={(e) => setValores({ ...valores, [p.id]: e.target.value })}
-                    style={{ ...inp, width: 90 }}
-                  />
+                  {natureza === "FOTO" ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {valores[p.id] ? (
+                        <a href={valores[p.id]} target="_blank" rel="noreferrer">
+                          <img
+                            src={valores[p.id]}
+                            alt="foto"
+                            style={{ height: 36, borderRadius: 4, border: "1px solid #eaecf3" }}
+                          />
+                        </a>
+                      ) : null}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) enviarFoto(p.id, f);
+                        }}
+                        style={{ fontSize: 12 }}
+                      />
+                      {subindo[p.id] && (
+                        <span style={{ fontSize: 11, color: "#7987A1" }}>enviando…</span>
+                      )}
+                    </div>
+                  ) : natureza === "TEXTO" ? (
+                    <input
+                      value={valores[p.id] ?? ""}
+                      onChange={(e) => setValores({ ...valores, [p.id]: e.target.value })}
+                      placeholder="observação"
+                      style={{ ...inp, width: 260 }}
+                    />
+                  ) : (
+                    <input
+                      value={valores[p.id] ?? ""}
+                      onChange={(e) => setValores({ ...valores, [p.id]: e.target.value })}
+                      style={{ ...inp, width: 90 }}
+                    />
+                  )}
                 </td>
               </tr>
             ))}

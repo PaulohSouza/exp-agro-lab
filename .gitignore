@@ -26,3 +26,6 @@ coverage/
 /projeto pesquisa comercial/
 /estrutura claude/
 /bloqueio-requisitos.png
+
+# storage local (fallback de dev)
+apps/api/uploads/

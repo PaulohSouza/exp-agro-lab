@@ -6,7 +6,8 @@
  */
 
 export type TipoAtividade = "ACAO" | "APONTAMENTO";
-export type TipoCampo = "NUMERO" | "TEXTO" | "DATA" | "BOOLEANO";
+// ARQUIVO guarda a URL de um arquivo (ex.: foto geral do ensaio) no slot valorTexto.
+export type TipoCampo = "NUMERO" | "TEXTO" | "DATA" | "BOOLEANO" | "ARQUIVO";
 
 /** Definição de um campo parametrizado de uma atividade com apontamento. */
 export interface CampoDef {
@@ -30,13 +31,14 @@ const SLOT: Record<TipoCampo, keyof ValorApontamento> = {
   TEXTO: "valorTexto",
   DATA: "valorData",
   BOOLEANO: "valorBool",
+  ARQUIVO: "valorTexto", // URL do arquivo
 };
 
 function preenchido(v: ValorApontamento | undefined, tipo: TipoCampo): boolean {
   if (!v) return false;
   const val = v[SLOT[tipo]];
   if (val === undefined || val === null) return false;
-  if (tipo === "TEXTO") return String(val).trim().length > 0;
+  if (tipo === "TEXTO" || tipo === "ARQUIVO") return String(val).trim().length > 0;
   if (tipo === "NUMERO") return typeof val === "number" && !Number.isNaN(val);
   return true; // DATA (string ISO) ou BOOLEANO
 }

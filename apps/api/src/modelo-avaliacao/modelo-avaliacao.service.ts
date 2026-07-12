@@ -12,6 +12,7 @@ interface ModeloDto {
   nome: string;
   descricaoColeta?: string;
   numeroPontos?: number;
+  natureza?: "NUMERICA" | "FOTO" | "TEXTO";
   metodologiaRelatorio?: string;
   unidadeColeta?: string;
   unidadeSaida?: string;
@@ -77,6 +78,7 @@ export class ModeloAvaliacaoService {
         nome: dto.nome,
         descricaoColeta: dto.descricaoColeta,
         numeroPontos: dto.numeroPontos ?? 1,
+        natureza: dto.natureza ?? "NUMERICA",
         metodologiaRelatorio: dto.metodologiaRelatorio,
         unidadeColeta: dto.unidadeColeta,
         unidadeSaida: dto.unidadeSaida,
@@ -132,6 +134,7 @@ export class ModeloAvaliacaoService {
           nome: dto.nome,
           descricaoColeta: dto.descricaoColeta,
           numeroPontos: dto.numeroPontos,
+          natureza: dto.natureza,
           metodologiaRelatorio: dto.metodologiaRelatorio,
           unidadeColeta: dto.unidadeColeta,
           unidadeSaida: dto.unidadeSaida,

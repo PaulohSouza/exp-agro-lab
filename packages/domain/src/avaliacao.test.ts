@@ -4,7 +4,34 @@ import {
   calcularProdutividadeKgHa,
   calcularSaida,
   dedupLancamentos,
+  entraNaAnalise,
+  resolverNatureza,
+  validarColetaPorNatureza,
 } from "./avaliacao.js";
+
+describe("natureza do dado (E2)", () => {
+  it("só NUMERICA entra na análise", () => {
+    expect(entraNaAnalise("NUMERICA")).toBe(true);
+    expect(entraNaAnalise("FOTO")).toBe(false);
+    expect(entraNaAnalise("TEXTO")).toBe(false);
+  });
+
+  it("resolverNatureza: avaliação > modelo > default NUMERICA", () => {
+    expect(resolverNatureza({ natureza: "FOTO" }, { natureza: "TEXTO" })).toBe("FOTO");
+    expect(resolverNatureza({ natureza: null }, { natureza: "TEXTO" })).toBe("TEXTO");
+    expect(resolverNatureza({}, null)).toBe("NUMERICA");
+  });
+
+  it("valida a coleta conforme a natureza (só documental é obrigatório)", () => {
+    // NUMERICA é leniente (retrocompat): sem valor não é erro.
+    expect(validarColetaPorNatureza("NUMERICA", { valorColetado: 3.2 })).toBeNull();
+    expect(validarColetaPorNatureza("NUMERICA", { valorColetado: null })).toBeNull();
+    expect(validarColetaPorNatureza("FOTO", { fotoUrl: "/x.jpg" })).toBeNull();
+    expect(validarColetaPorNatureza("FOTO", {})).toMatch(/imagem/i);
+    expect(validarColetaPorNatureza("TEXTO", { observacoes: "murcha" })).toBeNull();
+    expect(validarColetaPorNatureza("TEXTO", { observacoes: "  " })).toMatch(/observa/i);
+  });
+});
 
 describe("dedupLancamentos (coleta em lote)", () => {
   it("mantém o último por (avaliação, parcela, amostra)", () => {
