@@ -1,8 +1,10 @@
-import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { AuthModule } from "./auth/auth.module";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
 import { PapelGuard } from "./auth/papel.guard";
+import { RequestIdMiddleware } from "./common/request-id.middleware";
+import { LoggingInterceptor } from "./common/logging.interceptor";
 import { PrismaModule } from "./prisma/prisma.module";
 import { HealthController } from "./health/health.controller";
 import { EmailModule } from "./email/email.module";
@@ -49,8 +51,13 @@ import { DominiosModule } from "./dominios/dominios.module";
   ],
   controllers: [HealthController],
   providers: [
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PapelGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes("*");
+  }
+}
