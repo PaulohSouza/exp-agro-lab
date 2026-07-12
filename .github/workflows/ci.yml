@@ -39,6 +39,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Lint (ESLint)
+        run: pnpm lint
+
+      - name: Format (Prettier — check)
+        run: pnpm format:check
+
       - name: Testes (domain + analytics)
         run: pnpm test
 
