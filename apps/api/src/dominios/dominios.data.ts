@@ -56,7 +56,11 @@ export const DOMINIOS: Record<string, ValorDominio[]> = {
     { codigo: "CONDICIONAL", rotulo: "Condicional" },
   ],
   AvaliacaoNatureza: [
-    { codigo: "NUMERICA", rotulo: "Numérica", descricao: "Valor numérico; entra na análise estatística." },
+    {
+      codigo: "NUMERICA",
+      rotulo: "Numérica",
+      descricao: "Valor numérico; entra na análise estatística.",
+    },
     { codigo: "FOTO", rotulo: "Foto", descricao: "Registro fotográfico por parcela; documental." },
     { codigo: "TEXTO", rotulo: "Texto", descricao: "Observação textual por parcela; documental." },
   ],

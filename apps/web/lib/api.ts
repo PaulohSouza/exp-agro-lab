@@ -72,6 +72,7 @@ export interface Parcela {
   nivelPrincipal?: number | null;
   nivelSub?: number | null;
 }
+export type AvaliacaoNatureza = "NUMERICA" | "FOTO" | "TEXTO";
 export interface Avaliacao {
   id: string;
   nome: string;
@@ -80,6 +81,7 @@ export interface Avaliacao {
   unidadeSaida: string | null;
   formula: string | null;
   tipo: string;
+  natureza?: AvaliacaoNatureza;
   ordem: number;
   timingId: string | null;
   grupoColetaId?: string | null;
@@ -93,6 +95,7 @@ export interface ModeloAvaliacao {
   nome: string;
   descricaoColeta: string | null;
   numeroPontos: number;
+  natureza?: AvaliacaoNatureza;
   metodologiaRelatorio: string | null;
   unidadeColeta: string | null;
   unidadeSaida: string | null;
@@ -113,6 +116,7 @@ export interface ModeloAvaliacaoInput {
   nome: string;
   descricaoColeta?: string;
   numeroPontos?: number;
+  natureza?: AvaliacaoNatureza;
   metodologiaRelatorio?: string;
   unidadeColeta?: string;
   unidadeSaida?: string;
@@ -228,6 +232,7 @@ export interface AvaliacaoDado {
   comprimentoColhidoM: number | null;
   areaUtilM2: number | null;
   observacoes: string | null;
+  fotoUrl: string | null;
   parcela?: Parcela & { tratamento?: Tratamento };
 }
 export interface RelatorioAvaliacao {
@@ -913,6 +918,32 @@ async function baixarBlob(path: string): Promise<Blob> {
   }
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
   return r.blob();
+}
+
+/** Sobe uma imagem (multipart) e devolve a URL pública. Trata refresh no 401. */
+export async function uploadArquivo(file: File): Promise<{ url: string; key: string }> {
+  const send = (token: string | null) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return fetch(`${API_BASE}/uploads`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+  };
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("exp_token") : null;
+  let r = await send(token);
+  if (r.status === 401 && typeof window !== "undefined") {
+    const novo = await refreshAccessToken();
+    if (novo) r = await send(novo);
+    if (r.status === 401) {
+      clearSession();
+      if (window.location.pathname !== "/login") window.location.href = "/login";
+      throw new Error("Sessão expirada.");
+    }
+  }
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return r.json() as Promise<{ url: string; key: string }>;
 }
 
 function baixarArquivo(blob: Blob, nomeArquivo: string) {

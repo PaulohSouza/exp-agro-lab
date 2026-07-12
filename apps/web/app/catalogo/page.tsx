@@ -120,6 +120,7 @@ const VAZIO: ModeloAvaliacaoInput = {
   nome: "",
   descricaoColeta: "",
   numeroPontos: 1,
+  natureza: "NUMERICA",
   metodologiaRelatorio: "",
   unidadeColeta: "",
   unidadeSaida: "",
@@ -196,6 +197,8 @@ function Catalogo() {
   const [msg, setMsg] = useState<string | null>(null);
 
   const escoposGerenciaveis = ESCOPOS.filter((e) => podeGerenciar(papel, e.value));
+  // Avaliação documental (foto/texto): sem unidade/fórmula de saída.
+  const documental = (form.natureza ?? "NUMERICA") !== "NUMERICA";
 
   async function recarregar() {
     setModelos(await api.listarModelos());
@@ -250,6 +253,7 @@ function Catalogo() {
       nome: m.nome,
       descricaoColeta: m.descricaoColeta ?? "",
       numeroPontos: m.numeroPontos,
+      natureza: m.natureza ?? "NUMERICA",
       metodologiaRelatorio: m.metodologiaRelatorio ?? "",
       unidadeColeta: m.unidadeColeta ?? "",
       unidadeSaida: m.unidadeSaida ?? "",
@@ -308,6 +312,19 @@ function Catalogo() {
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
               style={inp}
             />
+            <select
+              data-testid="modelo-natureza"
+              value={form.natureza ?? "NUMERICA"}
+              onChange={(e) =>
+                setForm({ ...form, natureza: e.target.value as ModeloAvaliacaoInput["natureza"] })
+              }
+              style={inp}
+              title="Numérica entra na análise; foto/texto são registros documentais por parcela."
+            >
+              <option value="NUMERICA">Numérica (análise)</option>
+              <option value="FOTO">Foto (documental)</option>
+              <option value="TEXTO">Texto (documental)</option>
+            </select>
             <input
               type="number"
               min={1}
@@ -321,18 +338,22 @@ function Catalogo() {
               value={form.unidadeColeta}
               onChange={(e) => setForm({ ...form, unidadeColeta: e.target.value })}
               style={inp}
+              disabled={documental}
+              title={documental ? "Sem unidade em avaliação documental." : undefined}
             />
             <input
               placeholder="unid. saída (ex.: sacas/ha)"
               value={form.unidadeSaida}
               onChange={(e) => setForm({ ...form, unidadeSaida: e.target.value })}
               style={inp}
+              disabled={documental}
             />
             <input
               placeholder="cálculo p/ relatório (fórmula)"
               value={form.calculoRelatorio}
               onChange={(e) => setForm({ ...form, calculoRelatorio: e.target.value })}
               style={inp}
+              disabled={documental}
             />
             <select
               data-testid="modelo-escopo"

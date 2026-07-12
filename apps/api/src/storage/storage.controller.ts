@@ -25,12 +25,10 @@ export class StorageController {
   /** Sobe uma imagem e devolve a URL pública (usada como fotoUrl na coleta). */
   @Post("uploads")
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_BYTES } }))
-  async upload(
-    @CurrentUser() _user: UsuarioAtual,
-    @UploadedFile() file?: Express.Multer.File,
-  ) {
+  async upload(@CurrentUser() _user: UsuarioAtual, @UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException("Arquivo obrigatório (campo 'file').");
-    if (!TIPOS_OK.has(file.mimetype)) throw new BadRequestException("Tipo de imagem não suportado.");
+    if (!TIPOS_OK.has(file.mimetype))
+      throw new BadRequestException("Tipo de imagem não suportado.");
     return this.storage.upload(file, "avaliacoes");
   }
 

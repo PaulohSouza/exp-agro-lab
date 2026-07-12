@@ -44,7 +44,10 @@ export class StorageService {
     file: { buffer: Buffer; originalname: string; mimetype: string },
     prefixo = "uploads",
   ): Promise<{ url: string; key: string }> {
-    const ext = path.extname(file.originalname).toLowerCase().replace(/[^.a-z0-9]/g, "");
+    const ext = path
+      .extname(file.originalname)
+      .toLowerCase()
+      .replace(/[^.a-z0-9]/g, "");
     const key = `${prefixo}/${randomUUID()}${ext}`;
 
     if (this.s3) {
