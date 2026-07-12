@@ -1,0 +1,62 @@
+# Stack de demonstração/dev: MySQL + API (:3001) + Web (:3000).
+# Uso:
+#   docker compose up -d --build
+#   # API aplica migrations + seed no start; ver README (§ container).
+# O MySQL do container NÃO é exposto ao host (evita conflito com o MySQL local).
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: expagrolab_dev
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  api:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_BASE: http://localhost:3001
+    environment:
+      DATABASE_URL: mysql://root:root@mysql:3306/expagrolab_dev
+      SHADOW_DATABASE_URL: mysql://root:root@mysql:3306/expagrolab_dev
+      PORT: "3001"
+      JWT_SECRET: dev-container-secret
+      JWT_EXPIRES: 7d
+      JWT_REFRESH_EXPIRES: 30d
+      EMAIL_ENABLED: "true"
+      SIMULATE_SEND: "true"
+      SIMULATE_OUTPUT_DIR: /app/apps/api/email-previews
+      EMAIL_BASE_URL: http://localhost:3000
+      LOG_JSON: "true"
+    # migrate + seed idempotentes no start, depois sobe a API.
+    command: >
+      sh -c "pnpm --filter @exp/api exec prisma migrate deploy &&
+             pnpm --filter @exp/api db:seed &&
+             node apps/api/dist/main.js"
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_BASE: http://localhost:3001
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:3001
+    command: pnpm --filter @exp/web start
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  mysql-data:
