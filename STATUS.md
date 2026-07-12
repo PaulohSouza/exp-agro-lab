@@ -177,18 +177,21 @@ Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de cole
 - **`pnpm lint` + `format:check` no job unit** ✅ (repo conformado ao Prettier).
 - **Observabilidade** ✅ — `x-request-id` (middleware, ecoado no header) + `LoggingInterceptor` global (método/rota/status/latência/usuário; JSON com `LOG_JSON=true`; ignora `/health`).
 - **E-mail real (SMTP)** ✅ — `secure` por porta (465), `EMAIL_FROM`, transporter em cache, **fallback SIMULATE** quando SMTP incompleto. SIMULATE segue default seguro. Vars em `apps/api/.env.example`.
-- **Refresh-token + senha forte** ✅ — modelo `RefreshToken` (migration `20260712020758`), `/auth/refresh` (rotação + **detecção de reuso** revoga a família) e `/auth/logout`; `login`/registro devolvem `refresh_token`. Senha forte (`assertSenhaForte`: mín. `PASSWORD_MIN_LENGTH`=8 + letra + número) no registro e na criação de usuário. Regressão em `e2e/test_auth_refresh.py`. **Follow-up:** access token curto (hoje default do env) + **adoção do refresh no web** (client ainda usa só o access).
+- **Refresh-token + senha forte** ✅ — modelo `RefreshToken` (migration `20260712020758`), `/auth/refresh` (rotação + **detecção de reuso** revoga a família) e `/auth/logout`; `login`/registro devolvem `refresh_token`. Senha forte (`assertSenhaForte`: mín. `PASSWORD_MIN_LENGTH`=8 + letra + número) no registro e na criação de usuário. Regressão em `e2e/test_auth_refresh.py`.
+- **Adoção do refresh no cliente web** ✅ — `apps/web/lib/auth.ts` guarda `exp_refresh` e renova o access com **single-flight**; `api.ts` (wrapper `req` + downloads xlsx/pptx) renova e refaz a requisição no 401, só caindo para `/login` se o refresh falhar; `logout` revoga no servidor. Container roda **access token de 15m** (`JWT_EXPIRES`).
+- **Container Docker** ✅ — `docker compose up -d --build` sobe MySQL + API + Web (ver §10 / DEVELOPMENT.md).
 
-Restam: RBAC fino + auditoria; access token curto de fato + wiring do refresh no front.
+Restam: **RBAC fino + auditoria**; e-mail real em produção (SMTP configurado); métricas/observabilidade externa (coletor).
 
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
 
-> **Prioridade sugerida:** ~~(1) golden tests vs SAGRE~~ ✅ (§3.7) · ~~(2) PPTX fiel~~ ✅ (§8.3) · ~~(3) endurecimento/infra~~ ✅ (§8.5: lint/format no CI, observabilidade, SMTP, refresh-token+senha forte) → agora: (1) **mobile em device** (Expo Go; rodar `npm ci` em `apps/mobile` antes) → (2) **adoção do refresh-token no web** + access token curto de fato → (3) **RBAC fino + auditoria** → (4) **conjunta multi-local** — único golden pendente, **bloqueado por dado** (nenhuma planilha do SAGRE-app tem >1 local). **Analytics fase B/C completo e validado.**
+> **Prioridade sugerida:** ~~(1) golden tests vs SAGRE~~ ✅ (§3.7) · ~~(2) PPTX fiel~~ ✅ (§8.3) · ~~(3) endurecimento/infra~~ ✅ (§8.5: lint/format no CI, observabilidade, SMTP, refresh-token+senha forte, **refresh no web**, **docker-compose**) → agora: (1) **mobile em device** (Expo Go; rodar `npm ci` em `apps/mobile` antes) → (2) **RBAC fino + auditoria** → (3) **M3** (UI de coleta de N pontos amostrais por parcela; ver [MELHORIAS.md](MELHORIAS.md)) → (4) **conjunta multi-local** — único golden pendente, **bloqueado por dado** (nenhuma planilha do SAGRE-app tem >1 local). **Analytics fase B/C completo e validado.**
 
 ## 9. Releases
 `v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · `v0.10.0` (PR #20 — **analytics fase B/C**: ANOVA fatorial 2–3 + desdobramento · transformações √/log/Box-Cox · não-paramétrico Kruskal/Friedman · conjunta multi-local G×A · Shapiro-Wilk + rota) · **`v0.11.0`** (PRs #21/#22/#24 — **desdobramento da interação tripla** + **aplicar rota em 1 clique** · **golden tests vs SAGRE** (engine `ExpDes.pt` + dados reais; **27 testes**) · **PPTX fase B** (layout fiel ao modelo, marca da instituição); analytics **107 testes**, **10 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
 
 ## 10. Infra / notas de ambiente
 - `pnpm` symlinkado em `~/.local/bin`. MySQL local: root via socket (`mysql -u root`); app usa user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar schema `sagre`).
+- **Container:** `docker compose up -d --build` sobe **mysql + api(:3001) + web(:3000)** (MySQL do container NÃO exposto ao host); API roda migrate+seed no start; access token de 15m + refresh. Detalhe em [DEVELOPMENT.md](DEVELOPMENT.md) ("Subir via container").
 - Push/release liberados (`paulosouzafmt` é colaborador). Fluxo: por etapa → commit, push, release.

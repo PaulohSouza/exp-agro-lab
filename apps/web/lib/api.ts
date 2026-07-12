@@ -1,3 +1,5 @@
+import { refreshAccessToken, clearSession } from "./auth";
+
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3001";
 
 export interface Ref {
@@ -511,19 +513,28 @@ export interface Experimento {
 }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const doFetch = (token: string | null) =>
+    fetch(`${API_BASE}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      cache: "no-store",
+      ...init,
+    });
+
   const token = typeof window !== "undefined" ? window.localStorage.getItem("exp_token") : null;
-  const r = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    cache: "no-store",
-    ...init,
-  });
+  let r = await doFetch(token);
+
+  // Access token expirado: tenta renovar via refresh-token (uma vez) e refaz.
   if (r.status === 401 && typeof window !== "undefined") {
-    window.localStorage.removeItem("exp_token");
-    if (window.location.pathname !== "/login") window.location.href = "/login";
-    throw new Error("Sessão expirada.");
+    const novo = await refreshAccessToken();
+    if (novo) r = await doFetch(novo);
+    if (r.status === 401) {
+      clearSession();
+      if (window.location.pathname !== "/login") window.location.href = "/login";
+      throw new Error("Sessão expirada.");
+    }
   }
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
   return r.json() as Promise<T>;
@@ -885,36 +896,44 @@ export const api = {
     }),
 };
 
-/** Baixa o experimento em Excel (com token), via blob. */
-export async function baixarExperimentoXlsx(expId: string, nomeArquivo: string) {
+/** GET autenticado que devolve um blob, com renovação via refresh-token no 401. */
+async function baixarBlob(path: string): Promise<Blob> {
+  const get = (token: string | null) =>
+    fetch(`${API_BASE}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   const token = typeof window !== "undefined" ? window.localStorage.getItem("exp_token") : null;
-  const r = await fetch(`${API_BASE}/experimentos/${expId}/export.xlsx`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!r.ok) throw new Error("Falha ao exportar.");
-  const blob = await r.blob();
+  let r = await get(token);
+  if (r.status === 401 && typeof window !== "undefined") {
+    const novo = await refreshAccessToken();
+    if (novo) r = await get(novo);
+    if (r.status === 401) {
+      clearSession();
+      if (window.location.pathname !== "/login") window.location.href = "/login";
+      throw new Error("Sessão expirada.");
+    }
+  }
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return r.blob();
+}
+
+function baixarArquivo(blob: Blob, nomeArquivo: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${nomeArquivo}.xlsx`;
+  a.download = nomeArquivo;
   a.click();
   URL.revokeObjectURL(url);
 }
 
+/** Baixa o experimento em Excel (com token), via blob. */
+export async function baixarExperimentoXlsx(expId: string, nomeArquivo: string) {
+  const blob = await baixarBlob(`/experimentos/${expId}/export.xlsx`);
+  baixarArquivo(blob, `${nomeArquivo}.xlsx`);
+}
+
 /** Baixa o relatório PPTX (com token), via blob. */
 export async function baixarRelatorioPptx(expId: string, nomeArquivo: string) {
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("exp_token") : null;
-  const r = await fetch(`${API_BASE}/experimentos/${expId}/relatorio.pptx`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!r.ok) throw new Error("Falha ao gerar relatório.");
-  const blob = await r.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${nomeArquivo}.pptx`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const blob = await baixarBlob(`/experimentos/${expId}/relatorio.pptx`);
+  baixarArquivo(blob, `${nomeArquivo}.pptx`);
 }
 
 /** Decisão pública do cliente (sem auth) — usada na página /aprovacao/[token]. */
