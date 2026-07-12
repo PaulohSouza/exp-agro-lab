@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import pptxgen from "pptxgenjs";
 import { PrismaService } from "../prisma/prisma.service";
 import { ExperimentosService } from "../experimentos/experimentos.service";
@@ -49,6 +49,7 @@ interface MediaSumarizacao {
 
 @Injectable()
 export class RelatorioService {
+  private readonly logger = new Logger(RelatorioService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly experimentos: ExperimentosService,
@@ -98,8 +99,15 @@ export class RelatorioService {
       let analise;
       try {
         analise = await this.avaliacoes.analise(aval.id, user);
-      } catch {
-        continue; // sem dados suficientes
+      } catch (e) {
+        // Sem dados suficientes / análise indisponível: não inclui slide, mas
+        // registra para não sumir a variável do relatório sem rastro (M4).
+        this.logger.warn(
+          `Avaliação "${aval.nome}" (${aval.id}) sem análise — omitida do relatório: ${
+            e instanceof Error ? e.message : e
+          }`,
+        );
+        continue;
       }
       // o relatório nunca pede o teste não-paramétrico (rota só da tela de Análise)
       if ("teste" in analise && analise.teste === "naoParametrico") continue;
