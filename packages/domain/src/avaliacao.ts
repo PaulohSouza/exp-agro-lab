@@ -39,11 +39,12 @@ export interface DadoColeta {
 }
 
 /**
- * Valida se um dado satisfaz a natureza da avaliação:
- * - NUMERICA exige `valorColetado`;
+ * Valida se um dado satisfaz a natureza **documental** da avaliação:
  * - FOTO exige `fotoUrl`;
  * - TEXTO exige `observacoes` não-vazio.
- * Retorna a mensagem de erro (PT) ou `null` quando válido.
+ * NUMERICA não impõe requisito no lançamento (retrocompatível: permite salvar
+ * célula pendente/sem valor, limpar valor, ou só observação — a análise já
+ * ignora valores nulos). Retorna a mensagem de erro (PT) ou `null` quando válido.
  */
 export function validarColetaPorNatureza(
   natureza: AvaliacaoNatureza,
@@ -51,9 +52,7 @@ export function validarColetaPorNatureza(
 ): string | null {
   switch (natureza) {
     case "NUMERICA":
-      return dado.valorColetado === undefined || dado.valorColetado === null
-        ? "Avaliação numérica exige um valor."
-        : null;
+      return null;
     case "FOTO":
       return dado.fotoUrl ? null : "Avaliação de foto exige uma imagem.";
     case "TEXTO":

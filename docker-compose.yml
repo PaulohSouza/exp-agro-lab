@@ -17,6 +17,35 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
 
+  # Storage S3-compatível para fotos/anexos (Demanda E). Console em :9001.
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  # Cria o bucket público uma vez e sai.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "mc alias set local http://minio:9000 minioadmin minioadmin &&
+             mc mb --ignore-existing local/expagrolab &&
+             mc anonymous set download local/expagrolab"
+
   api:
     build:
       context: .
@@ -34,6 +63,13 @@ services:
       SIMULATE_OUTPUT_DIR: /app/apps/api/email-previews
       EMAIL_BASE_URL: http://localhost:3000
       LOG_JSON: "true"
+      # Storage (MinIO): endpoint interno p/ upload, base pública p/ URL no <img>.
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_BASE: http://localhost:9000
+      S3_BUCKET: expagrolab
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_REGION: us-east-1
     # migrate + seed idempotentes no start, depois sobe a API.
     command: >
       sh -c "pnpm --filter @exp/api exec prisma migrate deploy &&
@@ -43,6 +79,8 @@ services:
       - "3001:3001"
     depends_on:
       mysql:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   web:
@@ -60,3 +98,4 @@ services:
 
 volumes:
   mysql-data:
+  minio-data:

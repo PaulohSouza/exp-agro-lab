@@ -22,9 +22,10 @@ describe("natureza do dado (E2)", () => {
     expect(resolverNatureza({}, null)).toBe("NUMERICA");
   });
 
-  it("valida a coleta conforme a natureza", () => {
+  it("valida a coleta conforme a natureza (só documental é obrigatório)", () => {
+    // NUMERICA é leniente (retrocompat): sem valor não é erro.
     expect(validarColetaPorNatureza("NUMERICA", { valorColetado: 3.2 })).toBeNull();
-    expect(validarColetaPorNatureza("NUMERICA", { valorColetado: null })).toMatch(/valor/i);
+    expect(validarColetaPorNatureza("NUMERICA", { valorColetado: null })).toBeNull();
     expect(validarColetaPorNatureza("FOTO", { fotoUrl: "/x.jpg" })).toBeNull();
     expect(validarColetaPorNatureza("FOTO", {})).toMatch(/imagem/i);
     expect(validarColetaPorNatureza("TEXTO", { observacoes: "murcha" })).toBeNull();
