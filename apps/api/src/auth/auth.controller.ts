@@ -7,8 +7,10 @@ import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import {
   loginSchema,
   registrarInstituicaoSchema,
+  refreshSchema,
   type LoginDto,
   type RegistrarInstituicaoDto,
+  type RefreshDto,
 } from "./auth.schema";
 
 @Controller("auth")
@@ -25,6 +27,18 @@ export class AuthController {
   @Post("register-instituicao")
   registrar(@Body(new ZodValidationPipe(registrarInstituicaoSchema)) dto: RegistrarInstituicaoDto) {
     return this.auth.registrarInstituicao(dto);
+  }
+
+  @Public()
+  @Post("refresh")
+  refresh(@Body(new ZodValidationPipe(refreshSchema)) dto: RefreshDto) {
+    return this.auth.refresh(dto.refresh_token);
+  }
+
+  @Public()
+  @Post("logout")
+  logout(@Body(new ZodValidationPipe(refreshSchema)) dto: RefreshDto) {
+    return this.auth.logout(dto.refresh_token);
   }
 
   @Get("me")

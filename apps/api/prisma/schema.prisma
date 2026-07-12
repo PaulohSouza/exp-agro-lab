@@ -94,6 +94,24 @@ model Usuario {
   compartilhamentos  ExperimentoCompartilhamento[] @relation("CompartilhadoCom")
   responsavelEm      ExperimentoResponsavel[] @relation("ResponsavelColeta")
   aprovadorEm        AprovadorInstituicao[]
+  refreshTokens      RefreshToken[]
+}
+
+// Refresh-token com rotação (RN-AUTH). Guarda só o HASH do token; o valor em
+// claro só existe no cliente. `revokedAt`/`replacedById` permitem rotação e
+// detecção de reuso (um token revogado reapresentado revoga toda a família).
+model RefreshToken {
+  id           String    @id @default(cuid())
+  usuarioId    String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  createdAt    DateTime  @default(now())
+
+  usuario      Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
 }
 
 // Papéis com escopo (RN-RBAC). admin_sistema é GLOBAL (cross-institution).

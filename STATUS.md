@@ -171,7 +171,13 @@ Implementado nas 4 fatias (schema, API, web, ANOVA 2 erros). Follow-up: compara�
 Testar em device/emulador (Expo Go) e iterar — inclui validar o filtro de coleta do B5.
 
 ### 8.5 Endurecimento / infra
-~~CI no GitHub~~ ✅ feito. Restam: refresh-token + senha forte · RBAC fino + auditoria · e-mail real (hoje SIMULATE em `email-previews/`) · observabilidade · **CI ganhar `pnpm lint`/`format:check`** no job unit (actions ainda em Node 20 — bumpar quando saírem `@v5`).
+~~CI no GitHub~~ ✅. Rodada 11/07/2026 (branch `feature/endurecimento`):
+- **`pnpm lint` + `format:check` no job unit** ✅ (repo conformado ao Prettier).
+- **Observabilidade** ✅ — `x-request-id` (middleware, ecoado no header) + `LoggingInterceptor` global (método/rota/status/latência/usuário; JSON com `LOG_JSON=true`; ignora `/health`).
+- **E-mail real (SMTP)** ✅ — `secure` por porta (465), `EMAIL_FROM`, transporter em cache, **fallback SIMULATE** quando SMTP incompleto. SIMULATE segue default seguro. Vars em `apps/api/.env.example`.
+- **Refresh-token + senha forte** ✅ — modelo `RefreshToken` (migration `20260712020758`), `/auth/refresh` (rotação + **detecção de reuso** revoga a família) e `/auth/logout`; `login`/registro devolvem `refresh_token`. Senha forte (`assertSenhaForte`: mín. `PASSWORD_MIN_LENGTH`=8 + letra + número) no registro e na criação de usuário. Regressão em `e2e/test_auth_refresh.py`. **Follow-up:** access token curto (hoje default do env) + **adoção do refresh no web** (client ainda usa só o access).
+
+Restam: RBAC fino + auditoria; access token curto de fato + wiring do refresh no front.
 
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.

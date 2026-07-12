@@ -10,7 +10,7 @@ import type { UsuarioAtual } from "../auth/jwt.strategy";
 const criarUsuarioSchema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
   email: z.string().email("E-mail inválido"),
-  senha: z.string().min(6, "Senha deve ter ao menos 6 caracteres"),
+  senha: z.string().min(8, "Senha deve ter ao menos 8 caracteres"),
   papel: z
     .enum([
       "ADMIN_SISTEMA",

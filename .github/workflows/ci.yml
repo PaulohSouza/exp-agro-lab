@@ -136,7 +136,7 @@ jobs:
       - name: Rodar suites e2e
         run: |
           set -e
-          for t in test_catalogo test_catalogo_a5 test_atividades test_grupos test_periodo_marcos; do
+          for t in test_catalogo test_catalogo_a5 test_atividades test_grupos test_periodo_marcos test_auth_refresh; do
             echo "::group::$t"
             python3 "e2e/$t.py"
             echo "::endgroup::"
