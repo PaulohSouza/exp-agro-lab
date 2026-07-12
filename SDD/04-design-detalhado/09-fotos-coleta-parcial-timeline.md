@@ -175,12 +175,13 @@ a atividade/avaliação (o "74548 - CONTROLE…" com sub-eventos).
 Ordem: **E → F → G** (natureza destrava o caso foto; escopo parcial é ortogonal; timeline
 consome ambos). Cada fatia = 1 PR, CI verde, e2e quando aplicável (padrão do projeto).
 
-**E — Natureza do dado**
-- E1 schema: enum `AvaliacaoNatureza` + coluna em `Avaliacao`/`ModeloAvaliacao` (migration; default NUMERICA preserva tudo) + `DominioValor`.
-- E2 domínio: `entraNaAnalise`, validação de coleta por natureza, herança do modelo. +testes.
-- E3 API: guard nas rotas de análise/relatório (ignora documental); coleta aceita foto/texto; upload de arquivo (dev: storage local sob `apps/api`, servido estático; abstrair p/ S3-compat).
-- E4 web: seletor de natureza no catálogo; grade de coleta com upload/texto; documentais fora de Análise/relatório de médias (vão p/ Anexos/Timeline).
-- E-atividade: `TipoCampo=ARQUIVO` em `ModeloAtividadeCampo` (foto geral do ensaio) — schema + validação de apontamento + editor de campo + upload.
+**E — Natureza do dado** ✅ (11/07/2026)
+- E1 schema ✅: enum `AvaliacaoNatureza` + coluna em `Avaliacao`/`ModeloAvaliacao` (migration aditiva, default NUMERICA preserva tudo) + `DominioValor`.
+- E2 domínio ✅: `entraNaAnalise`, `resolverNatureza`, `validarColetaPorNatureza` (NUMERICA leniente — retrocompat; FOTO/TEXTO obrigatórios). +3 testes (domain 62).
+- E3 API ✅: guard nas rotas de análise/relatório (documental → 400); coleta aceita `fotoUrl`/`observacoes` validados por natureza; **`StorageService`** driver **S3-compatível (MinIO)** com fallback local (`POST /uploads`, valida tipo/10MB, `GET /uploads/*`); docker-compose ganhou `minio`+`minio-init`. Verificado ponta-a-ponta.
+- E4 web ✅: seletor de natureza no `/catalogo` e no ad-hoc; `Lançar` natureza-aware (número/texto/upload com preview); grade de coleta exclui documental; badge; documental sem botão Análise. e2e `test_avaliacao_documental.py`.
+- E-atividade ✅: `TipoCampo=ARQUIVO` (foto geral do ensaio) — schema+migration, domínio (slot `valorTexto`), catálogo e form de apontamento com upload. Verificado (400 sem arquivo / 201 com URL).
+- **Follow-up:** seed com modelo-sistema demo "Registro fotográfico parcela" (FOTO).
 
 **F — Coleta parcial**
 - F1 schema: enum `EscopoColeta` + `blocosAlvo` em `Avaliacao` + `AvaliacaoParcelaAlvo` (migration) + `DominioValor`.

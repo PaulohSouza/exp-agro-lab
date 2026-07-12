@@ -70,6 +70,12 @@ Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para mu
   - **B5 mobile** ✅ (compila; falta device) — sync pull expõe `timingId`/`grupoColetaId` + timings; app ganhou **filtro por timing** nos chips de coleta. O lote offline já funcionava (fila por célula sobre várias avaliações + push unificado).
 - **Status geral:** A ✅ · C ✅ (incl. C5) · B ✅ (B5 mobile pendente). Pré-requisitos cruzam avaliações **e** atividades. Testes: **domain 59** + **5 suites e2e** (Playwright Python em `e2e/`, todas passando).
 
+## 3.0.1 Em andamento — Avaliação documental (foto/texto), coleta parcial e Timeline
+Branch `feature/avaliacao-natureza-documental`. Design em [SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md). Três demandas: **E** natureza/foto · **F** coleta parcial · **G** timeline.
+- **Decisão de enquadramento:** foto **de parcela** = **avaliação documental** (por parcela, reusa croqui/coleta/sync, fora da ANOVA); foto **geral do ensaio** = **atividade** com campo `ARQUIVO`. Coleta parcial por **blocos + parcelas livres**. Timeline **híbrida** (tabela manual + eventos derivados na leitura).
+- **Demanda E — natureza do dado ✅** (E1–E4 + E-atividade): enum `AvaliacaoNatureza` (NUMERICA/FOTO/TEXTO) em `Avaliacao`/`ModeloAvaliacao`; documental fora da análise/relatório; `StorageService` **S3-compatível (MinIO)** com fallback local + `POST /uploads`; `Lançar` natureza-aware (upload de foto/texto); `TipoCampo=ARQUIVO` na atividade. **domain 62** + **e2e `test_avaliacao_documental.py`**; verificado ponta-a-ponta (API :3009). Migrations `20260712030653`, `20260712033946`.
+- **Falta:** **F** (coleta parcial: `EscopoColeta` TODAS/BLOCOS/PARCELAS + `AvaliacaoParcelaAlvo`, `parcelasEsperadas`/`completude`) · **G** (timeline: `RegistroTimeline` + projeção de eventos derivados + aba Timeline + toggle "Disponível para o cliente"). Follow-up E: seed com modelo-sistema demo de foto.
+
 ## 3.1 Croqui de 2+ fatores (split-plot) — ✅ implementado (29/06/2026)
 Distinção **fatorial × parcela subdividida (split-plot)**, completo nas 4 fatias (PRs #16, #17, #18). Design: [SDD/04-design-detalhado/06-croqui-esquemas.md](SDD/04-design-detalhado/06-croqui-esquemas.md).
 - **Domínio** (`packages/domain/croqui.ts`): `gerarParcelaSubdividida`, `validarParcelaSubdividida`, `trocarSubparcela`, `trocarParcelaPrincipal` (coberto pelos 59 testes).
