@@ -23,4 +23,5 @@ Alternativa ao env: editar `app.json` → `expo.extra.apiBase`.
 ## Notas
 - Compila por typecheck; **runtime deve ser validado em device/emulador**.
 - Coleta guarda **valor bruto** (a produtividade kg/ha é calculada só no relatório — web/API).
-- Próximos: fotos por parcela, indicador de conectividade automático, persistência por SQLite.
+- Na **web**, foto de parcela já existe (Demanda E / v0.13.0 — avaliação documental). No mobile ainda não.
+- Próximos: fotos por parcela no app, indicador de conectividade automático, persistência por SQLite.

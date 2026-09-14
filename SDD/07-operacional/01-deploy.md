@@ -1,7 +1,7 @@
 # 01 — Deploy, monitoramento e backup
 
 ## Ambientes
-- **dev:** Docker Compose (MySQL local — pode reusar a instância do sagre-app); API + Web em hot-reload; mobile via Expo/Metro.
+- **dev:** Docker Compose (**MySQL + MinIO + API + Web**); ou MySQL local + hot-reload; mobile via Expo/Metro.
 - **staging/prod:** API NestJS (container), MySQL gerenciado, storage de fotos (S3-compatível), Web (Vercel/Node), mobile distribuído (Play Store/EAS).
 
 ## Deploy
@@ -10,8 +10,9 @@
 - **Sem runtime R** em produção (estatística em TS).
 
 ## Monitoramento e observabilidade
-- Logs estruturados (API), métricas de erro e latência; alertas no endpoint de sync (taxa de conflito, falhas de upload).
-- Healthcheck da API e do banco.
+- Logs estruturados da API (`x-request-id` + `LoggingInterceptor`; JSON com `LOG_JSON=true`).
+- Healthcheck da API e do banco (`GET /health`).
+- Pendente: métricas/observabilidade externa (coletor) e alertas de sync.
 
 ## Backup e recuperação
 - Backup diário do MySQL (dump + retenção); restauração testada periodicamente (RNF-10).

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 # Cancela execuções antigas do mesmo branch/PR ao chegar um push novo.
@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Job 1 — núcleo puro: build + typecheck + testes (domain 59 + analytics 24).
+  # Job 1 — núcleo puro: build + typecheck + testes (domain 62 + analytics 107).
   # Não precisa de banco.
   # ---------------------------------------------------------------------------
   unit:

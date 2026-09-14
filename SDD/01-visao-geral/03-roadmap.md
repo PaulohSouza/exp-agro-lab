@@ -19,16 +19,16 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 - ✅ **Fatia 5 — polimento (28/06/2026):** aba **Fatores** com **1–3 fatores na UI** (níveis por fator → produto cartesiano → tratamentos, com prévia da contagem). **Exportação Excel** (`exceljs`): `GET /experimentos/:id/export.xlsx` com abas Geral/Tratamentos/Croqui/Dados (produtividade calculada), botão "Exportar Excel" no detalhe (download autenticado via blob). _PDF/PPTX ficam para o Marco 5 (relatório)._
 - **Entrega-alvo:** criar um experimento completo ponta-a-ponta na web; cenário E2E em [06-testes/02-casos-testes.md](../06-testes/02-casos-testes.md).
 
-## Autenticação & compartilhamento (RF-20..26) — em andamento
+## Autenticação & compartilhamento (RF-20..26) — ✅ concluído (28/06/2026; endurecido em v0.12.0)
 - ✅ **Etapa A (28/06/2026):** auth backend — login JWT + bcrypt, registro de instituição (cria instituição + admin), `/auth/me` protegido, guard + decorators (`@Public`, `@CurrentUser`). Seed com `admin@demo.com`/`admin123` e `analista@demo.com`/`analista123`.
 - ✅ **Etapa B (28/06/2026):** guard JWT **global** (`@Public` em login/registro/health), **escopo por instituição** (RN-TENANT) nos experimentos (lista/acesso/CRUD com `garantirAcesso`, owner = usuário atual), módulo **Usuários** (admin cadastra/lista). Web: **/login** (entrar + registrar instituição), **Protected** (header com usuário/logout + nav), **/usuarios**, e token JWT anexado a todas as chamadas (401 → /login). Verificado: 401 sem token, outra instituição vê 0 e recebe 403, não-admin 403 ao criar usuário.
 - ✅ **Etapa C (28/06/2026):** **compartilhamento** de experimentos (RF-23..25). API: compartilhar por e-mail com nível **input/edit** (auto-aceito se usuário existe; senão **convite por e-mail simulado** com token), listar e revogar (dono/admin). Lista inclui **compartilhados comigo**. Enforcement do nível: `garantirAcesso` aplicado em avaliações (lançar = input; cadastrar/editar = edit) e tratamentos (edit). Web: aba **Compartilhar** (form e-mail+nível, lista, revogar) + badge "compartilhado" na lista. Verificado: input lança mas não edita (403); edit edita; revogar tira acesso.
 - ✅ **Etapa D — Ordem de Serviço (RF-26, 28/06/2026):** fluxo comercial completo. API: `InstituicaoModule` (política `todos`/`n_de_m` + aprovadores) e `OrdemServicoModule` (criar → submeter → **aprovação interna por política** → **aprovação do cliente por e-mail/token**, endpoint **público** de decisão). Web: aba **Ordem de Serviço** (criar/submeter/aprovar interno/ver status), página **/instituicao** (política + aprovadores, admin) e página **pública /aprovacao/[token]**. Verificado E2E: submeter → aprovação interna 1-de-N → e-mail simulado → cliente decide por token → OS aprovada; não-aprovador bloqueado.
 
-## Marco 2 — Coleta mobile offline-first — em andamento
+## Marco 2 — Coleta mobile offline-first — ⚠️ scaffold (falta device)
 - ✅ **Fatia 1 — fundação de sync (28/06/2026):** helpers no `packages/domain` (`chaveColeta` idempotente, `resolverColeta` LWW, `dedupLote`) com 3 testes; API `SyncModule`: `GET /sync/experimentos/:id` (pacote offline: estrutura+croqui+avaliações+dados) e `POST /sync/push` (lote idempotente, dedup, **resolução de conflito** marcando — nunca descarta). Verificado: dedup, conflito por timestamp, origem `mobile`.
 - ✅ **Fatia 2 — app Expo (28/06/2026):** `apps/mobile` (Expo SDK 52 + expo-router, **fora do workspace pnpm**). Telas: login, protocolos (lista via pull), coleta por parcela com **fila offline** (AsyncStorage) e botão **Sincronizar** (push, avisa conflitos). Helpers de sync em cópia local. **Compila (npm install + tsc OK); runtime a validar em device** — ver `apps/mobile/README.md` (definir `EXPO_PUBLIC_API_BASE` com o IP da máquina).
-- ⬜ Próximos (fatia 3): fotos por parcela, detecção automática de conectividade, persistência SQLite, e migrar coleta para usar `/sync/push` com `clientUpdatedAt` por campo.
+- ⬜ Próximos (fatia 3): fotos por parcela **no mobile** (na web a Demanda E já entrega avaliação documental + upload; v0.13.0), detecção automática de conectividade, persistência SQLite, e migrar coleta para usar `/sync/push` com `clientUpdatedAt` por campo.
 - **Entrega:** coletar avaliações sem internet e sincronizar (app pronto para teste em device).
 
 ## Marco 3 — Fluxos (comercial × interno) e aprovação
@@ -36,18 +36,24 @@ Foco escolhido. Ver [requisitos funcionais](../02-requisitos/01-requisitos-funci
 - Fluxo interno (TCC) sem custo. Trilha de auditoria de status.
 - **Entrega:** lista de protocolos com filtros (igual ao print) e ciclo de aprovação.
 
-## Marco 4 — Análise estatística (port do SAGRE) — em andamento
+## Marco 4 — Análise estatística (port do SAGRE) — ✅ fase B/C (v0.10.0–v0.11.0)
 - ✅ **Fase A (28/06/2026):** `packages/analytics` puro — distribuições (F, t, qui-quadrado via beta/gama incompleta), **ANOVA 1 fator DIC/DBC** (decomposição, CV, F, p), **Bartlett** (homogeneidade) e **comparação de médias LSD (Fisher) com letras**. 9 testes (distribuições vs tabela, ANOVA F=13.5 exato, letras). API: `GET /avaliacoes/:id/analise` (usa o delineamento + valores de saída). Web: painel **Análise** na aba Avaliações (tabela ANOVA, médias+letras, CV, Bartlett). Seed popula as 20 parcelas → análise real (F≈373, CV 1,2%).
-- ⬜ **Fase B:** Tukey/Scott-Knott (qtukey), fatorial 2–3, transformações, não-paramétrico, conjunta multi-local, e **golden tests vs SAGRE** (precisa dos outputs do R). Ver [08-anexos/sagre-analytics.md](../08-anexos/sagre-analytics.md).
-- **Entrega:** análise de um experimento real (fase A entregue; equivalência exata ao SAGRE na fase B).
+- ✅ **Fase B/C (30/06/2026–01/07/2026):** Tukey/Scott-Knott (`ptukey`/`qtukey`), fatorial 2–3 + desdobramento (duplo e triplo), transformações (√/log/Box-Cox), não-paramétrico (Kruskal/Friedman), conjunta multi-local (G×A), Shapiro-Wilk + seleção de rota em 1 clique, **27 golden tests vs SAGRE** (`ExpDes.pt`). Analytics **107 testes**. Pendente: golden da conjunta (sem dado multi-local). Ver [STATUS §3.1–3.7](../../STATUS.md) e [08-anexos/sagre-analytics.md](../08-anexos/sagre-analytics.md).
+- **Entrega:** análise de um experimento real com equivalência numérica ao SAGRE nas rotas cobertas pelos golden.
 
-## Marco 5 — Relatório PPTX — em andamento
+## Marco 5 — Relatório PPTX — ✅ fase B (v0.11.0)
 - ✅ **Fase A (28/06/2026):** geração de **PPTX** (`pptxgenjs`) — capa (tema azul), resumo do experimento e, por avaliação, slide com **tabela ANOVA + médias/letras + gráfico de barras**. API `GET /experimentos/:id/relatorio.pptx` (auth + acesso); botão **Relatório PPTX** no web (download por blob). Verificado: PPTX válido, 3 slides no PC1699.
-- ⬜ Fase B: aproximar do layout exato de `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (logos, seções, formatação) e incluir gráficos de interação/regressão quando a fase B do analytics existir.
-- **Entrega:** relatório baixável (fase A entregue; fidelidade ao modelo na fase B).
+- ✅ **Fase B (30/06/2026):** layout fiel ao `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx` (capa, info gerais, metodologia, um slide por variável com gráfico+letras, fatorial/split, sumarização, rodapé/numeração, marca da instituição). Follow-up: % incremento vs testemunha; slides manuais; logo.
+- **Entrega:** relatório baixável na linguagem visual do modelo SAGRE.
 
-## Marco 6 — Endurecimento
-- Segurança (papéis/permissões finos), observabilidade, backup, performance do croqui em telas grandes, acessibilidade.
+## Demandas E/F/G (pós-marco) — em andamento
+- ✅ **E — avaliação documental** (v0.13.0): natureza NUMERICA/FOTO/TEXTO + MinIO + campo `ARQUIVO`.
+- ⏳ **F — coleta parcial** (próxima): escopo TODAS/BLOCOS/PARCELAS. Spec em [09-fotos-coleta-parcial-timeline.md](../04-design-detalhado/09-fotos-coleta-parcial-timeline.md).
+- ⏳ **G — timeline.**
+
+## Marco 6 — Endurecimento — ⚠️ parcial (v0.12.0)
+- ✅ CI (lint + format + unit + e2e), observabilidade (`x-request-id` + log JSON), SMTP real com fallback, refresh-token + senha forte, Docker Compose, RBAC 7 papéis (fatia 1–2).
+- ⬜ RBAC fino + auditoria, backup automatizado, métricas externas, acessibilidade, performance do croqui em telas grandes.
 
 ## Dependências entre marcos
 ```

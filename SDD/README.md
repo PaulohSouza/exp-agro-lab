@@ -15,8 +15,8 @@ Plataforma para cadastrar e gerir **experimentos de 1 a 3 fatores** com **tratam
 | [01-visao-geral/](01-visao-geral/) | Contexto, objetivos e roadmap |
 | [02-requisitos/](02-requisitos/) | Requisitos funcionais, não funcionais e regras de negócio |
 | [03-arquitetura/](03-arquitetura/) | Visão arquitetural, diagramas, tecnologias e **[padrão de desenvolvimento](03-arquitetura/04-padroes-desenvolvimento.md)** |
-| [04-design-detalhado/](04-design-detalhado/) | Modelo de dados, módulos, interfaces, fluxos e design system |
-| [05-seguranca/](05-seguranca/) | Autenticação, autorização e controles |
+| [04-design-detalhado/](04-design-detalhado/) | Modelo de dados, módulos, interfaces, fluxos, design system, [catálogo](04-design-detalhado/08-catalogo-avaliacoes.md) e [fotos/coleta parcial/timeline](04-design-detalhado/09-fotos-coleta-parcial-timeline.md) |
+| [05-seguranca/](05-seguranca/) | Autenticação, autorização e [RBAC](05-seguranca/03-papeis-rbac.md) |
 | [06-testes/](06-testes/) | Estratégia de testes e cenário E2E "criar experimento" |
 | [07-operacional/](07-operacional/) | Deploy, monitoramento e backup |
 | [08-anexos/](08-anexos/) | Glossário, exemplos e referências |
@@ -25,6 +25,7 @@ Plataforma para cadastrar e gerir **experimentos de 1 a 3 fatores** com **tratam
 - **Stack:** TypeScript full-stack monorepo — NestJS + Prisma + **MySQL**, web Next.js/React, mobile React Native **offline-first**, `packages/domain` com tipos/regras compartilhados. Ver [03-arquitetura/03-tecnologias.md](03-arquitetura/03-tecnologias.md).
 - **Estatística (SAGRE):** **reescrita na stack principal (TS)**, sem R em produção, com **validação golden** contra a saída do SAGRE. Ver [04-design-detalhado/02-design-modulos.md](04-design-detalhado/02-design-modulos.md) e [08-anexos/sagre-analytics.md](08-anexos/sagre-analytics.md).
 - **MVP-1:** Núcleo do experimento + croqui clique-e-arraste + avaliações com cálculo de unidade de saída. Ver [01-visao-geral/03-roadmap.md](01-visao-geral/03-roadmap.md).
+- **Estado implementado (14/09/2026, v0.13.0):** Marcos 0–1, auth/OS/sync, catálogo, split-plot, analytics fase B/C + golden vs SAGRE, PPTX fase B, endurecimento/Docker e **avaliação documental**. Em aberto: coleta parcial (F), timeline (G), mobile em device. Handoff em [STATUS.md](../STATUS.md).
 
 ## Fontes / materiais de base (no repositório)
 - `docs/` — documentos do TCC (projeto, apresentação) e export de protocolo real.

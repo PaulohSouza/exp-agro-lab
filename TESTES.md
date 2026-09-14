@@ -40,6 +40,12 @@ pnpm --filter @exp/web dev          # Web :3000  (terminal 2)
 - [ ] **Análise** → _ANOVA (DBC, n=20): F alto, p < 0.001, **CV ≈ 1,2%**, tratamento significativo; Bartlett homogêneo; médias com **letras** (T4 a … T1 e)._
 - [ ] **Relatório** → _kg/ha por parcela (ex.: bruto 8,5 / área 9 ≈ 9.444) + médias por tratamento._
 - [ ] Criar **nova avaliação** (ex.: "Nota visual", sem fórmula) → _aparece; "Lançar" mostra só o valor (sem linhas/comprimento)._
+- [ ] Criar avaliação natureza **TEXTO** (ou FOTO) → _Lançar pede texto/upload; **não** aparece na Análise; API de análise devolve 400._
+
+## 5b. Avaliação documental (v0.13.0)
+- [ ] Catálogo: criar modelo natureza **FOTO** → _badge/seletor de natureza visível._
+- [ ] Experimento → Avaliações → Lançar FOTO → upload (< 10 MB) → _preview; URL persistida._
+- [ ] Sem MinIO: fallback local `GET /uploads/*` funciona. Com Compose: objeto no bucket `expagrolab`.
 
 ## 6. Exportações
 - [ ] Cabeçalho → **Excel** → _baixa `.xlsx` com abas Geral/Tratamentos/Croqui/Dados._

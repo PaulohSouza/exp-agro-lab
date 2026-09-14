@@ -1,10 +1,10 @@
 # STATUS do projeto — EXP-AGROLAB
 
-> **Handoff para retomar em nova conversa.** Última atualização: 12/07/2026.
-> **Última rodada (12/07/2026, PR #29 — MERGED):** nova feature **avaliação documental (foto/texto)** — Demanda **E** de 3 (E/F/G). Foto de parcela = avaliação documental (fora da ANOVA); foto geral = atividade `ARQUIVO`. `AvaliacaoNatureza` (NUMERICA/FOTO/TEXTO), `StorageService` **S3/MinIO** + fallback local, `POST /uploads`, `Lançar` com upload de foto/texto. **domain 62** + e2e `test_avaliacao_documental`; CI verde. **Próxima: Demanda F (coleta parcial)** — spec pronta em §3.0.1 / [SDD 09 §Demanda F](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md). Detalhe da feature em **§3.0.1**. Rodada anterior (PRs #25/#26): simulação ponta-a-ponta + **M1** (agrega amostras por parcela; [MELHORIAS.md](MELHORIAS.md)) + endurecimento/infra (§8.5).
-> **Onde estamos:** **analytics fase B/C fechada + validada e PPTX fase B** (tag **v0.11.0** — PRs #21, #22, #24). Fechou os follow-ups da analytics (**desdobramento da interação tripla** + **aplicar rota em 1 clique**), montou os **golden tests vs SAGRE** (engine real `ExpDes.pt` + dados reais do SAGRE-app; **27 testes**, casando à última casa decimal) e reescreveu o **relatório PPTX** na linguagem visual do modelo SAGRE (marca dinâmica da instituição). Antes: analytics fase B/C (v0.10.0), croqui split-plot (v0.9.0), padronização + CI (v0.8.0, ver §0), catálogo/coleta (v0.7.0). **`main` no padrão.**
-> **Comece por aqui:** §3.1–3.7 (analytics + golden), §8.3 (PPTX) e §8 (próximos passos — agora o foco é **mobile em device** e **endurecimento/infra**; a única pendência da estatística é a **conjunta multi-local**, bloqueada por falta de dado). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
-> Testes: **domain 62** + **analytics 107** (inclui **27 golden vs SAGRE**) + **13 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`; inclui `test_pontos_amostrais`, `test_auth_refresh` e `test_avaliacao_documental`). **CI** roda tudo no PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)) — job unit com **`lint` + `format:check`**.
+> **Handoff para retomar em nova conversa.** Última atualização: 14/09/2026.
+> **Última rodada (14/09/2026 — release v0.13.0):** documentação consolidada ([README.md](README.md) detalhado) + branch **`develop`** criada e alinhada à `main` + tag da **Demanda E** (já mergeada no PR #29 em 12/07/2026, sem release até agora). Avaliação documental **foto/texto**, `StorageService` **S3/MinIO** + fallback local, campo `ARQUIVO` em atividade. **Próxima: Demanda F (coleta parcial)** — spec pronta em §3.0.1 / [SDD 09 §Demanda F](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md).
+> **Onde estamos:** tag **v0.13.0**. Analytics fase B/C + golden vs SAGRE + PPTX fase B (v0.11.0) · pontos amostrais + endurecimento + Docker + refresh (v0.12.0) · **avaliação documental + MinIO** (v0.13.0). **`main` e `develop` alinhadas, no padrão.**
+> **Comece por aqui:** §3.0.1 (E ✅ / F ⏳ / G ⏳), §8 (próximos passos — foco **Demanda F**) e o [README.md](README.md). Leia também [CLAUDE.md](CLAUDE.md) + [SDD/README.md](SDD/README.md) + o **[padrão de desenvolvimento](SDD/03-arquitetura/04-padroes-desenvolvimento.md)**.
+> Testes: **domain 62** + **analytics 107** (inclui **27 golden vs SAGRE**) + **13 suites e2e** (Playwright Python em `e2e/`, ver `e2e/README.md`). **CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)): job unit (`lint` + `format:check` + typecheck + test) e job e2e com **7 suites** (catálogo, atividades, grupos, período/marcos, auth/refresh, avaliação documental). As outras 6 suites de analytics rodam localmente.
 
 ## 0. Padronização de código (concluída em 29/06/2026)
 Iniciativa para alinhar todo o código a um padrão único — ver **[SDD/03-arquitetura/04-padroes-desenvolvimento.md](SDD/03-arquitetura/04-padroes-desenvolvimento.md)** (§12 = progresso). Tudo mergeado na `main`, cada etapa verificada (typecheck + 59+24 testes + build + reseed + 5 e2e):
@@ -36,7 +36,7 @@ Monorepo TypeScript (pnpm + Turborepo):
 | Fatores 1–3 → tratamentos (produto cartesiano) | ✅ | aba Fatores; `POST /experimentos/:id/fatores` |
 | Tratamentos com produtos/dose/modo/volume/timing/atividade | ✅ | aba Tratamentos; `TratamentosModule` |
 | Croqui automático (DIC/DBC) + **drag-drop** + recasualizar | ✅ | aba Croqui; `gerarCroqui`/`salvarCroqui` |
-| Avaliações: cadastro + **lançar valor bruto** (web) | ✅ | aba Avaliações → Lançar; `AvaliacoesModule` |
+| Avaliações: cadastro + **lançar valor bruto** (web) + **documental foto/texto** | ✅ | aba Avaliações → Lançar; `AvaliacoesModule` + `StorageModule`; ver §3.0.1 |
 | Relatório de produtividade (kg/ha no relatório, não na coleta) | ✅ | aba Avaliações → Relatório |
 | **Análise estatística** (ANOVA DIC/DBC/split/fatorial 2–3 + desdobramento duplo **e triplo**, CV, Bartlett/Shapiro + rota em 1 clique, transformações, não-paramétrico, conjunta, **Tukey/Scott-Knott/LSD**; **validada por golden vs SAGRE**) | ✅ fase B/C | aba Avaliações → Análise; `GET /avaliacoes/:id/analise?metodo=`; ver §3.1–3.7 |
 | **Relatório PPTX** (capa · info gerais · metodologia · slides de resultado c/ gráfico+letras · fatorial/split · sumarização · rodapé/numeração; marca da instituição) | ✅ fase B | botão "Relatório PPTX"; `GET /experimentos/:id/relatorio.pptx`; ver §8.3 |
@@ -73,7 +73,7 @@ Branch `feature/catalogo-avaliacoes-coleta`. Reestrutura as avaliações para mu
 ## 3.0.1 Avaliação documental (foto/texto), coleta parcial e Timeline
 Feature de 3 demandas: **E** natureza/foto ✅ · **F** coleta parcial ⏳ (próxima) · **G** timeline ⏳. Design completo em [SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md).
 - **Decisão de enquadramento (travada com o usuário):** foto **de parcela** = **avaliação documental** (por parcela, reusa croqui/coleta/sync, fora da ANOVA); foto **geral do ensaio** = **atividade** com campo `ARQUIVO`. Coleta parcial por **blocos + parcelas livres**. Timeline **híbrida** (tabela manual + eventos derivados na leitura).
-- **Demanda E — natureza do dado ✅ MERGED (PR #29, 11/07/2026).** E1–E4 + E-atividade: enum `AvaliacaoNatureza` (NUMERICA/FOTO/TEXTO) em `Avaliacao`/`ModeloAvaliacao`; documental fora da análise/relatório (guard → 400); `StorageService` **S3-compatível (MinIO)** com fallback local + `POST /uploads` (valida tipo/10MB, `GET /uploads/*`); docker-compose com `minio`+`minio-init`; `Lançar` natureza-aware (número/texto/upload de foto com preview); grade de coleta exclui documental; `TipoCampo=ARQUIVO` na atividade. **domain 62** + **e2e `test_avaliacao_documental.py`** (no CI). Migrations `20260712030653`, `20260712033946`. `NUMERICA` leniente no lançamento (retrocompat). **Tag/release ainda não feitos** (feito só o merge — decidir versão ao fechar mais demandas ou já).
+- **Demanda E — natureza do dado ✅ RELEASED (PR #29 + tag v0.13.0, 14/09/2026).** E1–E4 + E-atividade: enum `AvaliacaoNatureza` (NUMERICA/FOTO/TEXTO) em `Avaliacao`/`ModeloAvaliacao`; documental fora da análise/relatório (guard → 400); `StorageService` **S3-compatível (MinIO)** com fallback local + `POST /uploads` (valida tipo/10MB, `GET /uploads/*`); docker-compose com `minio`+`minio-init`; `Lançar` natureza-aware (número/texto/upload de foto com preview); grade de coleta exclui documental; `TipoCampo=ARQUIVO` na atividade. **domain 62** + **e2e `test_avaliacao_documental.py`** (no CI). Migrations `20260712030653`, `20260712033946`. `NUMERICA` leniente no lançamento (retrocompat).
 - **Demanda F — coleta parcial ⏳ PRÓXIMA.** Especificação detalhada e pronta para implementar em **[SDD 09 §Demanda F](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md#demanda-f--escopo-de-coleta-parcial-subconjunto-de-blocosparcelas)** (fatias F1–F5, assinaturas de domínio, endpoints, casos de borda — atenção à **higiene de alvos ao recasualizar croqui** — e plano de teste). Resumo: `Avaliacao.escopoColeta` (TODAS/BLOCOS/PARCELAS) + `blocosAlvo` (CSV) + `AvaliacaoParcelaAlvo`; domínio `parcelasEsperadas`/`completudeColeta`/`validarEscopoColeta`; UI de escopo (blocos por checkbox, parcelas pelo croqui) + rótulo "coletadas X de Y". Se faltar tempo, entregar **BLOCOS** primeiro.
 - **Demanda G — timeline ⏳.** `RegistroTimeline` (manual/declaração/status) + projeção de eventos derivados na leitura + aba Timeline + toggle "Disponível para o cliente" (filtro no portal `/aprovacao/[token]`). Modelo do exemplo: `timeline-exemplo.png`. Ver [SDD 09 §Demanda G](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md).
 - **Follow-up E:** seed com modelo-sistema demo "Registro fotográfico parcela" (natureza FOTO) — deixa a feature demoável e habilita e2e de catálogo com foto.
@@ -124,7 +124,7 @@ Destrava a escolha de rota pela checagem de pressupostos. Design: [SDD/08-anexos
 - **Aplicar a rota em 1 clique** ✅ (30/06/2026): botão "Aplicar rota sugerida" no banner ajusta os seletores (teste/transformação) para a recomendação — não-paramétrico, transformação sugerida (√/log/Box-Cox) ou paramétrica; quando a seleção já bate, mostra "✓ rota aplicada".
 - **Follow-up:** usar Shapiro também em split/fatorial.
 
-## 3.7 Golden tests vs SAGRE — 🔓 em andamento (30/06/2026)
+## 3.7 Golden tests vs SAGRE — ✅ implementado (30/06/2026; 27 testes)
 **Desbloqueado:** R 4.6.0 está disponível no ambiente com **`ExpDes.pt`/`agricolae`/`MASS`** (a engine do próprio SAGRE) e as planilhas de teste do SAGRE-app estão em `BD/dados`. A referência é gerada da engine real e **versionada** (a CI compara sem R).
 - **Harness** (`packages/analytics/golden/`): `gen-reference.R` lê as planilhas, copia os dados como CSV (`golden/data/`) e grava `golden/reference.json` (ANOVA/CV via `aov()`, cruzado com `ExpDes.pt::fat3.dbc` — casamento à última casa decimal). `src/golden.test.ts` compara o TS contra o JSON.
 - **Batch 1 (família ANOVA/fatorial)** ✅ **14 testes**: ANOVA 1 fator DBC (`teste_1fator_dbc_6trat`), fatorial 2×4 DBC (`teste_fatorial_dbc_3x4`) e trifatorial 3×3×2 DBC — incl. **`teste_trifatorial_triplasig_3x3x2`** (interação tripla significativa) — em 2 variáveis-resposta cada. GL/SQ/QM/F/p e CV batem com o SAGRE. O desdobramento triplo foi conferido manualmente contra `fat3.dbc` (SQ/Fc idênticos).
@@ -134,28 +134,31 @@ Destrava a escolha de rota pela checagem de pressupostos. Design: [SDD/08-anexos
 
 ## 4. Pendências / limitações conhecidas
 - **Simulação ponta-a-ponta (11/07/2026) — ver [MELHORIAS.md](MELHORIAS.md).** 4 experimentos de Fitopatologia (DIC/DBC/Fatorial/Split) × 2 variáveis (Produtividade sacas/ha; **Altura com 5 plantas/parcela**) até o PPTX. Achados **corrigidos**: **M1** — análise **agrega as amostras por parcela** (média) antes da ANOVA (antes pseudorreplicava: n=100 vs 20 e quebrava fatorial/split com 400; regressão em `e2e/test_pontos_amostrais.py`); **M2** — `numeroPontos` agora settável em avaliação ad-hoc (API + form web); **M4** — relatório loga variável omitida em vez de sumir sem rastro. **Follow-up:** **M3** (UI web para coletar N pontos/parcela) e **M5** (agregação por soma além de média). Detalhe e priorização em MELHORIAS.md.
-- **Analytics fase B/C:** **Tukey (HSD)**, **Scott-Knott**, LSD, **split-plot (2 erros)**, **fatorial 2–3 + desdobramento**, **transformações (√/log/Box-Cox)**, **não-paramétrico (Kruskal/Friedman + post-hoc)**, **conjunta multi-local (G×A)**, **Shapiro-Wilk + seleção de rota**, **desdobramento da interação tripla** e **aplicar a rota em 1 clique** ✅ implementados. **Falta:** comparação de médias por fator no split-plot e **golden tests vs SAGRE** (pendente por não ter o ambiente R aqui).
-- **PPTX fase A** tem layout próprio; falta aproximar do `modelo saida relatório - SAGRE - EXP-AGROLAB.pptx`.
+- **Analytics fase B/C:** **Tukey (HSD)**, **Scott-Knott**, LSD, **split-plot (2 erros)**, **fatorial 2–3 + desdobramento**, **transformações (√/log/Box-Cox)**, **não-paramétrico (Kruskal/Friedman + post-hoc)**, **conjunta multi-local (G×A)**, **Shapiro-Wilk + seleção de rota**, **desdobramento da interação tripla** e **aplicar a rota em 1 clique** ✅ implementados. **Golden vs SAGRE ✅** (27 testes; §3.7). **Falta:** comparação de médias por fator no split-plot; golden da **conjunta multi-local** (bloqueado por dado); médias/letras em fatorial nos golden.
+- **PPTX fase B ✅** (layout fiel ao modelo SAGRE; §8.3). Follow-up: % incremento vs testemunha; placeholders dos slides manuais; logo da instituição.
 - **App mobile não foi rodado** (sem device/emulador no ambiente). Compila por `tsc`. Validar com Expo Go.
-- E-mails em modo **SIMULATE** (arquivos em `apps/api/email-previews/`), não envia de verdade.
-- Sem auth real de senha forte/refresh-token rotation; JWT simples (dev).
+- E-mails: SMTP real disponível, mas o default continua **SIMULATE** (arquivos em `apps/api/email-previews/`) até configurar SMTP de produção.
+- Auth: refresh-token + senha forte ✅ (v0.12.0). Restam RBAC fino + auditoria.
 
 ## 5. Mapa do código
-- **API módulos** (`apps/api/src/`): `auth`, `experimentos`, `cadastros`, `tratamentos`, `avaliacoes`, `usuarios`, `compartilhamento`, `instituicao`, `ordem-servico`, `sync`, `export`, `relatorio`, `email`, `prisma`, `health`.
-- **Web páginas** (`apps/web/app/`): `/`, `/login`, `/experimentos`, `/experimentos/[id]` (7 abas), `/cadastros`, `/usuarios`, `/instituicao`, `/aprovacao/[token]`.
+- **API módulos** (`apps/api/src/`): `auth`, `experimentos`, `cadastros`, `tratamentos`, `avaliacoes`, `atividades`, `modelo-avaliacao`, `grupos-coleta`, `usuarios`, `compartilhamento`, `instituicao`, `ordem-servico`, `sync`, `export`, `relatorio`, `dashboard`, `departamentos`, `dominios`, `storage`, `email`, `prisma`, `health`.
+- **Web páginas** (`apps/web/app/`): `/`, `/login`, `/dashboard`, `/experimentos`, `/experimentos/[id]` (8 abas: Geral/Fatores/Tratamentos/Croqui/Avaliações/Atividades/Compartilhar/OS), `/cadastros`, `/catalogo`, `/usuarios`, `/instituicao`, `/analise-conjunta`, `/aprovacao/[token]`.
 - **Schema**: `apps/api/prisma/schema.prisma`. **Seed**: `apps/api/prisma/seed.ts`.
 
 ## 6. Como rodar (resumo rápido)
 ```bash
-# pré: Node ≥20, pnpm 9, MySQL local. Banco/credenciais já em apps/api/.env (expagrolab_dev).
+# Docker (MySQL + MinIO + API + Web):
+docker compose up -d --build
+
+# ou local — pré: Node ≥20, pnpm 9, MySQL. Credenciais em apps/api/.env (expagrolab_dev).
 pnpm install
 pnpm --filter @exp/api exec prisma migrate dev   # aplica migrações (1ª vez)
 pnpm --filter @exp/api db:seed                    # cenário PC1699 (20 parcelas com dados)
-node apps/api/dist/main.js                         # API em :3001  (rode 'pnpm --filter @exp/api build' antes)
+pnpm --filter @exp/api build && node apps/api/dist/main.js   # API em :3001
 pnpm --filter @exp/web dev                         # Web em :3000 → http://localhost:3000/login
 ```
 Login demo: **admin@demo.com / admin123** (gestão da instituição) · **analista@demo.com / analista123** · **root@sistema.com / root123** (super-admin global).
-Mobile: ver `apps/mobile/README.md` (`EXPO_PUBLIC_API_BASE` = IP da máquina).
+Mobile: ver `apps/mobile/README.md` (`EXPO_PUBLIC_API_BASE` = IP da máquina). Guia completo: [README.md](README.md).
 
 ## 7. Testes a fazer
 Ver o checklist completo em **[TESTES.md](TESTES.md)**.
@@ -194,12 +197,13 @@ Restam: **RBAC fino + auditoria**; e-mail real em produção (SMTP configurado);
 ### 8.6 Follow-ups da padronização (opcionais)
 UI consumir rótulos de `DominioValor` (substituir mapas hardcoded no web) · `userId`→`usuarioId` se desejado (hoje mantido como convenção de auth). Ver §0.
 
-> **Prioridade sugerida:** ~~(1) golden tests vs SAGRE~~ ✅ · ~~(2) PPTX fiel~~ ✅ · ~~(3) endurecimento/infra~~ ✅ · ~~(4) Demanda E — avaliação documental~~ ✅ (PR #29 merged; §3.0.1) → **agora: (1) Demanda F — coleta parcial** (spec pronta em §3.0.1 / [SDD 09 §Demanda F](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md); começar por F1 schema) → (2) **Demanda G — timeline** → (3) **mobile em device** (Expo Go; `npm ci` em `apps/mobile` antes) → (4) **RBAC fino + auditoria** → (5) **M3** (UI de N pontos por parcela; [MELHORIAS.md](MELHORIAS.md)) → (6) **conjunta multi-local** (golden bloqueado por dado). **Analytics fase B/C completo e validado.**
+> **Prioridade sugerida:** ~~(1) golden tests vs SAGRE~~ ✅ · ~~(2) PPTX fiel~~ ✅ · ~~(3) endurecimento/infra~~ ✅ · ~~(4) Demanda E — avaliação documental~~ ✅ (PR #29 + **v0.13.0**; §3.0.1) → **agora: (1) Demanda F — coleta parcial** (spec pronta em §3.0.1 / [SDD 09 §Demanda F](SDD/04-design-detalhado/09-fotos-coleta-parcial-timeline.md); começar por F1 schema) → (2) **Demanda G — timeline** → (3) **mobile em device** (Expo Go; `npm ci` em `apps/mobile` antes) → (4) **RBAC fino + auditoria** → (5) **M3** (UI de N pontos por parcela; [MELHORIAS.md](MELHORIAS.md)) → (6) **conjunta multi-local** (golden bloqueado por dado). **Analytics fase B/C completo e validado.**
 
 ## 9. Releases
-`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · `v0.10.0` (PR #20 — **analytics fase B/C**: ANOVA fatorial 2–3 + desdobramento · transformações √/log/Box-Cox · não-paramétrico Kruskal/Friedman · conjunta multi-local G×A · Shapiro-Wilk + rota) · `v0.11.0` (PRs #21/#22/#24 — **desdobramento da interação tripla** + **aplicar rota em 1 clique** · **golden tests vs SAGRE** (engine `ExpDes.pt` + dados reais; **27 testes**) · **PPTX fase B** (layout fiel ao modelo, marca da instituição); analytics **107 testes**) · **`v0.12.0`** (PRs #25/#26/#27/#28 — **pontos amostrais**: análise agrega amostras por parcela (M1/M2/M4, ver MELHORIAS.md) · **endurecimento/infra**: `lint`/`format:check` no CI, observabilidade (request-id + log JSON), SMTP real c/ fallback, **refresh-token** (rotação + reuso) + **senha forte**, **adoção do refresh no web** · **docker-compose** (MySQL+API+Web); **12 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
+`v0.1.0`…`v0.6.0` (até relatório PPTX) · `v1.0.0-rc.1` (checkpoint fluxo web) · `v0.7.0` (catálogo de avaliações/atividades + período/marcos + coleta agrupada) · `v0.8.0` (CI + padronização de código) · `v0.9.0` (croqui split-plot completo) · `v0.10.0` (PR #20 — **analytics fase B/C**) · `v0.11.0` (PRs #21/#22/#24 — **desdobramento triplo** + **rota em 1 clique** · **golden vs SAGRE** · **PPTX fase B**) · `v0.12.0` (PRs #25/#26/#27/#28 — **pontos amostrais** M1/M2/M4 · **endurecimento/infra** · **docker-compose** · **refresh no web**) · **`v0.13.0`** (PR #29 — **avaliação documental** foto/texto + **storage S3/MinIO** + campo `ARQUIVO`; docs + branch `develop`; **13 suites e2e** — **Latest**). Histórico: https://github.com/PaulohSouza/exp-agro-lab/releases
 
 ## 10. Infra / notas de ambiente
 - `pnpm` symlinkado em `~/.local/bin`. MySQL local: root via socket (`mysql -u root`); app usa user `expagrolab` em `expagrolab_dev`/`expagrolab_shadow` (NÃO usar schema `sagre`).
-- **Container:** `docker compose up -d --build` sobe **mysql + api(:3001) + web(:3000)** (MySQL do container NÃO exposto ao host); API roda migrate+seed no start; access token de 15m + refresh. Detalhe em [DEVELOPMENT.md](DEVELOPMENT.md) ("Subir via container").
-- Push/release liberados (`paulosouzafmt` é colaborador). Fluxo: por etapa → commit, push, release.
+- **Container:** `docker compose up -d --build` sobe **mysql + minio(:9000/:9001) + api(:3001) + web(:3000)** (MySQL do container NÃO exposto ao host); API roda migrate+seed no start; access token de 15m + refresh. Sem `S3_*` o upload cai no fallback local. Detalhe em [DEVELOPMENT.md](DEVELOPMENT.md) e [README.md](README.md).
+- **Branches:** `main` (releases) e `develop` (integração). CI dispara em push nas duas e em todo PR.
+- Push/release liberados (`paulosouzafmt` é colaborador). Fluxo: feature → PR → `develop` → `main` → tag/release.

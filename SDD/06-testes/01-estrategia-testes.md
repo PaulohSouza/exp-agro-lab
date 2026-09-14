@@ -8,7 +8,7 @@
 ## Golden tests da estatística (crítico)
 Para garantir **fidelidade ao SAGRE** sem R em produção:
 1. Exportar do SAGRE **fixtures**: dataset de entrada + saída esperada (ANOVA table, médias, letras, p-values) para cada rota/delineamento.
-2. Guardar em `packages/analytics/__fixtures__/sagre/`.
+2. Guardar em `packages/analytics/golden/` (`reference.json` + CSVs; gerados por `golden/gen-reference.R`).
 3. Teste compara saída TS × fixture com **tolerância numérica** (ex.: p-values e médias com `abs/rel tolerance` documentada; letras de agrupamento idênticas).
 4. Um algoritmo só é "pronto" quando passa o golden test correspondente. Ordem segue as fases A→B→C de [sagre-analytics](../08-anexos/sagre-analytics.md).
 

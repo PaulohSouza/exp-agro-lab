@@ -38,6 +38,10 @@ parcela mora na **avaliação**.
 
 ## Demanda E — Natureza do dado da avaliação (numérica × documental)
 
+> **✅ IMPLEMENTADA e released em v0.13.0** (PR #29, 12/07/2026; tag 14/09/2026).
+> Foto de parcela = avaliação `FOTO`/`TEXTO`; foto geral = atividade `ARQUIVO`.
+> Storage S3-compatível (MinIO) com fallback local. Ver [STATUS §3.0.1](../../STATUS.md).
+
 ### Modelo
 `Avaliacao` (e `ModeloAvaliacao`) ganham:
 ```prisma
@@ -65,8 +69,8 @@ apenas passa a aceitar registro sem `valorColetado` quando a natureza é documen
 - **Aba Avaliações**: a grade de coleta troca o input por **upload de foto** (FOTO) ou
   **campo de texto** (TEXTO); avaliações documentais não aparecem na aba Análise nem no
   relatório de médias (aparecem no **Anexos/Timeline**).
-- **Upload de foto**: reusa/pauta o storage já usado por `fotoUrl` (hoje URL). Definir o
-  backend de arquivos (local/dev; S3-compat futuro) — ver §Fatias.
+- **Upload de foto**: `StorageService` S3-compatível (MinIO em dev) com fallback local;
+  `POST /uploads` + `GET /uploads/*`. Implementado em v0.13.0.
 
 ---
 
